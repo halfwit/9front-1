@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Plan 9 — Fourth Edition Release Notes</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Plan 9 From Bell Labs</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Fourth Release Notes</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>April, 2002</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>updated June, 2003</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.42in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="margin-top: 0; margin-bottom: -0.40in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt">Copyright © 2002-2003 Lucent Technologies Inc.</span></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt">All Rights Reserved</span></p>
+<p style="margin-top: 0; margin-bottom: 0.20in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The fourth release of the Plan 9 operating system from Bell Labs
+packages a major overhaul of the system at every level.
+From the underlying file system protocol, 9P, through the kernel,
+libraries, and applications, almost everything has been modified
+and, in many cases, redesigned or rewritten.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The most significant change is that 9P has been redesigned to address
+a number of shortcomings, most important, its previous inability to handle long
+file names.
+Unfortunately, squeezing long names onto the disks of existing
+file servers is a messy business that we&rsquo;re still grappling with,
+so at the moment
+</span><span style="font-size: 10pt"><i>fs</i></span><span style="font-size: 10pt">(4)
+and
+</span><span style="font-size: 10pt"><i>kfs</i></span><span style="font-size: 10pt">(4)
+can&rsquo;t yet handle long names,
+although they do talk the new protocol.
+(In fact, they
+talk both old and new, as required, to ease transition.)
+In the meantime, there is a workaround —
+</span><span style="font-size: 10pt"><i>lnfs</i></span><span style="font-size: 10pt">(4)
+—
+and many of the other file servers such as
+</span><span style="font-size: 10pt"><i>ramfs</i></span><span style="font-size: 10pt">(4)
+and
+</span><span style="font-size: 10pt"><i>u9fs</i></span><span style="font-size: 10pt">(4)
+work just fine with long names.
+It&rsquo;s only the old disk-resident file servers
+that don&rsquo;t.
+The new file server
+</span><span style="font-size: 10pt"><i>fossil</i></span><span style="font-size: 10pt">(4)
+handles supports long names and many other features.
+The older servers are now deprecated.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following is a partial list of the major changes throughout the system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The file system protocol, 9P, has been reworked.
+It now has variable-length names, so it can handle long names
+but also is more compact when handling short ones.
+It uses a different format that is easily parsed, eliminating the need for the old
+</span><span style="font-size: 10pt"><tt>aux/fcall</tt></span><span style="font-size: 10pt">
+utility,
+and delegates its authentication duties to an external agent,
+</span><span style="font-size: 10pt"><tt>factotum</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Security has been a focus of attention.
+A new security agent,
+</span><span style="font-size: 10pt"><i>factotum</i></span><span style="font-size: 10pt">(4),
+manages passwords and other secrets and, coupled with a new secure file store
+</span><span style="font-size: 10pt"><i>secstore</i></span><span style="font-size: 10pt">(8),
+enables secure single sign-on.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+</span><span style="font-size: 10pt"><tt>Cpu</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>import</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>exportfs</tt></span><span style="font-size: 10pt">
+all encrypt their connections now, and since they use the new 9P they
+also use new network port numbers.
+A new service
+</span><span style="font-size: 10pt"><i>aan</i></span><span style="font-size: 10pt">(1)
+is used by
+</span><span style="font-size: 10pt"><tt>import</tt></span><span style="font-size: 10pt">
+to make its network connections more reliable in the face of network outages.
+The old ports still work, through the agency of a protocol conversion filter
+</span><span style="font-size: 10pt"><i>srvold9p</i></span><span style="font-size: 10pt">(4).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+We are phasing out the IL protocol since it doesn&rsquo;t handle long-distance connections
+well (and long-distance networks don&rsquo;t handle it well, either).
+IL is still used by
+</span><span style="font-size: 10pt"><i>fs</i></span><span style="font-size: 10pt">(4)
+but TCP has become the standard protocol for all other services.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The software for the new network-resident secure block store,
+</span><span style="font-size: 10pt"><i>venti</i></span><span style="font-size: 10pt">(8),
+is included with this distribution.
+The new
+file server
+</span><span style="font-size: 10pt"><i>fossil</i></span><span style="font-size: 10pt">(4)
+uses Venti rather than a WORM as its permanent block repository/backup medium.
+It is still being developed, but is mature enough that a handful of users
+throughout the world are using it as their primary file server.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The need to handle longer file names triggered a rethinking of the way the
+system handles strings in general.
+The kernel is now more explanatory when it gives an error message and
+more consistent in how it handles strings such as commands to devices.
+The interfaces to many of the system calls, such as
+</span><span style="font-size: 10pt"><i>errstr</i></span><span style="font-size: 10pt">(2)
+and
+</span><span style="font-size: 10pt"><i>wait</i></span><span style="font-size: 10pt">(2)
+all had to change as a result, as did the library interface to read directories,
+</span><span style="font-size: 10pt"><i>stat</i></span><span style="font-size: 10pt">(2)
+and its relatives.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The formatted I/O package described in
+</span><span style="font-size: 10pt"><i>print</i></span><span style="font-size: 10pt">(2)
+and
+</span><span style="font-size: 10pt"><i>fmtinstall</i></span><span style="font-size: 10pt">(2)
+has been redesigned.
+Although the basic interface is unchanged, it now runs without locks and
+has an internal buffer management mechanism that means
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+no longer needs a large on-stack buffer.
+The interface for writing custom print verbs and custom formatted I/O routines
+has also been greatly improved.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The thread library
+</span><span style="font-size: 10pt"><i>thread</i></span><span style="font-size: 10pt">(2)
+has been completely rewritten.
+The main visible change is that, coupled with the changes to printing,
+</span><span style="font-size: 10pt"><tt>threadprint</tt></span><span style="font-size: 10pt">
+is gone; you can just use
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>fprint</tt></span><span style="font-size: 10pt">
+at will.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Support for electronic mail has been extended in many ways and now includes
+some new spam filtering tools,
+much better (and more standard) handling of MIME messages,
+the ability to render incoming HTML mail,
+and much more.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are so many changes to the programming interfaces of the system
+that they are described in a separate document, entitled
+</span><span style="font-size: 10pt"><i>Changes to the Programming Environment in the Fourth Release of Plan 9.
+</i></span><span style="font-size: 10pt">Please read it before you start updating your own software to run under the new system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The installation method has also changed and we&rsquo;re moving towards a new
+method for maintaining updates.
+The Plan 9 Wiki
+(</span><span style="font-size: 10pt"><tt>http://plan9.bell-labs.com/wiki/plan9</tt></span><span style="font-size: 10pt">)
+and Usenet group
+(</span><span style="font-size: 10pt"><tt>comp.os.plan9</tt></span><span style="font-size: 10pt">)
+are the places to visit to learn more and stay current.
+In particular, the installation notes are now maintained in the Wiki;
+the traditional papers on installation and start-up are gone.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There&rsquo;s lots more new stuff.
+If you have problems, mail
+</span><span style="font-size: 10pt"><tt>9trouble@plan9.bell-labs.com</tt></span><span style="font-size: 10pt">
+or, better, check the wiki
+</span><span style="font-size: 10pt"><tt>http://plan9.bell-labs.com/wiki/plan9</tt></span><span style="font-size: 10pt">
+or ask the Usenet newsgroup
+</span><span style="font-size: 10pt"><tt>comp.os.plan9</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Good Luck!
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

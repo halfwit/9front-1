@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>The Various Ports</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>The Various Ports</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.42in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This document collects comments about the various
+architectures supported by Plan 9.
+The system tries to hide most of the differences between machines,
+so the machines as seen by a Plan 9
+user look different from how they are perceived through commercial software.
+Also, because we are a small group, we couldn&rsquo;t do everything:
+exploit every optimization, support every model,
+drive every device.
+This document records what we
+</span><span style="font-size: 10pt"><i>have</i></span><span style="font-size: 10pt">
+done.
+The first section discusses the compiler/assembler/loader suite for each machine.
+The second talks about
+the operating system implemented on each of the various
+machines.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Motorola MC68020 compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is the oldest compiler of the bunch.  Relative to its
+competitors—commercial compilers for the same machine—it generates
+quite good code.
+It assumes at least a 68020 architecture: some of the addressing
+modes it generates are not on the 68000 or 68010.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We also use this compiler for the 68040.  Except for a few
+instructions and registers available only from assembly language,
+the only user-visible difference between these machines is in
+floating point.  Our 68020s all have 68881 or 68882 floating
+point units attached, so to execute floating point programs we
+depend on there being appropriate hardware.
+Unfortunately, the 68040 is not quite so thorough in its implementation
+of the IEEE 754 standard or in its provision of built-in instructions
+for the
+transcendental functions.  The latter was easy to get around: we
+don&rsquo;t use them on the 68020 either, but we do have a library,
+</span><span style="font-size: 10pt"><tt>-l68881</tt></span><span style="font-size: 10pt">,
+that you can use if you need the performance (which can be
+substantial:
+</span><span style="font-size: 10pt"><tt>astro</tt></span><span style="font-size: 10pt">
+runs twice as fast).
+We don&rsquo;t use this library by default because we want to run the same
+binaries on both machines and don&rsquo;t want to emulate
+</span><span style="font-size: 10pt"><tt>FCOSH</tt></span><span style="font-size: 10pt">
+in the operating system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The problem with IEEE is nastier.  We didn&rsquo;t really want to deal
+with gradual underflow and all that, especially since we had
+half a dozen machines we&rsquo;d need to do it on, so on the 68040
+we implement non-trapping underflow as truncation to zero and
+do nothing about denormalized numbers and not-a-numbers.
+This means the 68020
+and the 68040 are not precisely compatible.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Motorola MC68000 compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This compiler is a stripped-down version of the MC68020 compiler
+built for an abortive port to the Dragonball processor on the Palm Pilot.
+It generates position-independent code whose overall quality is much
+poorer than the code for the MC68020.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The MIPS compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This compiler generates code for the R2000, R3000, and R4000 machines configured
+to be big-endians.  The compiler generates no R4000-specific instructions
+although the assembler and loader support the new user-mode instructions.
+There are options to generate code for little-endian machines.
+Considering its speed, the Plan 9 compiler generates good code,
+but the commercial
+MIPS compiler with all the stops pulled out consistently beats it
+by 20% or so, sometimes more.  Since ours compiles about 10 times
+faster and we spend most of our time compiling anyway,
+we are content with the tradeoff.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler is solid: we&rsquo;ve used it for several big projects and, of course,
+all our applications run under it.
+The behavior of floating-point programs is much like on the 68040:
+the operating system emulates where necessary to get past non-trapping
+underflow and overflow, but does not handle gradual underflow or
+denormalized numbers or not-a-numbers.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The SPARC compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The SPARC compiler is also solid and fast, although we haven&rsquo;t
+used it for a few years, due to a lack of current hardware.  We have seen it do
+much better than GCC with all the optimizations, but on average
+it is probably about the same.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We used to run some old SPARC machines with no multiply or divide instructions,
+so the compiler
+does not produce them by default.
+Instead it calls internal subroutines.
+A loader flag,
+</span><span style="font-size: 10pt"><tt>-M</tt></span><span style="font-size: 10pt">,
+causes the instructions to be emitted.  The operating system has
+trap code to emulate them if necessary, but the traps are slower than
+emulating them in user mode.
+In any modern lab, in which SPARCS have the instructions, it would be worth enabling the
+</span><span style="font-size: 10pt"><tt>-M</tt></span><span style="font-size: 10pt">
+flag by default.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The floating point story is the same as on the MIPS.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Intel i386 compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is really an
+</span><span style="font-size: 10pt"><i>x</i></span><span style="font-size: 10pt">86
+compiler, for
+</span><span style="font-size: 10pt"><i>x</i></span><span style="font-size: 10pt">&gt;2.
+It works only
+if the machine is in 32-bit protected mode.
+It is solid and generates tolerable code; it is our main compiler these days.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Floating point is well-behaved, but the compiler assumes i387-compatible
+hardware to execute
+the instructions.  With 387 hardware,
+the system does the full IEEE 754 job, just like
+the MC68881.  By default, the libraries don&rsquo;t use the 387 built-ins for
+transcendentals.
+If you want them,
+build the code in
+</span><span style="font-size: 10pt"><tt>/sys/src/libc/386/387</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Intel i960 compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This compiler was built as a weekend hack to let us get the Cyclone
+boards running.  It has only been used to run one program—the on-board
+code in the Cyclone—and is therefore likely to be buggy.
+There are a number of obvious optimizations to the code that have
+never been attempted.
+For example, the compiler does not support pipelining.
+The code runs in little-endian mode.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The DEC Alpha compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Alpha compiler is based on a port done by David Hogan while
+studying at the Basser Department of Computer Science, University of Sydney.
+It has been used to build a running version of the operating system, but has
+not been stressed as much as some of the other compilers.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Although the Alpha is a 64-bit architecture, this compiler treats
+</span><span style="font-size: 10pt"><tt>int</tt></span><span style="font-size: 10pt">s,
+</span><span style="font-size: 10pt"><tt>long</tt></span><span style="font-size: 10pt">s
+and pointers as 32 bits.  Access to the 64-bit operations is available through the
+</span><span style="font-size: 10pt"><tt>vlong</tt></span><span style="font-size: 10pt">
+type, as with the other architectures.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler assumes that the target CPU supports the optional byte and
+word memory operations (the &lsquo;&lsquo;BWX&rsquo;&rsquo; extension).
+If you have an old system, you can generate code without using the extension
+by passing the loader the
+</span><span style="font-size: 10pt"><tt>-x</tt></span><span style="font-size: 10pt">
+option.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are a number of optimizations that the Alpha Architecture Handbook
+recommends, but this compiler does not do.  In particular, there is currently
+no support for the code alignment and code scheduling optimizations.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler tries to conform to IEEE, but some Alpha CPUs do not implement
+all of the rounding and trapping modes in silicon.  Fixing this problem requires
+some software emulation code in the kernel; to date, this has not been attempted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The PowerPC compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The PowerPC compiler supports the 32-bit PowerPC architecture only;
+it does not support either the 64-bit extensions or the POWER compatibility instructions.
+It has been used for production operating system work on the 603, 603e, 604e, 821, 823, and 860,
+and experimental work on the 405, 440 and 450.
+On the 8xx floating-point instructions must be emulated.
+Instruction scheduling is not implemented; otherwise the code generated
+is similar to that for the other load-store architectures.
+The compiler makes little or no use of unusual PowerPC features such as the
+counter register, several condition code registers, and multiply-accumulate
+instructions, but they are sometimes
+used by assembly language routines in the libraries.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The ARM compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The ARM compiler is fairly solid; it has been used for some production
+operating system work including Inferno and the Plan 9 kernel
+for the iPAQ, which uses a StrongArm SA1, and the Sheevaplug,
+Guruplug, Dreamplug and others.
+The compiler supports the ARMv4 architecture;
+it does not support the Thumb instruction sets.
+It has been used on ARM7500FE, ARM926 and Cortex-A8 processors
+and the Strongarm SA1 core machines.
+The compiler generates instructions for
+ARM 7500 FPA floating-point coprocessor 1,
+but probably should instead generate VFP 3+ instructions
+for coprocessors 10 and 11.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The AMD 29000 compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This compiler was used to port an operating system to an AMD 29240 processor.
+The project is long abandoned, but the compiler lives on.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Carrera operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We used to have a number of MIPS R4400 PC-like devices called Carreras,
+with custom-built frame buffers, that we used as terminals.
+They&rsquo;re almost all decommissioned now, but we&rsquo;re including the source as a reference
+in case someone wants to get another MIPS-based system running.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The IBM PC operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The PC version of Plan 9 can boot either from MS-DOS
+or directly from a disk created by the
+</span><span style="font-size: 10pt"><tt>format</tt></span><span style="font-size: 10pt">
+command; see
+</span><span style="font-size: 10pt"><i>prep</i></span><span style="font-size: 10pt">(8).
+Plan 9 runs in 32-bit mode—which requires a 386 or later model x86 processor—and
+has an interrupt-driven I/O system, so it does not
+use the BIOS (except for a small portion of the boot program and floppy boot block).
+This helps performance but limits the set of I/O devices that it can support without
+special code.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 supports the ISA, EISA, and PCI buses as well as PCMCIA and PC card devices.
+It is infeasible to list all the supported machines, because
+the PC-clone marketplace is too volatile and there is
+no guarantee that the machine you buy today will contain the
+same components as the one you bought yesterday.
+(For our lab, we buy components and assemble the machines
+ourselves in an attempt to lessen this effect.)
+Both IDE/ATA and SCSI disks are supported, and
+there is support for large ATA drives.
+CD-ROMs are supported two ways, either on the SCSI bus, or as ATA(PI) devices.
+The SCSI adapter must be a member of the Mylex Multimaster (old Buslogic BT-*) series
+or the Symbios 53C8XX series.
+Supported Ethernet cards include the
+AMD79C790,
+3COM Etherlink III and 3C589 series,
+Lucent Wavelan and compatibles,
+NE2000,
+WD8003,
+WD8013,
+SMC Elite and Elite Ultra,
+Linksys Combo EthernetCard and EtherFast 10/100,
+and a variety of controllers based on the
+Intel i8255[789] and Digital (now Intel) 21114x chips.
+We mostly use Etherlink III, i8255[789], and 21114x, so those drivers may be more robust.
+There must be an explicit Plan 9 driver for peripherals;
+it cannot use DOS or Windows drivers.
+Also,
+Plan 9 cannot exploit special hardware-related features that fall outside of the
+IBM PC model,
+such as power management,
+unless architecture-dependent code is added to the kernel.
+For more details see
+</span><span style="font-size: 10pt"><i>plan9.ini</i></span><span style="font-size: 10pt">(8).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Over the years,
+Plan 9 has run on a number of VGA cards.
+Recent changes to the graphics system have not been
+tested on most of the older cards; some effort may be needed to get them working again.
+In our lab, most of our machines use the ATI Mach64, S3 ViRGE, or S3 Savage chips,
+so such devices are probably
+the most reliable.
+We also use a few Matrox and TNT cards.
+The system requires a hardware cursor.
+For more details see
+</span><span style="font-size: 10pt"><i>vgadb</i></span><span style="font-size: 10pt">(6)
+and
+</span><span style="font-size: 10pt"><i>vga</i></span><span style="font-size: 10pt">(8).
+The wiki
+(</span><span style="font-size: 10pt"><tt>http://plan9.bell-labs.com/wiki/plan9</tt></span><span style="font-size: 10pt">)
+contains the definitive list of cards that are known to work; see the &lsquo;&lsquo;supported PC hardware&rsquo;&rsquo;
+page.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For audio, Plan 9 supports the Sound Blaster 16 and compatibles.
+(Note that audio doesn&rsquo;t work under Plan 9 with 8-bit Sound Blasters.)
+There is also user-level support for USB audio devices; see 
+</span><span style="font-size: 10pt"><i>usb</i></span><span style="font-size: 10pt">(4).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Finally, it&rsquo;s important to have a three-button mouse with Plan 9.
+The system currently works only with mice on the PS/2 port or USB.
+Serial mouse support should return before long.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Once you have Plan 9 installed (see the wiki&rsquo;s installation document)
+run the program
+</span><span style="font-size: 10pt"><tt>ld</tt></span><span style="font-size: 10pt">
+from DOS
+or use a boot disk.  See
+</span><span style="font-size: 10pt"><i>booting</i></span><span style="font-size: 10pt">(8),
+</span><span style="font-size: 10pt"><i>9load</i></span><span style="font-size: 10pt">(8),
+and
+</span><span style="font-size: 10pt"><i>prep</i></span><span style="font-size: 10pt">(8)
+for more information.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Alpha PC operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 runs on the Alpha PC 164.
+The Alpha port has not been used as much as the others,
+and should be considered a preliminary release.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The port uses the OSF/1 flavor
+of PALcode, and should be booted from the SRM firmware (booting
+from ARC is not supported).
+Supported devices are a subset of the PC ones; currently
+this includes DECchip 2114x-based ethernet cards, S3 VGA cards,
+Sound Blaster 16-compatible audio, floppy drives, and ATA hard disks.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The system has to be booted via tftp.
+See
+</span><span style="font-size: 10pt"><i>booting</i></span><span style="font-size: 10pt">(8)
+for details.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The PowerPC operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We have a version of the system that runs on the PowerPC
+on a home-grown machine called Viaduct.
+The Viaduct minibrick is a small (12x9x3 cm) low-cost embedded
+computer consisting of a 50Mhz MPC850, 16MB sdram, 2MB flash,
+and two 10Mb Ethernet ports.  It is designed for home/SOHO
+networking applications such as VPN, firewalls, NAT, etc.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The kernel has also been ported to the Motorola MTX embedded motherboard;
+that port is included in the distribution.
+The port only works with a 604e processor (the 603e is substantially different)
+and at present only a single CPU is permitted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Compaq iPAQ operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 was ported to Compaq&rsquo;s iPAQ Pocket PC,
+which uses the StrongArm SA1 processor.
+The model we have is a 3630; neighboring models also work.
+The kernel can drive a PCMCIA sleeve with a WaveLAN card, but no other PCMCIA
+devices have been ported yet.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The iPAQ runs
+</span><span style="font-size: 10pt"><tt>rio</tt></span><span style="font-size: 10pt">
+with a small keyboard application that allows Palm-style handwriting
+input as well as typing with the stylus on a miniature keyboard.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Fco. J. Ballesteros
+(</span><span style="font-size: 10pt"><tt>nemo@plan9.escet.urjc.es</tt></span><span style="font-size: 10pt">)
+added support for hibernation, but we haven&rsquo;t been able to
+get that to work again in the new kernel; the code is there, however,
+for volunteers to play with.
+See the file
+</span><span style="font-size: 10pt"><tt>/sys/src/9/bitsy/Booting101</tt></span><span style="font-size: 10pt">
+for information about installing Plan 9 on the iPAQ.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Marvell Kirkwood operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is an ARM kernel for the ARM926EJ-S processor
+and it emulates floating-point and
+CAS (compare-and-swap) instructions.
+It is known to run on the Sheevaplug, Guruplug, Dreamplug
+and Openrd-client boards.
+It is derived from a port of native Inferno to the Sheevaplug
+by Salva Peir</span><span style="font-size: 10pt">&oacute;</span><span style="font-size: 10pt"> and Mechiel Lukkien.
+There are many features of the Kirkwood system-on-a-chip
+that it does not exploit.
+There are currently drivers for up to two
+Gigabit Ethernet interfaces,
+USB and the console serial port;
+we hope to add crypto acceleration, and a video driver for the Openrd-client.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Marvell PXA168 operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is an ARM kernel for the ARM-v5-architecture processor in the
+Marvell PXA168 system-on-a-chip
+and it emulates floating-point and
+CAS (compare-and-swap) instructions.
+It is known to run on the Guruplug Display.
+There are many features of the system-on-a-chip
+that it does not exploit.
+There are currently drivers for
+a Fast Ethernet interface,
+and the console serial port;
+we hope to add crypto acceleration, and a video driver.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The TI OMAP35 operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is an ARM kernel for the Cortex-A8 processor
+and it emulates pre-VFPv3 floating-point and
+CAS (compare-and-swap) instructions.
+It is known to run on the IGEPv2 board and the Gumstix Overo,
+and might eventually run on the Beagleboard, once USB is working.
+There are many features of the OMAP system-on-a-chip that it does not exploit.
+Initially, there are drivers for the SMSC 9221 100Mb/s Ethernet
+interface in the IGEPv2 and Overo,
+and the console serial port;
+we hope to add USB, flash memory and video drivers.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

@@ -1,0 +1,1881 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>How to Use the Plan 9 C Compiler</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>How to Use the Plan 9 C Compiler</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Rob Pike</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>rob@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The C compiler on Plan 9 is a wholly new program; in fact
+it was the first piece of software written for what would
+eventually become Plan 9 from Bell Labs.
+Programmers familiar with existing C compilers will find
+a number of differences in both the language the Plan 9 compiler
+accepts and in how the compiler is used.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler is really a set of compilers, one for each
+architecture &mdash; MIPS, SPARC, Motorola 68020, Intel 386, etc. &mdash;
+that accept a dialect of ANSI C and efficiently produce
+fairly good code for the target machine.
+There is a packaging of the compiler that accepts strict ANSI C for
+a POSIX environment, but this document focuses on the
+native Plan 9 environment, that in which all the system source and
+almost all the utilities are written.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Source
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The language accepted by the compilers is the core ANSI C language
+with some modest extensions,
+a greatly simplified preprocessor,
+a smaller library that includes system calls and related facilities,
+and a completely different structure for include files.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Official ANSI C accepts the old (K&amp;R) style of declarations for
+functions; the Plan 9 compilers
+are more demanding.
+Without an explicit run-time flag
+(</span><span style="font-size: 10pt"><tt>-B</tt></span><span style="font-size: 10pt">)
+whose use is discouraged, the compilers insist
+on new-style function declarations, that is, prototypes for
+function arguments.
+The function declarations in the libraries&rsquo; include files are
+all in the new style so the interfaces are checked at compile time.
+For C programmers who have not yet switched to function prototypes
+the clumsy syntax may seem repellent but the payoff in stronger typing
+is substantial.
+Those who wish to import existing software to Plan 9 are urged
+to use the opportunity to update their code.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compilers include an integrated preprocessor that accepts the familiar
+</span><span style="font-size: 10pt"><tt>#include</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>#define</tt></span><span style="font-size: 10pt">
+for macros both with and without arguments,
+</span><span style="font-size: 10pt"><tt>#undef</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>#line</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>#ifdef</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>#ifndef</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>#endif</tt></span><span style="font-size: 10pt">.
+It
+supports neither
+</span><span style="font-size: 10pt"><tt>#if</tt></span><span style="font-size: 10pt">
+nor
+</span><span style="font-size: 10pt"><tt>##</tt></span><span style="font-size: 10pt">,
+although it does
+honor a few
+</span><span style="font-size: 10pt"><tt>#pragmas</tt></span><span style="font-size: 10pt">.
+The
+</span><span style="font-size: 10pt"><tt>#if</tt></span><span style="font-size: 10pt">
+directive was omitted because it greatly complicates the
+preprocessor, is never necessary, and is usually abused.
+Conditional compilation in general makes code hard to understand;
+the Plan 9 source uses it sparingly.
+Also, because the compilers remove dead code, regular
+</span><span style="font-size: 10pt"><tt>if</tt></span><span style="font-size: 10pt">
+statements with constant conditions are more readable equivalents to many
+</span><span style="font-size: 10pt"><tt>#ifs</tt></span><span style="font-size: 10pt">.
+To compile imported code ineluctably fouled by
+</span><span style="font-size: 10pt"><tt>#if</tt></span><span style="font-size: 10pt">
+there is a separate command,
+</span><span style="font-size: 10pt"><tt>/bin/cpp</tt></span><span style="font-size: 10pt">,
+that implements the complete ANSI C preprocessor specification.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Include files fall into two groups: machine-dependent and machine-independent.
+The machine-independent files occupy the directory
+</span><span style="font-size: 10pt"><tt>/sys/include</tt></span><span style="font-size: 10pt">;
+the others are placed in a directory appropriate to the machine, such as
+</span><span style="font-size: 10pt"><tt>/mips/include</tt></span><span style="font-size: 10pt">.
+The compiler searches for include files
+first in the machine-dependent directory and then
+in the machine-independent directory.
+At the time of writing there are thirty-one machine-independent include
+files and two (per machine) machine-dependent ones:
+</span><span style="font-size: 10pt"><tt>&lt;ureg.h&gt;</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>&lt;u.h&gt;</tt></span><span style="font-size: 10pt">.
+The first describes the layout of registers on the system stack,
+for use by the debugger.
+The second defines some
+architecture-dependent types such as
+</span><span style="font-size: 10pt"><tt>jmp_buf</tt></span><span style="font-size: 10pt">
+for
+</span><span style="font-size: 10pt"><tt>setjmp</tt></span><span style="font-size: 10pt">
+and the
+</span><span style="font-size: 10pt"><tt>va_arg</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>va_list</tt></span><span style="font-size: 10pt">
+macros for handling arguments to variadic functions,
+as well as a set of
+</span><span style="font-size: 10pt"><tt>typedef</tt></span><span style="font-size: 10pt">
+abbreviations for
+</span><span style="font-size: 10pt"><tt>unsigned</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>short</tt></span><span style="font-size: 10pt">
+and so on.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here is an excerpt from
+</span><span style="font-size: 10pt"><tt>/68020/include/u.h</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#define nil     ((void*)0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef unsigned short  ushort;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef unsigned char   uchar;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef unsigned long   ulong;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef unsigned int    uint;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef   signed char   schar;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef long long       vlong;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef long    jmp_buf[2];</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#define JMPBUFSP    0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#define JMPBUFPC    1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#define JMPBUFDPC   0</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 programs use
+</span><span style="font-size: 10pt"><tt>nil</tt></span><span style="font-size: 10pt">
+for the name of the zero-valued pointer.
+The type
+</span><span style="font-size: 10pt"><tt>vlong</tt></span><span style="font-size: 10pt">
+is the largest integer type available; on most architectures it
+is a 64-bit value.
+A couple of other types in
+</span><span style="font-size: 10pt"><tt>&lt;u.h&gt;</tt></span><span style="font-size: 10pt">
+are
+</span><span style="font-size: 10pt"><tt>u32int</tt></span><span style="font-size: 10pt">,
+which is guaranteed to have exactly 32 bits (a possibility on all the supported architectures) and
+</span><span style="font-size: 10pt"><tt>mpdigit</tt></span><span style="font-size: 10pt">,
+which is used by the multiprecision math package
+</span><span style="font-size: 10pt"><tt>&lt;mp.h&gt;</tt></span><span style="font-size: 10pt">.
+The
+</span><span style="font-size: 10pt"><tt>#define</tt></span><span style="font-size: 10pt">
+constants permit an architecture-independent (but compiler-dependent)
+implementation of stack-switching using
+</span><span style="font-size: 10pt"><tt>setjmp</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>longjmp</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Every Plan 9 C program begins
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;u.h&gt;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">because all the other installed header files use the
+</span><span style="font-size: 10pt"><tt>typedefs</tt></span><span style="font-size: 10pt">
+declared in
+</span><span style="font-size: 10pt"><tt>&lt;u.h&gt;</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In strict ANSI C, include files are grouped to collect related functions
+in a single file: one for string functions, one for memory functions,
+one for I/O, and none for system calls.
+Each include file is protected by an
+</span><span style="font-size: 10pt"><tt>#ifdef</tt></span><span style="font-size: 10pt">
+to guarantee its contents are seen by the compiler only once.
+Plan 9 takes a different approach.  Other than a few include
+files that define external formats such as archives, the files in
+</span><span style="font-size: 10pt"><tt>/sys/include</tt></span><span style="font-size: 10pt">
+correspond to
+</span><span style="font-size: 10pt"><i>libraries.</i></span><span style="font-size: 10pt">
+If a program is using a library, it includes the corresponding header.
+The default C library comprises string functions, memory functions, and
+so on, largely as in ANSI C, some formatted I/O routines,
+plus all the system calls and related functions.
+To use these functions, one must
+</span><span style="font-size: 10pt"><tt>#include</tt></span><span style="font-size: 10pt">
+the file
+</span><span style="font-size: 10pt"><tt>&lt;libc.h&gt;</tt></span><span style="font-size: 10pt">,
+which in turn must follow
+</span><span style="font-size: 10pt"><tt>&lt;u.h&gt;</tt></span><span style="font-size: 10pt">,
+to define their prototypes for the compiler.
+Here is the complete source to the traditional first C program:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;u.h&gt;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;libc.h&gt;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>void</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main(void)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print("hello world\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    exits(0);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+routine and its relatives
+</span><span style="font-size: 10pt"><tt>fprint</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>sprint</tt></span><span style="font-size: 10pt">
+resemble the similarly-named functions in Standard I/O but are not
+attached to a specific I/O library.
+In Plan 9
+</span><span style="font-size: 10pt"><tt>main</tt></span><span style="font-size: 10pt">
+is not integer-valued; it should call
+</span><span style="font-size: 10pt"><tt>exits</tt></span><span style="font-size: 10pt">,
+which takes a string argument (or null; here ANSI C promotes the 0 to a
+</span><span style="font-size: 10pt"><tt>char*</tt></span><span style="font-size: 10pt">).
+All these functions are, of course, documented in the Programmer&rsquo;s Manual.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To use
+</span><span style="font-size: 10pt"><tt>printf</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;stdio.h&gt;</tt></span><span style="font-size: 10pt">
+must be included to define the function prototype for
+</span><span style="font-size: 10pt"><tt>printf</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;u.h&gt;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;libc.h&gt;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;stdio.h&gt;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>void</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main(int argc, char *argv[])</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    printf("%s: hello world; argc = %d\n", argv[0], argc);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    exits(0);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In practice, Standard I/O is not used much in Plan 9.  I/O libraries are
+discussed in a later section of this document.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are libraries for handling regular expressions, raster graphics,
+windows, and so on, and each has an associated include file.
+The manual for each library states which include files are needed.
+The files are not protected against multiple inclusion and themselves
+contain no nested
+</span><span style="font-size: 10pt"><tt>#includes</tt></span><span style="font-size: 10pt">.
+Instead the
+programmer is expected to sort out the requirements
+and to
+</span><span style="font-size: 10pt"><tt>#include</tt></span><span style="font-size: 10pt">
+the necessary files once at the top of each source file.  In practice this is
+trivial: this way of handling include files is so straightforward
+that it is rare for a source file to contain more than half a dozen
+</span><span style="font-size: 10pt"><tt>#includes</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compilers do their own register allocation so the
+</span><span style="font-size: 10pt"><tt>register</tt></span><span style="font-size: 10pt">
+keyword is ignored.
+For different reasons,
+</span><span style="font-size: 10pt"><tt>volatile</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>const</tt></span><span style="font-size: 10pt">
+are also ignored.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To make it easier to share code with other systems, Plan 9 has a version
+of the compiler,
+</span><span style="font-size: 10pt"><tt>pcc</tt></span><span style="font-size: 10pt">,
+that provides the standard ANSI C preprocessor, headers, and libraries
+with POSIX extensions.
+</span><span style="font-size: 10pt"><tt>Pcc</tt></span><span style="font-size: 10pt">
+is recommended only
+when broad external portability is mandated.  It compiles slower,
+produces slower code (it takes extra work to simulate POSIX on Plan 9),
+eliminates those parts of the Plan 9 interface
+not related to POSIX, and illustrates the clumsiness of an environment
+designed by committee.
+</span><span style="font-size: 10pt"><tt>Pcc</tt></span><span style="font-size: 10pt">
+is described in more detail in
+</span><span style="font-size: 10pt"><i>APE&mdash;The ANSI/POSIX Environment,
+</i></span><span style="font-size: 10pt">by Howard Trickey.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Process
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Each CPU architecture supported by Plan 9 is identified by a single,
+arbitrary, alphanumeric character:
+</span><span style="font-size: 10pt"><tt>k</tt></span><span style="font-size: 10pt">
+for SPARC,
+</span><span style="font-size: 10pt"><tt>q</tt></span><span style="font-size: 10pt">
+for Motorola Power PC 630 and 640,
+</span><span style="font-size: 10pt"><tt>v</tt></span><span style="font-size: 10pt">
+for MIPS,
+</span><span style="font-size: 10pt"><tt>0</tt></span><span style="font-size: 10pt">
+for little-endian MIPS,
+</span><span style="font-size: 10pt"><tt>1</tt></span><span style="font-size: 10pt">
+for Motorola 68000,
+</span><span style="font-size: 10pt"><tt>2</tt></span><span style="font-size: 10pt">
+for Motorola 68020 and 68040,
+</span><span style="font-size: 10pt"><tt>5</tt></span><span style="font-size: 10pt">
+for Acorn ARM 7500,
+</span><span style="font-size: 10pt"><tt>6</tt></span><span style="font-size: 10pt">
+for AMD 64,
+</span><span style="font-size: 10pt"><tt>7</tt></span><span style="font-size: 10pt">
+for DEC Alpha,
+</span><span style="font-size: 10pt"><tt>8</tt></span><span style="font-size: 10pt">
+for Intel 386, and
+</span><span style="font-size: 10pt"><tt>9</tt></span><span style="font-size: 10pt">
+for AMD 29000.
+The character labels the support tools and files for that architecture.
+For instance, for the 68020 the compiler is
+</span><span style="font-size: 10pt"><tt>2c</tt></span><span style="font-size: 10pt">,
+the assembler is
+</span><span style="font-size: 10pt"><tt>2a</tt></span><span style="font-size: 10pt">,
+the link editor/loader is
+</span><span style="font-size: 10pt"><tt>2l</tt></span><span style="font-size: 10pt">,
+the object files are suffixed
+</span><span style="font-size: 10pt"><tt>.2</tt></span><span style="font-size: 10pt">,
+and the default name for an executable file is
+</span><span style="font-size: 10pt"><tt>2.out</tt></span><span style="font-size: 10pt">.
+Before we can use the compiler we therefore need to know which
+machine we are compiling for.
+The next section explains how this decision is made; for the moment
+assume we are building 68020 binaries and make the mental substitution for
+</span><span style="font-size: 10pt"><tt>2</tt></span><span style="font-size: 10pt">
+appropriate to the machine you are actually using.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To convert source to an executable binary is a two-step process.
+First run the compiler,
+</span><span style="font-size: 10pt"><tt>2c</tt></span><span style="font-size: 10pt">,
+on the source, say
+</span><span style="font-size: 10pt"><tt>file.c</tt></span><span style="font-size: 10pt">,
+to generate an object file
+</span><span style="font-size: 10pt"><tt>file.2</tt></span><span style="font-size: 10pt">.
+Then run the loader,
+</span><span style="font-size: 10pt"><tt>2l</tt></span><span style="font-size: 10pt">,
+to generate an executable
+</span><span style="font-size: 10pt"><tt>2.out</tt></span><span style="font-size: 10pt">
+that may be run (on a 680X0 machine):
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>2c file.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>2l file.2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>2.out</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The loader automatically links with whatever libraries the program
+needs, usually including the standard C library as defined by
+</span><span style="font-size: 10pt"><tt>&lt;libc.h&gt;</tt></span><span style="font-size: 10pt">.
+Of course the compiler and loader have lots of options, both familiar and new;
+see the manual for details.
+The compiler does not generate an executable automatically;
+the output of the compiler must be given to the loader.
+Since most compilation is done under the control of
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+(see below), this is rarely an inconvenience.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The distribution of work between the compiler and loader is unusual.
+The compiler integrates preprocessing, parsing, register allocation,
+code generation and some assembly.
+Combining these tasks in a single program is part of the reason for
+the compiler&rsquo;s efficiency.
+The loader does instruction selection, branch folding,
+instruction scheduling,
+and writes the final executable.
+There is no separate C preprocessor and no assembler in the usual pipeline.
+Instead the intermediate object file
+(here a
+</span><span style="font-size: 10pt"><tt>.2</tt></span><span style="font-size: 10pt">
+file) is a type of binary assembly language.
+The instructions in the intermediate format are not exactly those in
+the machine.  For example, on the 68020 the object file may specify
+a MOVE instruction but the loader will decide just which variant of
+the MOVE instruction &mdash; MOVE immediate, MOVE quick, MOVE address,
+etc. &mdash; is most efficient.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The assembler,
+</span><span style="font-size: 10pt"><tt>2a</tt></span><span style="font-size: 10pt">,
+is just a translator between the textual and binary
+representations of the object file format.
+It is not an assembler in the traditional sense.  It has limited
+macro capabilities (the same as the integral C preprocessor in the compiler),
+clumsy syntax, and minimal error checking.  For instance, the assembler
+will accept an instruction (such as memory-to-memory MOVE on the MIPS) that the
+machine does not actually support; only when the output of the assembler
+is passed to the loader will the error be discovered.
+The assembler is intended only for writing things that need access to instructions
+invisible from C,
+such as the machine-dependent
+part of an operating system;
+very little code in Plan 9 is in assembly language.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compilers take an option
+</span><span style="font-size: 10pt"><tt>-S</tt></span><span style="font-size: 10pt">
+that causes them to print on their standard output the generated code
+in a format acceptable as input to the assemblers.
+This is of course merely a formatting of the
+data in the object file; therefore the assembler is just
+an
+ASCII-to-binary converter for this format.
+Other than the specific instructions, the input to the assemblers
+is largely architecture-independent; see
+&lsquo;&lsquo;A Manual for the Plan 9 Assembler&rsquo;&rsquo;,
+by Rob Pike,
+for more information.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The loader is an integral part of the compilation process.
+Each library header file contains a
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+that tells the loader the name of the associated archive; it is
+not necessary to tell the loader which libraries a program uses.
+The C run-time startup is found, by default, in the C library.
+The loader starts with an undefined
+symbol,
+</span><span style="font-size: 10pt"><tt>_main</tt></span><span style="font-size: 10pt">,
+that is resolved by pulling in the run-time startup code from the library.
+(The loader undefines
+</span><span style="font-size: 10pt"><tt>_mainp</tt></span><span style="font-size: 10pt">
+when profiling is enabled, to force loading of the profiling start-up
+instead.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Unlike its counterpart on other systems, the Plan 9 loader rearranges
+data to optimize access.  This means the order of variables in the
+loaded program is unrelated to its order in the source.
+Most programs don&rsquo;t care, but some assume that, for example, the
+variables declared by
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int a;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int b;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will appear at adjacent addresses in memory.  On Plan 9, they won&rsquo;t.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Heterogeneity
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When the system starts or a user logs in the environment is configured
+so the appropriate binaries are available in
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">.
+The configuration process is controlled by an environment variable,
+</span><span style="font-size: 10pt"><tt>$cputype</tt></span><span style="font-size: 10pt">,
+with value such as
+</span><span style="font-size: 10pt"><tt>mips</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>68020</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>386</tt></span><span style="font-size: 10pt">,
+or
+</span><span style="font-size: 10pt"><tt>sparc</tt></span><span style="font-size: 10pt">.
+For each architecture there is a directory in the root,
+with the appropriate name,
+that holds the binary and library files for that architecture.
+Thus
+</span><span style="font-size: 10pt"><tt>/mips/lib</tt></span><span style="font-size: 10pt">
+contains the object code libraries for MIPS programs,
+</span><span style="font-size: 10pt"><tt>/mips/include</tt></span><span style="font-size: 10pt">
+holds MIPS-specific include files, and
+</span><span style="font-size: 10pt"><tt>/mips/bin</tt></span><span style="font-size: 10pt">
+has the MIPS binaries.
+These binaries are attached to
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">
+at boot time by binding
+</span><span style="font-size: 10pt"><tt>/$cputype/bin</tt></span><span style="font-size: 10pt">
+to
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">,
+so
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">
+always contains the correct files.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The MIPS compiler,
+</span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt">,
+by definition
+produces object files for the MIPS architecture,
+regardless of the architecture of the machine on which the compiler is running.
+There is a version of
+</span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt">
+compiled for each architecture:
+</span><span style="font-size: 10pt"><tt>/mips/bin/vc</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/68020/bin/vc</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/sparc/bin/vc</tt></span><span style="font-size: 10pt">,
+and so on,
+each capable of producing MIPS object files regardless of the native
+instruction set.
+If one is running on a SPARC,
+</span><span style="font-size: 10pt"><tt>/sparc/bin/vc</tt></span><span style="font-size: 10pt">
+will compile programs for the MIPS;
+if one is running on machine
+</span><span style="font-size: 10pt"><tt>$cputype</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/$cputype/bin/vc</tt></span><span style="font-size: 10pt">
+will compile programs for the MIPS.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Because of the bindings that assemble
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">,
+the shell always looks for a command, say
+</span><span style="font-size: 10pt"><tt>date</tt></span><span style="font-size: 10pt">,
+in
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">
+and automatically finds the file
+</span><span style="font-size: 10pt"><tt>/$cputype/bin/date</tt></span><span style="font-size: 10pt">.
+Therefore the MIPS compiler is known as just
+</span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt">;
+the shell will invoke
+</span><span style="font-size: 10pt"><tt>/bin/vc</tt></span><span style="font-size: 10pt">
+and that is guaranteed to be the version of the MIPS compiler
+appropriate for the machine running the command.
+Regardless of the architecture of the compiling machine,
+</span><span style="font-size: 10pt"><tt>/bin/vc</tt></span><span style="font-size: 10pt">
+is
+</span><span style="font-size: 10pt"><i>always</i></span><span style="font-size: 10pt">
+the MIPS compiler.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Also, the output of
+</span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>vl</tt></span><span style="font-size: 10pt">
+is completely independent of the machine type on which they are executed:
+</span><span style="font-size: 10pt"><tt>.v</tt></span><span style="font-size: 10pt">
+files compiled (with
+</span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt">)
+on a SPARC may be linked (with
+</span><span style="font-size: 10pt"><tt>vl</tt></span><span style="font-size: 10pt">)
+on a 386.
+(The resulting
+</span><span style="font-size: 10pt"><tt>v.out</tt></span><span style="font-size: 10pt">
+will run, of course, only on a MIPS.)
+Similarly, the MIPS libraries in
+</span><span style="font-size: 10pt"><tt>/mips/lib</tt></span><span style="font-size: 10pt">
+are suitable for loading with
+</span><span style="font-size: 10pt"><tt>vl</tt></span><span style="font-size: 10pt">
+on any machine; there is only one set of MIPS libraries, not one
+set for each architecture that supports the MIPS compiler.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Heterogeneity and </b></span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Most software on Plan 9 is compiled under the control of
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">,
+a descendant of
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+that is documented in the Programmer&rsquo;s Manual.
+A convention used throughout the
+</span><span style="font-size: 10pt"><tt>mkfiles</tt></span><span style="font-size: 10pt">
+makes it easy to compile the source into binary suitable for any architecture.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The variable
+</span><span style="font-size: 10pt"><tt>$cputype</tt></span><span style="font-size: 10pt">
+is advisory: it reports the architecture of the current environment, and should
+not be modified.  A second variable,
+</span><span style="font-size: 10pt"><tt>$objtype</tt></span><span style="font-size: 10pt">,
+is used to set which architecture is being
+</span><span style="font-size: 10pt"><i>compiled</i></span><span style="font-size: 10pt">
+for.
+The value of
+</span><span style="font-size: 10pt"><tt>$objtype</tt></span><span style="font-size: 10pt">
+can be used by a
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+to configure the compilation environment.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In each machine&rsquo;s root directory there is a short
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+that defines a set of macros for the compiler, loader, etc.
+Here is
+</span><span style="font-size: 10pt"><tt>/mips/mkfile</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/mkfile.proto</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>CC=vc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>LD=vl</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>O=v</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>AS=va</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The line
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/mkfile.proto</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">causes
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+to include the file
+</span><span style="font-size: 10pt"><tt>/sys/src/mkfile.proto</tt></span><span style="font-size: 10pt">,
+which contains general definitions:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># common mkfile parameters shared by all architectures</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OS=v486xq7</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>CPUS=mips 386 power alpha</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>CFLAGS=-FVw</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>LEX=lex</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>YACC=yacc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>MK=/bin/mk</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>CC</tt></span><span style="font-size: 10pt">
+is obviously the compiler,
+</span><span style="font-size: 10pt"><tt>AS</tt></span><span style="font-size: 10pt">
+the assembler, and
+</span><span style="font-size: 10pt"><tt>LD</tt></span><span style="font-size: 10pt">
+the loader.
+</span><span style="font-size: 10pt"><tt>O</tt></span><span style="font-size: 10pt">
+is the suffix for the object files and
+</span><span style="font-size: 10pt"><tt>CPUS</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>OS</tt></span><span style="font-size: 10pt">
+are used in special rules described below.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here is a
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+to build the installed source for
+</span><span style="font-size: 10pt"><tt>sam</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OBJ=sam.$O address.$O buffer.$O cmd.$O disc.$O error.$O \</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    file.$O io.$O list.$O mesg.$O moveto.$O multi.$O \</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    plan9.$O rasp.$O regexp.$O string.$O sys.$O xec.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$O.out: $OBJ</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD $OBJ</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>install:    $O.out</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    cp $O.out /$objtype/bin/sam</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>installall:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    for(objtype in $CPUS) mk install</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$OBJ:   sam.h errors.h mesg.h</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>address.$O cmd.$O parse.$O xec.$O unix.$O:  parse.h</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>clean:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f [$OS].out *.[$OS] y.tab.?</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(The actual
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+imports most of its rules from other secondary files, but
+this example works and is not misleading.)
+The first line causes
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+to include the contents of
+</span><span style="font-size: 10pt"><tt>/$objtype/mkfile</tt></span><span style="font-size: 10pt">
+in the current
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">.
+If
+</span><span style="font-size: 10pt"><tt>$objtype</tt></span><span style="font-size: 10pt">
+is
+</span><span style="font-size: 10pt"><tt>mips</tt></span><span style="font-size: 10pt">,
+this inserts the MIPS macro definitions into the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">.
+In this case the rule for
+</span><span style="font-size: 10pt"><tt>$O.out</tt></span><span style="font-size: 10pt">
+uses the MIPS tools to build
+</span><span style="font-size: 10pt"><tt>v.out</tt></span><span style="font-size: 10pt">.
+The
+</span><span style="font-size: 10pt"><tt>%.$O</tt></span><span style="font-size: 10pt">
+rule in the file uses
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">&rsquo;s
+pattern matching facilities to convert the source files to the object
+files through the compiler.
+(The text of the rules is passed directly to the shell,
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">,
+without further translation.
+See the
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+manual if any of this is unfamiliar.)
+Because the default rule builds
+</span><span style="font-size: 10pt"><tt>$O.out</tt></span><span style="font-size: 10pt">
+rather than
+</span><span style="font-size: 10pt"><tt>sam</tt></span><span style="font-size: 10pt">,
+it is possible to maintain binaries for multiple machines in the
+same source directory without conflict.
+This is also, of course, why the output files from the various
+compilers and loaders
+have distinct names.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The rest of the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+should be easy to follow; notice how the rules for
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>installall</tt></span><span style="font-size: 10pt">
+(that is, install versions for all architectures) use other macros
+defined in
+</span><span style="font-size: 10pt"><tt>/$objtype/mkfile</tt></span><span style="font-size: 10pt">.
+In Plan 9,
+</span><span style="font-size: 10pt"><tt>mkfiles</tt></span><span style="font-size: 10pt">
+for commands conventionally contain rules to
+</span><span style="font-size: 10pt"><tt>install</tt></span><span style="font-size: 10pt">
+(compile and install the version for
+</span><span style="font-size: 10pt"><tt>$objtype</tt></span><span style="font-size: 10pt">),
+</span><span style="font-size: 10pt"><tt>installall</tt></span><span style="font-size: 10pt">
+(compile and install for all
+</span><span style="font-size: 10pt"><tt>$objtypes</tt></span><span style="font-size: 10pt">),
+and
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+(remove all object files, binaries, etc.).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+is easy to use.  To build a MIPS binary,
+</span><span style="font-size: 10pt"><tt>v.out</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% objtype=mips</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% mk</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To build and install a MIPS binary:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% objtype=mips</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% mk install</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To build and install all versions:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% mk installall</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">These conventions make cross-compilation as easy to manage
+as traditional native compilation.
+Plan 9 programs compile and run without change on machines from
+large multiprocessors to laptops.  For more information about this process, see
+&lsquo;&lsquo;Plan 9 Mkfiles&rsquo;&rsquo;,
+by Bob Flandrena.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Portability
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Within Plan 9, it is painless to write portable programs, programs whose
+source is independent of the machine on which they execute.
+The operating system is fixed and the compiler, headers and libraries
+are constant so most of the stumbling blocks to portability are removed.
+Attention to a few details can avoid those that remain.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 is a heterogeneous environment, so programs must
+</span><span style="font-size: 10pt"><i>expect</i></span><span style="font-size: 10pt">
+that external files will be written by programs on machines of different
+architectures.
+The compilers, for instance, must handle without confusion
+object files written by other machines.
+The traditional approach to this problem is to pepper the source with
+</span><span style="font-size: 10pt"><tt>#ifdefs</tt></span><span style="font-size: 10pt">
+to turn byte-swapping on and off.
+Plan 9 takes a different approach: of the handful of machine-dependent
+</span><span style="font-size: 10pt"><tt>#ifdefs</tt></span><span style="font-size: 10pt">
+in all the source, almost all are deep in the libraries.
+Instead programs read and write files in a defined format,
+either (for low volume applications) as formatted text, or
+(for high volume applications) as binary in a known byte order.
+If the external data were written with the most significant
+byte first, the following code reads a 4-byte integer correctly
+regardless of the architecture of the executing machine (assuming
+an unsigned long holds 4 bytes):
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ulong</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>getlong(void)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ulong l;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    l = (getchar()&amp;0xFF)&lt;&lt;24;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    l |= (getchar()&amp;0xFF)&lt;&lt;16;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    l |= (getchar()&amp;0xFF)&lt;&lt;8;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    l |= (getchar()&amp;0xFF)&lt;&lt;0;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    return l;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Note that this code does not &lsquo;swap&rsquo; the bytes; instead it just reads
+them in the correct order.
+Variations of this code will handle any binary format
+and also avoid problems
+involving how structures are padded, how words are aligned,
+and other impediments to portability.
+Be aware, though, that extra care is needed to handle floating point data.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Efficiency hounds will argue that this method is unnecessarily slow and clumsy
+when the executing machine has the same byte order (and padding and alignment)
+as the data.
+The CPU cost of I/O processing
+is rarely the bottleneck for an application, however,
+and the gain in simplicity of porting and maintaining the code greatly outweighs
+the minor speed loss from handling data in this general way.
+This method is how the Plan 9 compilers, the window system, and even the file
+servers transmit data between programs.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To port programs beyond Plan 9, where the system interface is more variable,
+it is probably necessary to use
+</span><span style="font-size: 10pt"><tt>pcc</tt></span><span style="font-size: 10pt">
+and hope that the target machine supports ANSI C and POSIX.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>I/O
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The default C library, defined by the include file
+</span><span style="font-size: 10pt"><tt>&lt;libc.h&gt;</tt></span><span style="font-size: 10pt">,
+contains no buffered I/O package.
+It does have several entry points for printing formatted text:
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+outputs text to the standard output,
+</span><span style="font-size: 10pt"><tt>fprint</tt></span><span style="font-size: 10pt">
+outputs text to a specified integer file descriptor, and
+</span><span style="font-size: 10pt"><tt>sprint</tt></span><span style="font-size: 10pt">
+places text in a character array.
+To access library routines for buffered I/O, a program must
+explicitly include the header file associated with an appropriate library.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The recommended I/O library, used by most Plan 9 utilities, is
+</span><span style="font-size: 10pt"><tt>bio</tt></span><span style="font-size: 10pt">
+(buffered I/O), defined by
+</span><span style="font-size: 10pt"><tt>&lt;bio.h&gt;</tt></span><span style="font-size: 10pt">.
+There also exists an implementation of ANSI Standard I/O,
+</span><span style="font-size: 10pt"><tt>stdio</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Bio</tt></span><span style="font-size: 10pt">
+is small and efficient, particularly for buffer-at-a-time or
+line-at-a-time I/O.
+Even for character-at-a-time I/O, however, it is significantly faster than
+the Standard I/O library,
+</span><span style="font-size: 10pt"><tt>stdio</tt></span><span style="font-size: 10pt">.
+Its interface is compact and regular, although it lacks a few conveniences.
+The most noticeable is that one must explicitly define buffers for standard
+input and output;
+</span><span style="font-size: 10pt"><tt>bio</tt></span><span style="font-size: 10pt">
+does not predefine them.  Here is a program to copy input to output a byte
+at a time using
+</span><span style="font-size: 10pt"><tt>bio</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;u.h&gt;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;libc.h&gt;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include &lt;bio.h&gt;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Biobuf  bin;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Biobuf  bout;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main(void)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int c;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Binit(&amp;bin, 0, OREAD);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Binit(&amp;bout, 1, OWRITE);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    while((c=Bgetc(&amp;bin)) != Beof)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        Bputc(&amp;bout, c);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    exits(0);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For peak performance, we could replace
+</span><span style="font-size: 10pt"><tt>Bgetc</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>Bputc</tt></span><span style="font-size: 10pt">
+by their equivalent in-line macros
+</span><span style="font-size: 10pt"><tt>BGETC</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>BPUTC</tt></span><span style="font-size: 10pt">
+but 
+the performance gain would be modest.
+For more information on
+</span><span style="font-size: 10pt"><tt>bio</tt></span><span style="font-size: 10pt">,
+see the Programmer&rsquo;s Manual.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Perhaps the most dramatic difference in the I/O interface of Plan 9 from other
+systems&rsquo; is that text is not ASCII.
+The format for
+text in Plan 9 is a byte-stream encoding of 16-bit characters.
+The character set is based on the Unicode Standard and is backward compatible with
+ASCII:
+characters with value 0 through 127 are the same in both sets.
+The 16-bit characters, called
+</span><span style="font-size: 10pt"><i>runes</i></span><span style="font-size: 10pt">
+in Plan 9, are encoded using a representation called
+UTF,
+an encoding that is becoming accepted as a standard.
+(ISO calls it UTF-8;
+throughout Plan 9 it&rsquo;s just called
+UTF.)
+UTF
+defines multibyte sequences to
+represent character values from 0 to 65535.
+In
+UTF,
+character values up to 127 decimal, 7F hexadecimal, represent themselves,
+so straight
+ASCII
+files are also valid
+UTF.
+Also,
+UTF
+guarantees that bytes with values 0 to 127 (NUL to DEL, inclusive)
+will appear only when they represent themselves, so programs that read bytes
+looking for plain ASCII characters will continue to work.
+Any program that expects a one-to-one correspondence between bytes and
+characters will, however, need to be modified.
+An example is parsing file names.
+File names, like all text, are in
+UTF,
+so it is incorrect to search for a character in a string by
+</span><span style="font-size: 10pt"><tt>strchr(filename,</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>c)</tt></span><span style="font-size: 10pt">
+because the character might have a multi-byte encoding.
+The correct method is to call
+</span><span style="font-size: 10pt"><tt>utfrune(filename,</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>c)</tt></span><span style="font-size: 10pt">,
+defined in
+</span><span style="font-size: 10pt"><i>rune</i></span><span style="font-size: 10pt">(2),
+which interprets the file name as a sequence of encoded characters
+rather than bytes.
+In fact, even when you know the character is a single byte
+that can represent only itself,
+it is safer to use
+</span><span style="font-size: 10pt"><tt>utfrune</tt></span><span style="font-size: 10pt">
+because that assumes nothing about the character set
+and its representation.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The library defines several symbols relevant to the representation of characters.
+Any byte with unsigned value less than
+</span><span style="font-size: 10pt"><tt>Runesync</tt></span><span style="font-size: 10pt">
+will not appear in any multi-byte encoding of a character.
+</span><span style="font-size: 10pt"><tt>Utfrune</tt></span><span style="font-size: 10pt">
+compares the character being searched against
+</span><span style="font-size: 10pt"><tt>Runesync</tt></span><span style="font-size: 10pt">
+to see if it is sufficient to call
+</span><span style="font-size: 10pt"><tt>strchr</tt></span><span style="font-size: 10pt">
+or if the byte stream must be interpreted.
+Any byte with unsigned value less than
+</span><span style="font-size: 10pt"><tt>Runeself</tt></span><span style="font-size: 10pt">
+is represented by a single byte with the same value.
+Finally, when errors are encountered converting
+to runes from a byte stream, the library returns the rune value
+</span><span style="font-size: 10pt"><tt>Runeerror</tt></span><span style="font-size: 10pt">
+and advances a single byte.  This permits programs to find runes
+embedded in binary data.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Bio</tt></span><span style="font-size: 10pt">
+includes routines
+</span><span style="font-size: 10pt"><tt>Bgetrune</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>Bputrune</tt></span><span style="font-size: 10pt">
+to transform the external byte stream
+UTF
+format to and from
+internal 16-bit runes.
+Also, the
+</span><span style="font-size: 10pt"><tt>%s</tt></span><span style="font-size: 10pt">
+format to
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+accepts
+UTF;
+</span><span style="font-size: 10pt"><tt>%c</tt></span><span style="font-size: 10pt">
+prints a character after narrowing it to 8 bits.
+The
+</span><span style="font-size: 10pt"><tt>%S</tt></span><span style="font-size: 10pt">
+format prints a null-terminated sequence of runes;
+</span><span style="font-size: 10pt"><tt>%C</tt></span><span style="font-size: 10pt">
+prints a character after narrowing it to 16 bits.
+For more information, see the Programmer&rsquo;s Manual, in particular
+</span><span style="font-size: 10pt"><i>utf</i></span><span style="font-size: 10pt">(6)
+and
+</span><span style="font-size: 10pt"><i>rune</i></span><span style="font-size: 10pt">(2),
+and the paper,
+&lsquo;&lsquo;Hello world, or
+&Kappa;&alpha;&lambda;&eta;&mu;&#941;&rho;&alpha; &kappa;&#972;&sigma;&mu;&epsilon;, or 
+</span><span style="font-size: 10pt">&#12371;&#12435;&#12395;&#12385;&#12399; &#19990;&#30028;</span><span style="font-size: 10pt">&rsquo;&rsquo;,
+by Rob Pike and
+Ken Thompson;
+there is not room for the full story here.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">These issues affect the compiler in several ways.
+First, the C source is in
+UTF.
+ANSI says C variables are formed from
+ASCII
+alphanumerics, but comments and literal strings may contain any characters
+encoded in the native encoding, here
+UTF.
+The declaration
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>char *cp = "abc&yuml;";</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">initializes the variable
+</span><span style="font-size: 10pt"><tt>cp</tt></span><span style="font-size: 10pt">
+to point to an array of bytes holding the
+UTF
+representation of the characters
+</span><span style="font-size: 10pt"><tt>abc&yuml;.</tt></span><span style="font-size: 10pt">
+The type
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+is defined in
+</span><span style="font-size: 10pt"><tt>&lt;u.h&gt;</tt></span><span style="font-size: 10pt">
+to be
+</span><span style="font-size: 10pt"><tt>ushort</tt></span><span style="font-size: 10pt">,
+which is also the  &lsquo;wide character&rsquo; type in the compiler.
+Therefore the declaration
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Rune *rp = L"abc&yuml;";</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">initializes the variable
+</span><span style="font-size: 10pt"><tt>rp</tt></span><span style="font-size: 10pt">
+to point to an array of unsigned short integers holding the 16-bit
+values of the characters
+</span><span style="font-size: 10pt"><tt>abc&yuml;</tt></span><span style="font-size: 10pt">.
+Note that in both these declarations the characters in the source
+that represent
+</span><span style="font-size: 10pt"><tt>abc&yuml;</tt></span><span style="font-size: 10pt">
+are the same; what changes is how those characters are represented
+in memory in the program.
+The following two lines:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>print("%s\n", "abc&yuml;");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>print("%S\n", L"abc&yuml;");</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">produce the same
+UTF
+string on their output, the first by copying the bytes, the second
+by converting from runes to bytes.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In C, character constants are integers but narrowed through the
+</span><span style="font-size: 10pt"><tt>char</tt></span><span style="font-size: 10pt">
+type.
+The Unicode character
+</span><span style="font-size: 10pt"><tt>&yuml;</tt></span><span style="font-size: 10pt">
+has value 255, so if the
+</span><span style="font-size: 10pt"><tt>char</tt></span><span style="font-size: 10pt">
+type is signed,
+the constant
+</span><span style="font-size: 10pt"><tt>&rsquo;&yuml;&rsquo;</tt></span><span style="font-size: 10pt">
+has value -1 (which is equal to EOF).
+On the other hand,
+</span><span style="font-size: 10pt"><tt>L&rsquo;&yuml;&rsquo;</tt></span><span style="font-size: 10pt">
+narrows through the wide character type,
+</span><span style="font-size: 10pt"><tt>ushort</tt></span><span style="font-size: 10pt">,
+and therefore has value 255.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Finally, although it&rsquo;s not ANSI C, the Plan 9 C compilers
+assume any character with value above
+</span><span style="font-size: 10pt"><tt>Runeself</tt></span><span style="font-size: 10pt">
+is an alphanumeric,
+so &alpha; is a legal, if non-portable, variable name.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Arguments
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Some macros are defined
+in
+</span><span style="font-size: 10pt"><tt>&lt;libc.h&gt;</tt></span><span style="font-size: 10pt">
+for parsing the arguments to
+</span><span style="font-size: 10pt"><tt>main()</tt></span><span style="font-size: 10pt">.
+They are described in
+</span><span style="font-size: 10pt"><i>ARG</i></span><span style="font-size: 10pt">(2)
+but are fairly self-explanatory.
+There are four macros:
+</span><span style="font-size: 10pt"><tt>ARGBEGIN</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>ARGEND</tt></span><span style="font-size: 10pt">
+are used to bracket a hidden
+</span><span style="font-size: 10pt"><tt>switch</tt></span><span style="font-size: 10pt">
+statement within which
+</span><span style="font-size: 10pt"><tt>ARGC</tt></span><span style="font-size: 10pt">
+returns the current option character (rune) being processed and
+</span><span style="font-size: 10pt"><tt>ARGF</tt></span><span style="font-size: 10pt">
+returns the argument to the option, as in the loader option
+</span><span style="font-size: 10pt"><tt>-o</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>file</tt></span><span style="font-size: 10pt">.
+Here, for example, is the code at the beginning of
+</span><span style="font-size: 10pt"><tt>main()</tt></span><span style="font-size: 10pt">
+in
+</span><span style="font-size: 10pt"><tt>ramfs.c</tt></span><span style="font-size: 10pt">
+(see
+</span><span style="font-size: 10pt"><i>ramfs</i></span><span style="font-size: 10pt">(1))
+that cracks its arguments:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>void</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main(int argc, char *argv[])</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char *defmnt;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int p[2];</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int mfd[2];</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int stdio = 0;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    defmnt = "/tmp";</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ARGBEGIN{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    case &rsquo;i&rsquo;:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        defmnt = 0;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        stdio = 1;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        mfd[0] = 0;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        mfd[1] = 1;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        break;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    case &rsquo;s&rsquo;:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        defmnt = 0;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        break;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    case &rsquo;m&rsquo;:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        defmnt = ARGF();</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        break;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    default:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        usage();</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }ARGEND</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Extensions
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler has several extensions to ANSI C, all of which are used
+extensively in the system source.
+First,
+</span><span style="font-size: 10pt"><i>structure</i></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>displays</i></span><span style="font-size: 10pt">
+permit 
+</span><span style="font-size: 10pt"><tt>struct</tt></span><span style="font-size: 10pt">
+expressions to be formed dynamically.
+Given these declarations:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef struct Point Point;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef struct Rectangle Rectangle;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct Point</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int x, y;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct Rectangle</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Point min, max;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Point   p, q, add(Point, Point);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Rectangle r;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int x, y;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">this assignment may appear anywhere an assignment is legal:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>r = (Rectangle){add(p, q), (Point){x, y+3}};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The syntax is the same as for initializing a structure but with
+a leading cast.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If an
+</span><span style="font-size: 10pt"><i>anonymous</i></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>structure</i></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><i>union</i></span><span style="font-size: 10pt">
+is declared within another structure or union, the members of the internal
+structure or union are addressable without prefix in the outer structure.
+This feature eliminates the clumsy naming of nested structures and,
+particularly, unions.
+For example, after these declarations,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct Lock</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int locked;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct Node</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int type;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    union{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        double  dval;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        double  fval;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        long    lval;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    };      /* anonymous union */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    struct Lock;    /* anonymous structure */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>} *node;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>void    lock(struct Lock*);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">one may refer to
+</span><span style="font-size: 10pt"><tt>node-&gt;type</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>node-&gt;dval</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>node-&gt;fval</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>node-&gt;lval</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>node-&gt;locked</tt></span><span style="font-size: 10pt">.
+Moreover, the address of a
+</span><span style="font-size: 10pt"><tt>struct</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>Node</tt></span><span style="font-size: 10pt">
+may be used without a cast anywhere that the address of a
+</span><span style="font-size: 10pt"><tt>struct</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>Lock</tt></span><span style="font-size: 10pt">
+is used, such as in argument lists.
+The compiler automatically promotes the type and adjusts the address.
+Thus one may invoke
+</span><span style="font-size: 10pt"><tt>lock(node)</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Anonymous structures and unions may be accessed by type name
+if (and only if) they are declared using a
+</span><span style="font-size: 10pt"><tt>typedef</tt></span><span style="font-size: 10pt">
+name.
+For example, using the above declaration for
+</span><span style="font-size: 10pt"><tt>Point</tt></span><span style="font-size: 10pt">,
+one may declare
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int type;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Point;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>} p;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">and refer to
+</span><span style="font-size: 10pt"><tt>p.Point</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the initialization of arrays, a number in square brackets before an
+element sets the index for the initialization.  For example, to initialize
+some elements in
+a table of function pointers indexed by
+ASCII
+character,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>void    percent(void), slash(void);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>void    (*func[128])(void) =</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    [&rsquo;%&rsquo;]   percent,</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    [&rsquo;/&rsquo;]   slash,</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A similar syntax allows one to initialize structure elements:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Point p =</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    .y 100,</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    .x 200</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">These initialization syntaxes were later added to ANSI C, with the addition of an
+equals sign between the index or tag and the value.
+The Plan 9 compiler accepts either form.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Finally, the declaration
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern register reg;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(</span><span style="font-size: 10pt"><i>this</i></span><span style="font-size: 10pt">
+appearance of the register keyword is not ignored)
+allocates a global register to hold the variable
+</span><span style="font-size: 10pt"><tt>reg</tt></span><span style="font-size: 10pt">.
+External registers must be used carefully: they need to be declared in
+</span><span style="font-size: 10pt"><i>all</i></span><span style="font-size: 10pt">
+source files and libraries in the program to guarantee the register
+is not allocated temporarily for other purposes.
+Especially on machines with few registers, such as the i386,
+it is easy to link accidentally with code that has already usurped
+the global registers and there is no diagnostic when this happens.
+Used wisely, though, external registers are powerful.
+The Plan 9 operating system uses them to access per-process and
+per-machine data structures on a multiprocessor.  The storage class they provide
+is hard to create in other ways.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The compile-time environment
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The code generated by the compilers is &lsquo;optimized&rsquo; by default:
+variables are placed in registers and peephole optimizations are
+performed.
+The compiler flag
+</span><span style="font-size: 10pt"><tt>-N</tt></span><span style="font-size: 10pt">
+disables these optimizations.
+Registerization is done locally rather than throughout a function:
+whether a variable occupies a register or
+the memory location identified in the symbol
+table depends on the activity of the variable and may change
+throughout the life of the variable.
+The
+</span><span style="font-size: 10pt"><tt>-N</tt></span><span style="font-size: 10pt">
+flag is rarely needed;
+its main use is to simplify debugging.
+There is no information in the symbol table to identify the
+registerization of a variable, so
+</span><span style="font-size: 10pt"><tt>-N</tt></span><span style="font-size: 10pt">
+guarantees the variable is always where the symbol table says it is.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another flag,
+</span><span style="font-size: 10pt"><tt>-w</tt></span><span style="font-size: 10pt">,
+turns
+</span><span style="font-size: 10pt"><i>on</i></span><span style="font-size: 10pt">
+warnings about portability and problems detected in flow analysis.
+Most code in Plan 9 is compiled with warnings enabled;
+these warnings plus the type checking offered by function prototypes
+provide most of the support of the Unix tool
+</span><span style="font-size: 10pt"><tt>lint</tt></span><span style="font-size: 10pt">
+more accurately and with less chatter.
+Two of the warnings,
+&lsquo;used and not set&rsquo; and &lsquo;set and not used&rsquo;, are almost always accurate but
+may be triggered spuriously by code with invisible control flow,
+such as in routines that call
+</span><span style="font-size: 10pt"><tt>longjmp</tt></span><span style="font-size: 10pt">.
+The compiler statements
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>SET(v1);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>USED(v2);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">decorate the flow graph to silence the compiler.
+Either statement accepts a comma-separated list of variables.
+Use them carefully: they may silence real errors.
+For the common case of unused parameters to a function,
+leaving the name off the declaration silences the warnings.
+That is, listing the type of a parameter but giving it no
+associated variable name does the trick.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Debugging
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are two debuggers available on Plan 9.
+The first, and older, is
+</span><span style="font-size: 10pt"><tt>db</tt></span><span style="font-size: 10pt">,
+a revision of Unix
+</span><span style="font-size: 10pt"><tt>adb</tt></span><span style="font-size: 10pt">.
+The other,
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">,
+is a source-level debugger whose commands are statements in
+a true programming language.
+</span><span style="font-size: 10pt"><tt>Acid</tt></span><span style="font-size: 10pt">
+is the preferred debugger, but since it
+borrows some elements of
+</span><span style="font-size: 10pt"><tt>db</tt></span><span style="font-size: 10pt">,
+notably the formats for displaying values, it is worth knowing a little bit about
+</span><span style="font-size: 10pt"><tt>db</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Both debuggers support multiple architectures in a single program; that is,
+the programs are
+</span><span style="font-size: 10pt"><tt>db</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">,
+not for example
+</span><span style="font-size: 10pt"><tt>vdb</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>vacid</tt></span><span style="font-size: 10pt">.
+They also support cross-architecture debugging comfortably:
+one may debug a 68020 binary on a MIPS.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Imagine a program has crashed mysteriously:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% X11/X</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Fatal server bug!</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>failed to create default stipple</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>X 106: suicide: sys: trap: fault read addr=0x0 pc=0x00105fb8</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% </tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a process dies on Plan 9 it hangs in the &lsquo;broken&rsquo; state
+for debugging.
+Attach a debugger to the process by naming its process id:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% acid 106</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/proc/106/text:mips plan 9 executable</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/sys/lib/acid/port</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/sys/lib/acid/mips</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: </tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+function
+</span><span style="font-size: 10pt"><tt>stk()</tt></span><span style="font-size: 10pt">
+reports the stack traceback:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: stk()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>At pc:0x105fb8:abort+0x24 /sys/src/ape/lib/ap/stdio/abort.c:6</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>abort() /sys/src/ape/lib/ap/stdio/abort.c:4</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    called from FatalError+#4e</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /sys/src/X/mit/server/dix/misc.c:421</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>FatalError(s9=#e02, s8=#4901d200, s7=#2, s6=#72701, s5=#1,</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s4=#7270d, s3=#6, s2=#12, s1=#ff37f1c, s0=#6, f=#7270f)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    /sys/src/X/mit/server/dix/misc.c:416</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    called from gnotscreeninit+#4ce</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /sys/src/X/mit/server/ddx/gnot/gnot.c:792</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>gnotscreeninit(snum=#0, sc=#80db0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    /sys/src/X/mit/server/ddx/gnot/gnot.c:766</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    called from AddScreen+#16e</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /n/bootes/sys/src/X/mit/server/dix/main.c:610</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>AddScreen(pfnInit=0x0000129c,argc=0x00000001,argv=0x7fffffe4)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    /sys/src/X/mit/server/dix/main.c:530</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    called from InitOutput+0x80</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /sys/src/X/mit/server/ddx/brazil/brddx.c:522</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>InitOutput(argc=0x00000001,argv=0x7fffffe4)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    /sys/src/X/mit/server/ddx/brazil/brddx.c:511</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    called from main+0x294</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /sys/src/X/mit/server/dix/main.c:225</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main(argc=0x00000001,argv=0x7fffffe4)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    /sys/src/X/mit/server/dix/main.c:136</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    called from _main+0x24</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /sys/src/ape/lib/ap/mips/main9.s:8</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The function
+</span><span style="font-size: 10pt"><tt>lstk()</tt></span><span style="font-size: 10pt">
+is similar but
+also reports the values of local variables.
+Note that the traceback includes full file names; this is a boon to debugging,
+although it makes the output much noisier.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To use
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+well you will need to learn its input language; see the
+&lsquo;&lsquo;Acid Manual&rsquo;&rsquo;,
+by Phil Winterbottom,
+for details.  For simple debugging, however, the information in the manual page is
+sufficient.  In particular, it describes the most useful functions
+for examining a process.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler does not place
+information describing the types of variables in the executable,
+but a compile-time flag provides crude support for symbolic debugging.
+The
+</span><span style="font-size: 10pt"><tt>-a</tt></span><span style="font-size: 10pt">
+flag to the compiler suppresses code generation
+and instead emits source text in the
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+language to format and display data structure types defined in the program.
+The easiest way to use this feature is to put a rule in the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>syms:   main.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        $CC -a main.c &gt; syms</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Then from within
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: include("sourcedirectory/syms")</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">to read in the relevant definitions.
+(For multi-file source, you need to be a little fancier;
+see
+</span><span style="font-size: 10pt"><i>2c</i></span><span style="font-size: 10pt">(1)).
+This text includes, for each defined compound
+type, a function with that name that may be called with the address of a structure
+of that type to display its contents.
+For example, if
+</span><span style="font-size: 10pt"><tt>rect</tt></span><span style="font-size: 10pt">
+is a global variable of type
+</span><span style="font-size: 10pt"><tt>Rectangle</tt></span><span style="font-size: 10pt">,
+one may execute
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Rectangle(*rect)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">to display it.
+The
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+(indirection) operator is necessary because
+of the way
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+works: each global symbol in the program is defined as a variable by
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">,
+with value equal to the
+</span><span style="font-size: 10pt"><i>address</i></span><span style="font-size: 10pt">
+of the symbol.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another common technique is to write by hand special
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+code to define functions to aid debugging, initialize the debugger, and so on.
+Conventionally, this is placed in a file called
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+in the source directory; it has a line
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>include("sourcedirectory/syms");</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">to load the compiler-produced symbols.  One may edit the compiler output directly but
+it is wiser to keep the hand-generated
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+separate from the machine-generated.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To make things simple, the default rules in the system
+</span><span style="font-size: 10pt"><tt>mkfiles</tt></span><span style="font-size: 10pt">
+include entries to make
+</span><span style="font-size: 10pt"><tt>foo.acid</tt></span><span style="font-size: 10pt">
+from
+</span><span style="font-size: 10pt"><tt>foo.c</tt></span><span style="font-size: 10pt">,
+so one may use
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+to automate the production of
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+definitions for a given C source file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is much more to say here.  See
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+manual page, the reference manual, or the paper
+&lsquo;&lsquo;Acid: A Debugger Built From A Language&rsquo;&rsquo;,
+also by Phil Winterbottom.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

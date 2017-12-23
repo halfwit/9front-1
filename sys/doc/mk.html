@@ -1,0 +1,2009 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Maintaining Files on Plan 9 with Mk</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Maintaining Files on Plan 9 with Mk</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Andrew G. Hume</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>andrew@research.att.com</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Bob Flandrena</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>bobf@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.35in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+is a tool
+for describing and maintaining dependencies between
+files.
+It is similar to the
+UNIX program
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">,
+but provides several extensions.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+flexible rule specifications, implied
+dependency derivation, and parallel
+execution of maintenance actions are
+well-suited to the Plan 9 environment.
+Almost all Plan 9 maintenance procedures
+are automated using
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>1.
+Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This document describes how
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">,
+a program functionally similar to
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+[Feld79],
+is used to maintain dependencies between
+files in Plan 9.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+provides several extensions to the
+capabilities of its predecessor that work
+well in Plan 9&rsquo;s distributed, multi-architecture
+environment.  It
+exploits the power of multiprocessors by executing
+maintenance actions in parallel and interacts with
+the Plan 9 command interpreter
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+to provide a powerful set of maintenance tools.
+It accepts pattern-based dependency specifications
+that are not limited to describing
+rules for program construction.
+The result is a tool that is flexible enough to
+perform many maintenance tasks including
+database maintenance,
+hardware design, and document production.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This document begins by discussing 
+the syntax of the control file,
+the pattern matching capabilities, and
+the special rules for maintaining archives.
+A brief description of
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+algorithm for deriving dependencies
+is followed by a discussion
+of the conventions used to resolve ambiguous
+specifications.  The final sections
+describe parallel execution
+and special features.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An earlier paper [Hume87]
+provides a detailed discussion of
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+design and an appendix summarizes
+the differences between
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.
+The </b></span><span style="font-size: 10pt"><tt>Mkfile</tt></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+reads a file describing relationships among files
+and executes commands to bring the files up to date.
+The specification file, called a
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">,
+contains three types of statements:
+assignments, includes, and rules.
+Assignment and include statements are similar
+to those in C.
+Rules specify dependencies between a
+</span><span style="font-size: 10pt"><i>target</i></span><span style="font-size: 10pt">
+and its
+</span><span style="font-size: 10pt"><i>prerequisites</i></span><span style="font-size: 10pt">.
+When the target and prerequisites are files, their
+modification times determine if they
+are out of date.  Rules often contain a
+</span><span style="font-size: 10pt"><i>recipe</i></span><span style="font-size: 10pt">,
+an
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">(1)
+script that produces the target from
+the prerequisites.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This simple
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+produces an executable
+from a C source file:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>CC=pcc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f1: f1.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC -o f1 f1.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first line assigns the name of the portable ANSI/POSIX compiler
+to the
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+variable
+</span><span style="font-size: 10pt"><tt>CC</tt></span><span style="font-size: 10pt">;
+subsequent references of the form
+</span><span style="font-size: 10pt"><tt>$CC</tt></span><span style="font-size: 10pt">
+select this compiler.
+The only rule specifies a dependence between the target file
+</span><span style="font-size: 10pt"><tt>f1</tt></span><span style="font-size: 10pt">
+and the prerequisite file
+</span><span style="font-size: 10pt"><tt>f1.c</tt></span><span style="font-size: 10pt">.
+If the target does not exist or if the
+prerequisite has been modified more recently than
+the target,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+passes the recipe to
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+for execution.  Here,
+</span><span style="font-size: 10pt"><tt>f1.c</tt></span><span style="font-size: 10pt">
+is compiled and loaded to produce
+</span><span style="font-size: 10pt"><tt>f1</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The native Plan 9 environment
+requires executables for
+all architectures, not only the current one.
+The Plan 9 version of the same
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+looks like:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f1: f1.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD $LDFLAGS -o f1 f1.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f1.$O:  f1.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS f1.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first line is an include statement
+that replaces itself with the contents of the file
+</span><span style="font-size: 10pt"><tt>/$objtype/mkfile</tt></span><span style="font-size: 10pt">.
+The variable
+</span><span style="font-size: 10pt"><tt>$objtype</tt></span><span style="font-size: 10pt">
+is inherited from the environment and
+contains the name of the target architecture.
+The prototype
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+for that architecture defines architecture-specific variables:
+</span><span style="font-size: 10pt"><tt>CC</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>LD</tt></span><span style="font-size: 10pt">
+are the names of the compiler and loader,
+</span><span style="font-size: 10pt"><tt>O</tt></span><span style="font-size: 10pt">
+is the code character of the architecture.
+The rules compile the source file into an object
+file and invoke the loader to produce
+</span><span style="font-size: 10pt"><tt>f1</tt></span><span style="font-size: 10pt">.
+Invoking
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+from the command line as follows
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% objtype=mips mk</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc -w f1.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vl $LDFLAGS -o f1 f1.k</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">produces the
+</span><span style="font-size: 10pt"><tt>mips</tt></span><span style="font-size: 10pt">
+executable of program
+</span><span style="font-size: 10pt"><tt>f1</tt></span><span style="font-size: 10pt">
+regardless of the current architecture type.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We can extend the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+to build two programs:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ALL=f1 f2</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>all:V:  $ALL</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f1: f1.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD $LDFLAGS -o f1 f1.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f1.$O:  f1.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS f1.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f2: f2.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD $LDFLAGS -o f2 f2.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f2.$O:  f2.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS f2.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The target
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">,
+modified by the
+</span><span style="font-size: 10pt"><i>attribute</i></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>V</tt></span><span style="font-size: 10pt">,
+builds both programs.
+The attribute identifies 
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+as a dummy target that is
+not related to a file of the same name;
+its precise effect is explained later.
+This example describes cascading dependencies:
+the first target depends on another which depends on a third and
+so on.
+Here, individual rules build each
+program; later we&rsquo;ll see how to do this with a
+general rule.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.
+Variables and the environment
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+does not distinguish between its
+internal variables and
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+variables in the environment.
+When
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+starts, it imports each environment variable into a
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+variable of the same name.  Before executing a recipe,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+exports all variables, including those
+inherited from the environment,
+to the environment in which
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+executes the recipe.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are several ways for a
+variable to take a value.
+It can be set with an assignment statement,
+inherited from the environment, or specified
+on the command line.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+also maintains several special internal variables
+that are described in
+</span><span style="font-size: 10pt"><i>mk</i></span><span style="font-size: 10pt">(1).
+Assignments have the following decreasing order of precedence:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.70in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">1)  Command line assignment
+</span></p><p style="line-height: 1.2em; margin-left: 1.70in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">2)  Assignment statement
+</span></p><p style="line-height: 1.2em; margin-left: 1.70in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">3)  Imported from the environment
+</span></p><p style="line-height: 1.2em; margin-left: 1.70in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">4)  Implicitly set by </span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For example, a command line assignment overrides
+a value imported from the environment.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">All variable values are strings.  They can be
+used for pattern matching and
+comparison but not for arithmetic.
+A
+</span><span style="font-size: 10pt"><i>list</i></span><span style="font-size: 10pt">
+is a string containing several values separated by
+white space.  Each member is
+handled individually during pattern matching,
+target selection, and prerequisite evaluation.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A
+</span><span style="font-size: 10pt"><i>namelist</i></span><span style="font-size: 10pt">
+is a list produced by
+transforming the members of an existing list.
+The transform applies a pattern to each member,
+replacing each matched string with a new string,
+much as in the substitute command in
+</span><span style="font-size: 10pt"><i>sam</i></span><span style="font-size: 10pt">(1)
+or
+</span><span style="font-size: 10pt"><i>ed</i></span><span style="font-size: 10pt">(1).
+The syntax is
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>${</tt></span><span style="font-size: 9pt"><i>var</i></span><span style="font-size: 9pt"><tt>:A%B=C%D}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">where
+</span><span style="font-size: 10pt"><i>var</i></span><span style="font-size: 10pt">
+is a variable.
+The pattern
+</span><span style="font-size: 10pt"><tt>A%B</tt></span><span style="font-size: 10pt">
+matches a member beginning with the string
+</span><span style="font-size: 10pt"><i>A</i></span><span style="font-size: 10pt">
+and ending with the string
+</span><span style="font-size: 10pt"><i>B</i></span><span style="font-size: 10pt">
+with any string in between;
+it behaves like the regular expression
+</span><span style="font-size: 10pt"><tt>A.*B</tt></span><span style="font-size: 10pt">.
+When a member of the
+</span><span style="font-size: 10pt"><i>var</i></span><span style="font-size: 10pt">
+list
+matches this pattern,
+the string
+</span><span style="font-size: 10pt"><i>C</i></span><span style="font-size: 10pt">
+replaces
+</span><span style="font-size: 10pt"><i>A</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><i>D</i></span><span style="font-size: 10pt">
+replaces
+</span><span style="font-size: 10pt"><i>B</i></span><span style="font-size: 10pt">,
+and the matched string replaces itself.
+Any of
+</span><span style="font-size: 10pt"><i>A</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><i>B</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><i>C</i></span><span style="font-size: 10pt">,
+or
+</span><span style="font-size: 10pt"><i>D</i></span><span style="font-size: 10pt">
+may be the empty string.  In effect, a namelist is
+generated by applying the
+</span><span style="font-size: 10pt"><i>ed</i></span><span style="font-size: 10pt">(1)
+substitute command
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s/</tt></span><span style="font-size: 9pt"><i>A</i></span><span style="font-size: 9pt"><tt>(.*)</tt></span><span style="font-size: 9pt"><i>B</i></span><span style="font-size: 9pt"><tt>/</tt></span><span style="font-size: 9pt"><i>C</i></span><span style="font-size: 9pt"><tt>\1</tt></span><span style="font-size: 9pt"><i>D</i></span><span style="font-size: 9pt"><tt>/</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">to each member of a variable list.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Namelists are useful for generating
+a list based on a predictable transformation.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    SRC=a.c b.c c.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    OBJ=${SRC:%.c=%.v}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">assigns the list </span><span style="font-size: 10pt"><tt>(a.v b.v c.v)</tt></span><span style="font-size: 10pt"> to
+</span><span style="font-size: 10pt"><tt>OBJ</tt></span><span style="font-size: 10pt">.
+A namelist may be used anywhere a variable is allowed
+except in a recipe.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Command output is assigned to a variable
+using the normal
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+syntax:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    var=&lsquo;{rc command}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The command executes in an environment populated
+with previously assigned variables, including those
+inherited from
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+execution environment.
+The command may
+be arbitrarily complex; for example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    TARG=&lsquo;{ls -d *.[cy] | sed &rsquo;s/..$//&rsquo;}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">assigns a list of the C and yacc source files in the current
+directory, stripped of their suffix, to the variable
+</span><span style="font-size: 10pt"><tt>TARG</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.
+The include statement
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The include statement
+replaces itself with the contents of a file.
+It is functionally similar to the C
+</span><span style="font-size: 10pt"><tt>#include</tt></span><span style="font-size: 10pt">
+statement but uses a different syntax:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    &lt;</tt></span><span style="font-size: 9pt"><i>filename</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The contents of the file are evaluated
+as they are read.
+An include statement may be used anywhere except
+in a recipe.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Unlike
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+has no built-in rules.  Instead,
+the include statement allows generic rules
+to be imported from a prototype
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">;
+most Plan 9
+</span><span style="font-size: 10pt"><tt>mkfiles</tt></span><span style="font-size: 10pt">
+use this approach [Flan95].
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.
+Rules
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A rule has four elements: targets,
+prerequisites, attributes, and a recipe.
+It has the form:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>targets</i></span><span style="font-size: 9pt"><tt>:</tt></span><span style="font-size: 9pt"><i>attributes</i></span><span style="font-size: 9pt"><tt>:</tt></span><span style="font-size: 9pt"><i>prerequisites</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    </tt></span><span style="font-size: 9pt"><i>recipe</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first line, containing the
+targets, attributes, and prerequisites is
+the
+</span><span style="font-size: 10pt"><i>rule header</i></span><span style="font-size: 10pt">;
+it
+must begin at the left margin.
+The recipe contains zero or more lines,
+each of which begins with white space.
+One or more targets must be specified but the
+attributes, prerequisites, and recipe are optional.
+A rule specifies
+a dependency between the target(s) and its prerequisite(s),
+the recipe brings the target(s)
+up to date with the prerequisite(s) and
+attributes modify
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+evaluation of the dependency.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Normally the target is a file that depends
+on one or more prerequisite files.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+compares the modification times of each target
+and each prerequisite; a target is considered out of date
+when it does not exist or when a prerequisite has been modified
+more recently.
+When a target is out of date,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+executes the
+recipe to bring it up to date.
+When the recipe completes,
+the modification time of the target is checked and
+used in later dependency evaluations.
+If the recipe does not update the target,
+evaluation continues with the out of date target.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A prerequisite of one rule
+may be the target of another.  When
+this happens, the rules cascade
+to define a multi-step procedure.
+For example,
+an executable target depends on prerequisite
+object files, each of which is a target
+in a rule with a C source file as the prerequisite.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+follows a chain of dependencies until it encounters
+a prerequisite that is not a target of another rule
+or it finds a target that
+is up to date.  It then
+executes the recipes in reverse order to produce
+the desired target.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The rule header is evaluated when the rule is read.
+Variables are replaced by their values, namelists are
+generated, and
+commands are replaced by their
+output at this time.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Most attributes modify
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+evaluation of a rule.
+An attribute is usually a single letter but some
+are more complicated.
+This paper only discusses commonly used attributes;
+see
+</span><span style="font-size: 10pt"><i>mk</i></span><span style="font-size: 10pt">(1)
+for a complete list.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>V</tt></span><span style="font-size: 10pt">
+attribute identifies a
+</span><span style="font-size: 10pt"><i>virtual</i></span><span style="font-size: 10pt">
+target;
+that is, a target that is not a file.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>clean:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm *.$O $O.out</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">removes executables and compiler intermediate files.
+The target is virtual because it does not refer to a file named
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">.
+Without the attribute, the recipe would not be
+executed if a file named
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+existed.
+The
+</span><span style="font-size: 10pt"><tt>Q</tt></span><span style="font-size: 10pt">
+attribute
+silences the printing of a recipe before
+execution.
+It is useful when the output of a recipe is
+similar to the recipe:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>default:QV:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    echo &rsquo;No default target; use mk all or mk install&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The recipe is an
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+script.  It is optional but when it is
+missing, the rule is handled specially, as described later.
+Unlike
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+executes recipes without interpretation.
+After
+stripping the first white space character from each line
+it passes the entire recipe to
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+on standard input.
+Since
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+does not interpret a recipe,
+escape conventions are exactly those of
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">.
+Scripts for
+</span><span style="font-size: 10pt"><tt>awk</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>sed</tt></span><span style="font-size: 10pt">
+commands can be embedded exactly as they would
+be entered from the command line.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+invokes
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+with the
+</span><span style="font-size: 10pt"><tt>-e</tt></span><span style="font-size: 10pt">
+flag, which causes
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+to stop if any command
+in the recipe exits with a non-zero status; the
+</span><span style="font-size: 10pt"><tt>E</tt></span><span style="font-size: 10pt">
+attribute overrides this behavior and allows
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+to continue executing in the face of errors.
+Before a recipe is executed, variables are exported
+to the environment where they are available to
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">.
+Commands in the recipe may not read from
+standard input because
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+uses it internally.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">References to a variable can yield different
+values depending on the location of the
+reference in the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+resolves variable references
+in assignment statements and rule headers
+when the statement is read.  Variable references
+in recipes are evaluated by
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+when the recipe is executed; this
+happens after the entire
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+has been read.  The value of a variable in a recipe
+is the last value assigned in the file.  For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>STRING=all</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>all:VQ:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    echo $STRING</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>STRING=none</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">produces the message
+</span><span style="font-size: 10pt"><tt>none</tt></span><span style="font-size: 10pt">.
+A variable assignment in a recipe
+does not affect the value of the variable in the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+for two reasons.
+First,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+does not import values from
+the environment when a recipe completes;
+one recipe cannot pass a value through
+the environment to another recipe.
+Second, no recipe is executed until 
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+has completed its evaluation, so even if a variable
+were changed,
+it would not affect the dependency evaluation.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.
+Metarules
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A
+</span><span style="font-size: 10pt"><i>metarule</i></span><span style="font-size: 10pt">
+is a rule based on a pattern.
+The pattern selects a class of target(s) and 
+identifies related prerequisites.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+metarules may select targets and prerequisites
+based on any criterion that can be described by a pattern, not just
+the suffix transformations associated with program
+construction.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Metarule patterns are either
+</span><span style="font-size: 10pt"><i>intrinsic</i></span><span style="font-size: 10pt">
+or regular expressions conforming to the
+syntax of
+</span><span style="font-size: 10pt"><i>regexp</i></span><span style="font-size: 10pt">(6).
+The intrinsic patterns are shorthand
+for common regular expressions.
+The intrinsic pattern
+</span><span style="font-size: 10pt"><tt>%</tt></span><span style="font-size: 10pt">
+matches one or more of anything; it is equivalent to
+the regular expression
+</span><span style="font-size: 10pt"><tt>&lsquo;.+&rsquo;</tt></span><span style="font-size: 10pt">.
+The other intrinsic pattern,
+</span><span style="font-size: 10pt"><tt>&amp;</tt></span><span style="font-size: 10pt">,
+matches one or more of any characters except </span><span style="font-size: 10pt"><tt>&lsquo;/&rsquo;</tt></span><span style="font-size: 10pt">
+and </span><span style="font-size: 10pt"><tt>&lsquo;.&rsquo;</tt></span><span style="font-size: 10pt">.
+It matches a portion of a path and is
+equivalent to the regular expression
+</span><span style="font-size: 10pt"><tt>&lsquo;[^./]+&rsquo;</tt></span><span style="font-size: 10pt">.
+An intrinsic pattern in a prerequisite references
+the string matched by the same intrinsic pattern in the target.
+For example, the rule
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    %.v:    %.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">says that a file ending in
+</span><span style="font-size: 10pt"><tt>.v</tt></span><span style="font-size: 10pt">
+depends on a file of the same name with a
+</span><span style="font-size: 10pt"><tt>.c</tt></span><span style="font-size: 10pt">
+suffix:
+</span><span style="font-size: 10pt"><tt>foo.v</tt></span><span style="font-size: 10pt">
+depends on
+</span><span style="font-size: 10pt"><tt>foo.c</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>bar.v</tt></span><span style="font-size: 10pt">
+depends on
+</span><span style="font-size: 10pt"><tt>bar.c</tt></span><span style="font-size: 10pt">,
+and so on.
+The string matched by an intrinsic pattern in the target
+is supplied to the recipe in the variable
+</span><span style="font-size: 10pt"><tt>$stem</tt></span><span style="font-size: 10pt">.
+Thus the rule
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">creates an object file for the target architecture from
+a similarly named C source file.  If several object
+files are out of date, the rule is applied repeatedly and
+</span><span style="font-size: 10pt"><tt>$stem</tt></span><span style="font-size: 10pt">
+refers to each file in turn.
+Since there is only one
+</span><span style="font-size: 10pt"><tt>stem</tt></span><span style="font-size: 10pt">
+variable, there can only be one
+</span><span style="font-size: 10pt"><tt>%</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>&amp;</tt></span><span style="font-size: 10pt">
+pattern in a target;
+the pattern
+</span><span style="font-size: 10pt"><tt>%-%.c</tt></span><span style="font-size: 10pt">
+is illegal.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Metarules simplify the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+for building programs
+</span><span style="font-size: 10pt"><tt>f1</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>f2</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ALL=f1 f2</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>all:V:  $ALL</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%:  %.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $target $prereq</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>clean:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f $ALL *.[$OS]</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(The variable
+</span><span style="font-size: 10pt"><tt>$OS</tt></span><span style="font-size: 10pt">
+is a list of code characters for all architectures.)
+Here, metarules specify
+compile and load steps for all C source files.
+The loader rule relies on two internal variables
+set by
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+during evaluation of the rule:
+</span><span style="font-size: 10pt"><tt>$target</tt></span><span style="font-size: 10pt">
+is the name of the target(s) and
+</span><span style="font-size: 10pt"><tt>$prereq</tt></span><span style="font-size: 10pt">
+the name of all prerequisite(s).
+Metarules allow this
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+to be easily extended; a new program
+is supported by adding its name to the third line.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A regular expression metarule must have an
+</span><span style="font-size: 10pt"><tt>R</tt></span><span style="font-size: 10pt">
+attribute.
+Prerequisites may reference matching substrings in
+the target using the form
+</span><span style="font-size: 10pt"><tt>\</tt></span><span style="font-size: 10pt"><i>n</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+where
+</span><span style="font-size: 10pt"><i>n</i></span><span style="font-size: 10pt">
+is a digit from 1 to 9 specifying the
+</span><span style="font-size: 10pt"><i>n</i></span><span style="font-size: 10pt">th
+parenthesized sub-expression.  In a recipe,
+</span><span style="font-size: 10pt"><tt>$stem</tt></span><span style="font-size: 10pt"><i>n</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+is the equivalent reference.
+For example, a compile rule could be
+specified using regular expressions:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>(.+)\.$O:R: \1.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem1.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here,
+</span><span style="font-size: 10pt"><tt>\1</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>$stem1</tt></span><span style="font-size: 10pt">
+refer to the name of the target object file without the
+suffix.  The variable
+</span><span style="font-size: 10pt"><tt>$stem</tt></span><span style="font-size: 10pt">
+associated with an intrinsic pattern is undefined
+in a regular expression metarule.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>7.
+Archives
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+provides a special mechanism for maintaining an archive.
+An archive member is referenced using the form
+</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"><i>lib</i></span><span style="font-size: 10pt"><tt>(</tt></span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt"><tt>)</tt></span><span style="font-size: 10pt">
+where
+</span><span style="font-size: 10pt"><i>lib</i></span><span style="font-size: 10pt">
+is the name of the archive and 
+</span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt">
+is the name of the member.  Two rules define the
+dependency between an object file and its membership
+in an archive:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB(foo.8):N:  foo.8</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB:   $LIB(foo.8)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ar rv $LIB foo.8</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first rule establishes a dependency between the
+archive member and the object file.
+Normally,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+detects an error when a target does not exist and the rule
+contains no recipe; the
+</span><span style="font-size: 10pt"><tt>N</tt></span><span style="font-size: 10pt">
+attribute overrides this behavior because the subsequent rule
+updates the member.
+The second
+rule establishes the dependency between the member and
+the archive; its recipe inserts the member
+into the archive.
+This two-step specification allows the modification time
+of the archive
+to represent the state of its members.  Other rules
+can then specify the archive as a prerequisite instead of
+listing each member.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A metarule generalizes library maintenance:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>LIB=lib.a</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OBJS=etoa.$O atoe.$O ebcdic.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB(%):N:  %</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB:   ${OBJS:%=$LIB(%)}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ar rv $LIB $OBJS</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The namelist prerequisite of the
+</span><span style="font-size: 10pt"><tt>$LIB</tt></span><span style="font-size: 10pt">
+target generates archive member names for each object file name;
+for example, 
+</span><span style="font-size: 10pt"><tt>etoa.$O</tt></span><span style="font-size: 10pt">
+becomes
+</span><span style="font-size: 10pt"><tt>lib.a(etoa.$O)</tt></span><span style="font-size: 10pt">.
+This formulation always updates all members.
+This is acceptable for a small archive, but may 
+be slow for a big one.
+The rule
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB:   ${OBJS:%=$LIB(%)}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ar rv $LIB &lsquo;{membername $newprereq}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">only updates out of date object files.
+The internal variable
+</span><span style="font-size: 10pt"><tt>$newprereq</tt></span><span style="font-size: 10pt">
+contains the names of the out of
+date prerequisites.  The
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+script
+</span><span style="font-size: 10pt"><tt>membername</tt></span><span style="font-size: 10pt">
+transforms an archive member specification into a file name:
+it translates
+</span><span style="font-size: 10pt"><tt>lib.a(etoa.$O)</tt></span><span style="font-size: 10pt">
+into
+</span><span style="font-size: 10pt"><tt>etoa.$O</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>LIB=lib.a</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OBJS=etoa.$O atoe.$O ebcdic.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>prog:   main.$O $LIB</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $target $prereq</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB(%):N:  %</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB:   ${OBJS:%=$LIB(%)}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ar rv $LIB $OBJS</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">builds a program by loading it with a library.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>8.
+Evaluation algorithm
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For each target of interest,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+uses the rules in a
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+to build a data
+structure called a dependency graph.  The nodes of
+the graph represent targets and prerequisites;
+a directed arc
+from one node to another indicates that
+the file associated with the first node depends
+on the file associated with the second.
+When the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+has been completely read, the graph is analyzed.
+In the first step, implied dependencies are resolved by
+computing the
+</span><span style="font-size: 10pt"><i>transitive closure</i></span><span style="font-size: 10pt">
+of the graph.
+This calculation extends the graph to include all
+targets that are potentially
+derivable from the rules in the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">.
+Next the graph is checked for cycles;
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+accepts cyclic dependencies, but
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+does not allow them.
+Subsequent steps
+prune subgraphs that are irrelevant for producing the
+desired target and verify that there is only one way
+to build it.
+The recipes associated with the
+nodes on the longest path between the
+target and an out of date prerequisite
+are then executed in reverse order.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The transitive closure calculation is sensitive to
+metarules; the patterns often select many potential targets
+and cause the graph to grow rapidly.
+Fortunately,
+dependencies associated with the desired target
+usually form a small part of the graph, so, after
+pruning, analysis is tractable.
+For example, the rules
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%:  x.%</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    recipe1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>x.%:    %.k</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    recipe2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.k:    %.f</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    recipe3</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">produce a graph with four nodes for each file in the
+current directory.
+If the desired target is
+</span><span style="font-size: 10pt"><tt>foo</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+detects the dependency between it
+and the original file
+</span><span style="font-size: 10pt"><tt>foo.f</tt></span><span style="font-size: 10pt">
+through intermediate dependencies on
+</span><span style="font-size: 10pt"><tt>foo.k</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>x.foo</tt></span><span style="font-size: 10pt">.
+Nodes associated with other files are deleted during pruning because
+they are irrelevant to the production of
+</span><span style="font-size: 10pt"><tt>foo</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+avoids infinite cycles by evaluating
+each metarule once.
+Thus, the rule
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%:  %.z</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    cp $prereq $prereq.z</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">copies the prerequisite file once.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>9.
+Conventions for evaluating rules
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There must be only one
+way to build each target.  However, during evaluation
+metarule patterns often select potential targets that
+conflict with the
+targets of other rules.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+uses several conventions to resolve ambiguities
+and to select the proper dependencies.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a target selects more than one rule,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+chooses a regular rule
+over a metarule.
+For example, the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>FILES=f1.$O f2.$O f3.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>prog:   $FILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $target $prereq</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f2.$O:  f2.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC f2.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">contains two rules that could build
+</span><span style="font-size: 10pt"><tt>f2.$O</tt></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+selects the last rule because its target,
+</span><span style="font-size: 10pt"><tt>f2.$O</tt></span><span style="font-size: 10pt">,
+is explicitly specified, while the 
+</span><span style="font-size: 10pt"><tt>%.$O</tt></span><span style="font-size: 10pt">
+rule is a metarule.  In effect,
+the explicit rule for
+</span><span style="font-size: 10pt"><tt>f2.$O</tt></span><span style="font-size: 10pt">
+overrides the general rule for building object files from
+C source files.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a rule has a target and prerequisites but no recipe,
+those prerequisites are added to all other rules with
+recipes that have the same target.
+All prerequisites, regardless of where they were specified, are
+exported to the recipe in variable
+</span><span style="font-size: 10pt"><tt>$prereq</tt></span><span style="font-size: 10pt">.
+For example, in
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>FILES=f1.$O f2.$O f3.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>prog:   $FILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $target $prereq</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   hdr.h</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">the second rule adds
+</span><span style="font-size: 10pt"><tt>hdr.h</tt></span><span style="font-size: 10pt">
+as a prerequisite of the compile metarule;
+an object file produced from a C source file
+depends on
+</span><span style="font-size: 10pt"><tt>hdr.h</tt></span><span style="font-size: 10pt">
+as well as the source file.  Notice that the recipe of 
+the compile rule uses
+</span><span style="font-size: 10pt"><tt>$stem.c</tt></span><span style="font-size: 10pt">
+instead of
+</span><span style="font-size: 10pt"><tt>$prereq</tt></span><span style="font-size: 10pt">
+because the latter specification would attempt to compile
+</span><span style="font-size: 10pt"><tt>hdr.h</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a target is virtual and there is no other rule with
+the same target,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+evaluates each prerequisite.
+For example, adding the rule
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>all:V:  prog</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">to the preceding example builds the executable
+when either
+</span><span style="font-size: 10pt"><tt>prog</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+is the specified target.  In effect, the
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+target is an alias for
+</span><span style="font-size: 10pt"><tt>prog</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When two rules have identical rule headers and both have
+recipes, the later rule replaces the former one.
+For example,
+if a file named
+</span><span style="font-size: 10pt"><tt>mkrules</tt></span><span style="font-size: 10pt">
+contains
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$O.out: $OFILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD $LFLAGS $OFILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OFILES=f1.$O f2.$O f3.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;mkrules</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$O.out: $OFILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD $LFLAGS -l $OFILES -lbio -lc</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">overrides the general loader rule with a special
+rule using a non-standard library search sequence.
+A rule is neutralized by overriding it with a rule
+with a null recipe:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;mkrules</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$O.out:Q:   $OFILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>Q</tt></span><span style="font-size: 10pt">
+attribute suppresses the printing of the semicolon.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a rule has no prerequisites, the recipe is executed
+only when the target does not exist.  For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>marker:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    touch $target</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">defines a rule to manage a marker file.
+If the file exists, it is considered up to date
+regardless of its modification time.
+When a virtual target has no prerequisites the
+recipe is always executed.
+The
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+rule is of this type:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>clean:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f [$OS].out *.[$OS]</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a rule without prerequisites has multiple targets, the
+extra targets are aliases for the rule.
+For example, in
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>clean tidy nuke:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f [$OS].out *.[$OS]</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">the
+rule can be invoked by any of three names.
+The first rule in a
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+is handled specially:
+when
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+is invoked without a command line target
+all targets of the first non-metarule are built.
+If that rule has multiple targets, the recipe
+is executed once for each target; normally, the recipe
+of a rule with multiple targets is only executed once.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A rule applies to a target only when its prerequisites
+exist or can be derived.  More than one rule may have the
+same target as long as only one rule with a recipe
+remains applicable after the dependency evaluation completes.
+For example, consider a program built from C
+and assembler source files.  Two rules produce
+object files:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.s</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $AS $AFLAGS $stem.s</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">As long as there are not two source files with names like
+</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"><i>foo</i></span><span style="font-size: 10pt"><tt>.c</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"><i>foo</i></span><span style="font-size: 10pt"><tt>.s</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+can unambiguously select the proper rule.
+If both files exist,
+the rules are ambiguous
+and
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+exits with an error message.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In Plan 9, many programs consist of portable code stored
+in one directory and architecture-specific source stored in
+another.
+For example, the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>FILES=f1.$O f2.$O f3.$O f3.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>prog:   $FILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $target $prereq</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.$c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   ../port/%.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS ../port/$stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">builds the program named
+</span><span style="font-size: 10pt"><tt>prog</tt></span><span style="font-size: 10pt">
+using portable code in directory
+</span><span style="font-size: 10pt"><tt>../port</tt></span><span style="font-size: 10pt">
+and architecture-specific code in the current directory.
+As long as the
+names of the C source files in 
+</span><span style="font-size: 10pt"><tt>../port</tt></span><span style="font-size: 10pt">
+do not conflict with the names of files in the current directory,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+selects the appropriate rule to build the object file.
+If like-named files exist in both directories, the
+specification is ambiguous and an explicit target
+must be specified to resolve the ambiguity.
+For example,
+adding the rule
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f2.$O:  f2.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $f2.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">to the previous
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+uses the architecture-specific version of
+</span><span style="font-size: 10pt"><tt>f2.c</tt></span><span style="font-size: 10pt">
+instead of the portable one.
+Here, the explicit rule unambiguously
+documents which of the
+like-named source files is used to build the program.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">s
+heuristics can produce unintended results
+when rules are not carefully specified.
+For example, the rules that build
+object files from C or assembler source files
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.s</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $AS $AFLAGS $stem.s</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">illustrate a subtle pratfall.
+Adding a header file dependency to the compile rule
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c hdr.h</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">produces the error message
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt></tt></span><span style="font-size: 9pt"><tt>don&rsquo;t know how to make &rsquo;</tt></span><span style="font-size: 9pt"><i>file</i></span><span style="font-size: 9pt"><tt>.c&rsquo;</tt></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">when </span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt">.s is an assembler
+source file.
+This occurs because 
+</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt"><tt>.s</tt></span><span style="font-size: 10pt">
+satisfies the assemble rule and
+</span><span style="font-size: 10pt"><tt>hdr.h</tt></span><span style="font-size: 10pt">
+satisfies the compile rule, so
+either rule can potentially produce the target.
+When a prerequisite exists or can be
+derived,
+all other prerequisites in that
+rule header must exist or be derivable; here,
+the existence of
+</span><span style="font-size: 10pt"><tt>hdr.h</tt></span><span style="font-size: 10pt">
+forces the evaluation of a C source file.
+Specifying the dependencies in different
+rules avoids this interpretation:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   hdr.h</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $CFLAGS $stem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Although
+</span><span style="font-size: 10pt"><tt>hdr.h</tt></span><span style="font-size: 10pt">
+is an additional prerequisite of the compile rule,
+the two rules are evaluated independently and
+the existence of the C source file is not linked
+to the existence of the header file.
+However, this specification describes a different
+dependency.  Originally, only object
+files derived from C files depended on
+</span><span style="font-size: 10pt"><tt>hdr.h</tt></span><span style="font-size: 10pt">;
+now all object files, including those built
+from assembler source, depend on the header file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Metarule patterns should be as restrictive as possible to
+prevent conflicts with other rules.
+Consider the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>BIN=/$objtype/bin</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>PROG=foo</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>install:V:  $BIN/$PROG</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%:  %.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $stem.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $target $stem.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$BIN/%: %</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    mv $stem $target</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first target builds an executable
+in the local directory; the second
+installs it in the directory
+of executables for the architecture.
+Invoking
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+with the
+</span><span style="font-size: 10pt"><tt>install</tt></span><span style="font-size: 10pt">
+target produces:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>mk: ambiguous recipes for /mips/bin/foo:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/mips/bin/foo &lt;-(mkfile:8)- /mips/bin/foo.c &lt;-(mkfile:12)- foo.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/mips/bin/foo &lt;-(mkfile:12)- foo &lt;-(mkfile:8)- foo.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The prerequisite of the
+</span><span style="font-size: 10pt"><tt>install</tt></span><span style="font-size: 10pt">
+rule,
+</span><span style="font-size: 10pt"><tt>$BIN/$PROG</tt></span><span style="font-size: 10pt">,
+matches both metarules because the
+</span><span style="font-size: 10pt"><tt>%</tt></span><span style="font-size: 10pt">
+pattern matches everything.
+The
+</span><span style="font-size: 10pt"><tt>&amp;</tt></span><span style="font-size: 10pt">
+pattern restricts the compile rule to files in the
+current directory and avoids the conflict:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&amp;:  &amp;.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $CC $stem.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $target $stem.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>10.
+Missing intermediates
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+does not build a missing intermediate file if a target
+is up to date with the prerequisites of the intermediate.
+For example,
+when an executable is up to date with its source file,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+does not compile the source to create a missing object file.
+The evaluation only applies
+when a target is considered up to date by pretending that the
+intermediate exists.  Thus, it does not apply
+when the intermediate is a command line target
+or when it has no prerequisites.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This capability is useful for
+maintaining archives.  We can modify the archive
+update recipe to remove object files after
+they are archived:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB(%):N:  %</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB:   ${OBJS:%=$LIB(%)}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    names=&lsquo;{membername $newprereq}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ar rv $LIB $names</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f $names</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A subsequent
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+does not remake the object files as long as the members
+of the archive remain up to date with the source files.
+The
+</span><span style="font-size: 10pt"><tt>-i</tt></span><span style="font-size: 10pt">
+command line option overrides this behavior
+and causes all intermediates to be built.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>11.
+Alternative out-of-date determination
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Sometimes the modification time is not useful
+for deciding when a target and prerequisite are out of date.
+The
+</span><span style="font-size: 10pt"><tt>P</tt></span><span style="font-size: 10pt">
+attribute replaces the default mechanism with the result of
+a command.  The command immediately follows the attribute
+and is repeatedly executed with each
+target and each prerequisite as its arguments;
+if its exit status is non-zero, they are considered out of date
+and the recipe is executed.  Consider the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>foo.ref:Pcmp -s:    foo</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    cp $prereq $target</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The command
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cmp -s foo.ref foo</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">is executed and if 
+</span><span style="font-size: 10pt"><tt>foo.ref</tt></span><span style="font-size: 10pt">
+differs from
+</span><span style="font-size: 10pt"><tt>foo</tt></span><span style="font-size: 10pt">,
+the latter file is copied to the former.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>12.
+Parallel processing
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When possible,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+executes recipes in parallel.
+The variable
+</span><span style="font-size: 10pt"><tt>$NPROC</tt></span><span style="font-size: 10pt">
+specifies the maximum number of simultaneously executing
+recipes.
+Normally it is imported from the environment,
+where the system has set it to the number of available processors.
+It can be decreased by assigning a new
+value and can be set to 1 to force single-threaded recipe execution.
+This is necessary when several targets access
+a common resource such as
+a status file or data base.
+When there is no dependency between targets,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+assumes the
+recipes can be
+executed concurrently.
+Normally, this allows
+multiple prerequisites to be built simultaneously;
+for example, the object file prerequisites of
+a load rule can be produced by compiling the source files in parallel.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+does not define the order of execution of independent recipes.
+When the prerequisites of a rule are not independent,
+the dependencies between them should be specified in a rule or the
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">
+should be single-threaded.
+For example, the archive update rules
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB(%):N:  %</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB:   ${OBJS:%=$LIB(%)}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ar rv $LIB &lsquo;{membername $newprereq}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">compile source files in parallel but update
+all members of the archive at once.
+It is a mistake to merge the two rules
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$LIB(%):    %</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ar rv $LIB $stem</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">because an
+</span><span style="font-size: 10pt"><tt>ar</tt></span><span style="font-size: 10pt">
+command is executed for every
+member of the library.  Not only is this
+inefficient, but the archive is updated
+in parallel, making interference likely.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>$nproc</tt></span><span style="font-size: 10pt">
+environment variable contains a number associated
+with the processor executing a recipe.
+It can be used to create unique
+names when the
+recipe may be executing simultaneously on several processors.
+Other maintenance tools provide mechanisms to control recipe
+scheduling explicitly [Cmel86], but
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+general rules are sufficient for all but the most unusual cases.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>13.
+Deleting target files on errors
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>D</tt></span><span style="font-size: 10pt">
+attribute
+causes
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+to remove the target file when a
+recipe terminates prematurely.
+The error message describing the
+termination condition warns
+of the deletion.
+A partially built file is doubly dangerous:
+it is not only wrong, but is also
+considered to be up to date so
+a subsequent
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+will not rebuild it.  For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>pic.out:D:  mk.ms</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        pic $prereq | tbl | troff -ms &gt; $target</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">produces the message
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt></tt></span><span style="font-size: 9pt"><tt>mk: pic mk.ms | ...  : exit status=rc 685: deleting &rsquo;pic.out&rsquo;</tt></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">if any program in the recipe exits with an error status.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>14.
+Unspecified dependencies
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>-w</tt></span><span style="font-size: 10pt">
+command line flag forces the
+files following the flag to be treated
+as if they were just modified.
+We can use this flag with a command that selects files
+to force a build based on the selection criterion.
+For example, if the declaration of
+a global variable named
+</span><span style="font-size: 10pt"><i>var</i></span><span style="font-size: 10pt">
+is changed in a header file,
+all source files that reference
+it can be rebuilt with the command
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$ mk -w&lsquo;{grep -l </tt></span><span style="font-size: 9pt"><i>var</i></span><span style="font-size: 9pt"><tt> *.[cyl]}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>15.
+Conclusion
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are many programs related to
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">,
+each choosing a different balance between
+specialization and generality.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+emphasizes generality but allows
+customization through its pattern specifications and
+include facilities.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 presents a difficult maintenance environment
+with its heterogeneous
+architectures and languages.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">&rsquo;</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+flexible specification language and simple
+interaction with
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+work well in this environment.
+As a result,
+Plan 9 relies on
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+to automate almost all maintenance.
+Tasks as diverse as updating the
+network data base, producing the manual,
+or building a release are expressed as
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+procedures.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>16.
+References
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Cmel86] R. F. Cmelik,
+&lsquo;&lsquo;Concurrent Make: A Distributed Program in Concurrent C&rsquo;&rsquo;,
+AT&amp;T Bell Laboratories Technical Report, 1986.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Feld79] S. I. Feldman,
+&lsquo;&lsquo;Make &mdash; a program for maintaining computer programs&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Software Practice &amp; Experience ,
+</i></span><span style="font-size: 10pt">1979
+Vol 9 #4,
+pp. 255-266.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Flan95] Bob Flandrena,
+&lsquo;&lsquo;Plan 9 Mkfiles&rsquo;&rsquo;,
+this volume.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Hume87] A. G. Hume,
+&lsquo;&lsquo;Mk: A Successor to Make&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>USENIX Summer Conf. Proc.,
+</i></span><span style="font-size: 10pt">Phoenix, Az.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>17.
+Appendix: Differences between
+</b></span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt"><b>
+and
+</b></span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The differences between
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+are:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Make</tt></span><span style="font-size: 10pt">
+builds targets when it needs them, allowing systematic use of side effects.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+constructs the entire dependency graph before building any target.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Make</tt></span><span style="font-size: 10pt">
+supports suffix rules and
+</span><span style="font-size: 10pt"><tt>%</tt></span><span style="font-size: 10pt">
+metarules.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+supports
+</span><span style="font-size: 10pt"><tt>%</tt></span><span style="font-size: 10pt">
+and regular expression metarules.
+(Older versions of
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+support only suffix rules.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+performs transitive closure on metarules,
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+does not.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Make</tt></span><span style="font-size: 10pt">
+supports cyclic dependencies,
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+does not.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Make</tt></span><span style="font-size: 10pt">
+evaluates recipes one line at a time, replacing variables by their values and
+executing some commands internally.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+passes the entire recipe to the shell without
+interpretation or internal execution.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Make</tt></span><span style="font-size: 10pt">
+supports parallel execution of single-line recipes when building
+the prerequisites for specified targets.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+supports parallel execution of all recipes.
+(Older versions of
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+did not support parallel execution.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Make</tt></span><span style="font-size: 10pt">
+uses special targets (beginning with a period)
+to indicate special processing.
+</span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+uses attributes to modify rule evaluation.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+supports virtual
+targets that are independent of the file system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.21in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  </span><span style="font-size: 10pt"><tt>Mk</tt></span><span style="font-size: 10pt">
+allows non-standard out-of-date determination,
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+does not.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It is usually easy to convert a
+</span><span style="font-size: 10pt"><tt>makefile</tt></span><span style="font-size: 10pt">
+to or from an equivalent
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

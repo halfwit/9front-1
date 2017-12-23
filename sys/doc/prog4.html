@@ -1,0 +1,779 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Changes to the Programming Environment in the Fourth Release of Plan 9</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Changes to the Programming Environment</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>in the</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Fourth Release of Plan 9</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Rob Pike</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>rob@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The fourth release of Plan 9 includes changes at many levels of the system,
+with repercussions in the libraries and program interfaces.
+This document summarizes the changes and describes how
+existing programs must be modified to run in the new release.
+It is not exhaustive, of course; for further detail about any of the
+topics refer to the manual pages, as always.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Programmers new to Plan 9 may find valuable tidbits here, but the
+real audience for this paper is those with a need to update applications
+and servers written in C for earlier releases of the Plan 9 operating system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>9P, NAMELEN, and strings
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The underlying file service protocol for Plan 9, 9P, retains its basic form
+but has had a number of adjustments to deal with longer file names and error strings,
+new authentication mechanisms, and to make it more efficient at
+evaluating file names.
+The change to file names affects a number of system interfaces;
+because file name elements are no longer of fixed size, they can
+no longer be stored as arrays.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">9P used to be a fixed-format protocol with
+</span><span style="font-size: 10pt"><tt>NAMELEN</tt></span><span style="font-size: 10pt">-sized
+byte arrays representing file name elements.
+Now, it is a variable-format protocol, as described in
+</span><span style="font-size: 10pt"><i>intro</i></span><span style="font-size: 10pt">(5),
+in which strings are represented by a count followed by that many bytes.
+Thus, the string
+</span><span style="font-size: 10pt"><tt>ken</tt></span><span style="font-size: 10pt">
+would previously have occupied 28
+(</span><span style="font-size: 10pt"><tt>NAMELEN</tt></span><span style="font-size: 10pt">)
+bytes in the message; now it occupies 5: a two-byte count followed by the three bytes of
+</span><span style="font-size: 10pt"><tt>ken</tt></span><span style="font-size: 10pt">
+and no terminal zero.
+(And of course, a name could now be much longer.)
+A similar format change has been made to
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+buffers: they are no longer
+</span><span style="font-size: 10pt"><tt>DIRLEN</tt></span><span style="font-size: 10pt">
+bytes long but instead have variable size prefixed by a two-byte count.
+And in fact the entire 9P message syntax has changed: every message
+now begins with a message length field that makes it trivial to break the
+string into messages without parsing them, so
+</span><span style="font-size: 10pt"><tt>aux/fcall</tt></span><span style="font-size: 10pt">
+is gone.
+A new library entry point,
+</span><span style="font-size: 10pt"><tt>read9pmsg</tt></span><span style="font-size: 10pt">,
+makes it easy for user-level servers to break the client data stream into 9P messages.
+All servers should switch from using
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">
+(or the now gone
+</span><span style="font-size: 10pt"><tt>getS)</tt></span><span style="font-size: 10pt">
+to using
+</span><span style="font-size: 10pt"><tt>read9pmsg</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This change to 9P affects the way strings are handled by the kernel and throughout
+the system.
+The consequences are primarily that fixed-size arrays have been replaced
+by pointers and counts in a variety of system interfaces.
+Most programs will need at least some adjustment to the new style.
+In summary:
+</span><span style="font-size: 10pt"><tt>NAMELEN</tt></span><span style="font-size: 10pt">
+is gone, except as a vestige in the authentication libraries, where it has been
+rechristened
+</span><span style="font-size: 10pt"><tt>ANAMELEN</tt></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><tt>DIRLEN</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>ERRLEN</tt></span><span style="font-size: 10pt">
+are also gone.
+All programs that mention
+these constants
+will need to be fixed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The simplest place to see this change is in the
+</span><span style="font-size: 10pt"><tt>errstr</tt></span><span style="font-size: 10pt">
+system call, which no longer assumes a buffer of length
+</span><span style="font-size: 10pt"><tt>ERRLEN</tt></span><span style="font-size: 10pt">
+but now requires a byte-count argument:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>char buf[...];</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>errstr(buf, sizeof buf);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The buffer can be any size you like.
+For convenience, the kernel stores error strings internally as 256-byte arrays,
+so if you like &mdash; but it&rsquo;s not required &mdash; you can use the defined constant
+</span><span style="font-size: 10pt"><tt>ERRMAX=</tt></span><span style="font-size: 10pt">256
+as a good buffer size.
+Unlike the old
+</span><span style="font-size: 10pt"><tt>ERRLEN</tt></span><span style="font-size: 10pt">
+(which had value 64),
+</span><span style="font-size: 10pt"><tt>ERRMAX</tt></span><span style="font-size: 10pt">
+is advisory, not mandatory, and is not part of the 9P specification.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">With names, stat buffers, and directories, there isn&rsquo;t even an echo of a fixed-size array any more.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Directories and wait messages
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">With strings now variable-length, a number of system calls needed to change:
+</span><span style="font-size: 10pt"><tt>errstr</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>fstat</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>wstat</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>fwstat</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>wait</tt></span><span style="font-size: 10pt">
+are all affected, as is
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">
+when applied to directories.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">As far as directories are concerned, most programs don&rsquo;t use the system calls
+directly anyway, since they operate on the machine-independent form, but
+instead call the machine-dependent
+</span><span style="font-size: 10pt"><tt>Dir</tt></span><span style="font-size: 10pt">
+routines
+</span><span style="font-size: 10pt"><tt>dirstat</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>dirread</tt></span><span style="font-size: 10pt">,
+etc.
+These used to fill user-provided fixed-size buffers; now they return objects allocated
+by
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">
+(which must therefore be freed after use).
+To &lsquo;stat&rsquo; a file:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Dir *d;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>d = dirstat(filename);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if(d == nil){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    fprint(2, "can&rsquo;t stat %s: %r\n", filename);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    exits("stat");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>use(d);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>free(d);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A common new bug is to forget to free a
+</span><span style="font-size: 10pt"><tt>Dir</tt></span><span style="font-size: 10pt">
+returned by
+</span><span style="font-size: 10pt"><tt>dirstat</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Dirfstat</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>Dirfwstat</tt></span><span style="font-size: 10pt">
+work pretty much as before, but changes to 9P make
+it possible to exercise finer-grained control on what fields
+of the
+</span><span style="font-size: 10pt"><tt>Dir</tt></span><span style="font-size: 10pt">
+are to be changed; see
+</span><span style="font-size: 10pt"><i>stat</i></span><span style="font-size: 10pt">(2)
+and
+</span><span style="font-size: 10pt"><i>stat</i></span><span style="font-size: 10pt">(5)
+for details.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Reading a directory works in a similar way to
+</span><span style="font-size: 10pt"><tt>dirstat</tt></span><span style="font-size: 10pt">,
+with
+</span><span style="font-size: 10pt"><tt>dirread</tt></span><span style="font-size: 10pt">
+allocating and filling in an array of
+</span><span style="font-size: 10pt"><tt>Dir</tt></span><span style="font-size: 10pt">
+structures.
+The return value is the number of elements of the array.
+The arguments to
+</span><span style="font-size: 10pt"><tt>dirread</tt></span><span style="font-size: 10pt">
+now include a pointer to a
+</span><span style="font-size: 10pt"><tt>Dir*</tt></span><span style="font-size: 10pt">
+to be filled in with the address of the allocated array:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Dir *d;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int i, n;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>while((n = dirread(fd, &amp;d)) &gt; 0){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    for(i=0; i&lt;n; i++)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        use(&amp;d[i]);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    free(d);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A new library function,
+</span><span style="font-size: 10pt"><tt>dirreadall</tt></span><span style="font-size: 10pt">,
+has the same form as
+</span><span style="font-size: 10pt"><tt>dirread</tt></span><span style="font-size: 10pt">
+but returns the entire directory in one call:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>n = dirreadall(fd, &amp;d)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i=0; i&lt;n; i++)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    use(&amp;d[i]);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>free(d);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If your program insists on using the underlying
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+system call or its relatives, or wants to operate directly on the
+machine-independent format returned by
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">,
+it will need to be modified.
+Such programs are rare enough that we&rsquo;ll not discuss them here beyond referring to
+the man page
+</span><span style="font-size: 10pt"><i>stat</i></span><span style="font-size: 10pt">(2)
+for details.
+Be aware, though, that it used to be possible to regard the buffer returned by
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+as a byte array that began with the zero-terminated
+name of the file; this is no longer true.
+With very rare exceptions, programs that call
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+would be better recast to use the
+</span><span style="font-size: 10pt"><tt>dir</tt></span><span style="font-size: 10pt">
+routines or, if their goal is just to test the existence of a file,
+</span><span style="font-size: 10pt"><tt>access</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Similar changes have affected the
+</span><span style="font-size: 10pt"><tt>wait</tt></span><span style="font-size: 10pt">
+system call.  In fact,
+</span><span style="font-size: 10pt"><tt>wait</tt></span><span style="font-size: 10pt">
+is no longer a system call but a library routine that calls the new
+</span><span style="font-size: 10pt"><tt>await</tt></span><span style="font-size: 10pt">
+system call and returns a newly allocated machine-dependent
+</span><span style="font-size: 10pt"><tt>Waitmsg</tt></span><span style="font-size: 10pt">
+structure:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Waitmsg *w;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>w = wait();</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if(w == nil)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    error("wait: %r");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>print("pid is %d; exit string %s\n", w-&gt;pid, w-&gt;msg);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>free(w);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The exit string
+</span><span style="font-size: 10pt"><tt>w-&gt;msg</tt></span><span style="font-size: 10pt">
+may be empty but it will never be a nil pointer.
+Again, don&rsquo;t forget to free the structure returned by
+</span><span style="font-size: 10pt"><tt>wait</tt></span><span style="font-size: 10pt">.
+If all you need is the pid, you can call
+</span><span style="font-size: 10pt"><tt>waitpid</tt></span><span style="font-size: 10pt">,
+which reports just the pid and doesn&rsquo;t return an allocated structure:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int pid;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>pid = waitpid();</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if(pid &lt; 0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    error("wait: %r");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>print("pid is %d\n", pid);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Quoted strings and tokenize
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Wait</tt></span><span style="font-size: 10pt">
+gives us a good opportunity to describe how the system copes with all this
+free-format data.
+Consider the text returned by the
+</span><span style="font-size: 10pt"><tt>await</tt></span><span style="font-size: 10pt">
+system call, which includes a set of integers (pids and times) and a string (the exit status).
+This information is formatted free-form; here is the statement in the kernel that
+generates the message:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>n = snprint(a, n, "%d %lud %lud %lud %q",</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    wq-&gt;w.pid,</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    wq-&gt;w.time[TUser], wq-&gt;w.time[TSys], wq-&gt;w.time[TReal],</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    wq-&gt;w.msg);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Note the use of
+</span><span style="font-size: 10pt"><tt>%q</tt></span><span style="font-size: 10pt">
+to produce a quoted-string representation of the exit status.
+The
+</span><span style="font-size: 10pt"><tt>%q</tt></span><span style="font-size: 10pt">
+format is like %s but will wrap
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">-style
+single quotes around the string if it contains white space or is otherwise ambiguous.
+The library routine
+</span><span style="font-size: 10pt"><tt>tokenize</tt></span><span style="font-size: 10pt">
+can be used to parse data formatted this way: it splits white-space-separated
+fields but understands the
+</span><span style="font-size: 10pt"><tt>%q</tt></span><span style="font-size: 10pt">
+quoting conventions.
+Here is how the
+</span><span style="font-size: 10pt"><tt>wait</tt></span><span style="font-size: 10pt">
+library routine builds its
+</span><span style="font-size: 10pt"><tt>Waitmsg</tt></span><span style="font-size: 10pt">
+from the data returned by
+</span><span style="font-size: 10pt"><tt>await</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Waitmsg*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>wait(void)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int n, l;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char buf[512], *fld[5];</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Waitmsg *w;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    n = await(buf, sizeof buf-1);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if(n &lt; 0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        return nil;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    buf[n] = &rsquo; &rsquo;;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if(tokenize(buf, fld, nelem(fld)) != nelem(fld)){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        werrstr("couldn&rsquo;t parse wait message");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        return nil;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    l = strlen(fld[4])+1;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    w = malloc(sizeof(Waitmsg)+l);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if(w == nil)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        return nil;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    w-&gt;pid = atoi(fld[0]);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    w-&gt;time[0] = atoi(fld[1]);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    w-&gt;time[1] = atoi(fld[2]);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    w-&gt;time[2] = atoi(fld[3]);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    w-&gt;msg = (char*)&amp;w[1];</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    memmove(w-&gt;msg, fld[4], l);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    return w;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This style of quoted-string and
+</span><span style="font-size: 10pt"><tt>tokenize</tt></span><span style="font-size: 10pt">
+is used all through the system now.
+In particular, devices now
+</span><span style="font-size: 10pt"><tt>tokenize</tt></span><span style="font-size: 10pt">
+the messages written to their
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+files, which means that you can send messages that contain white space, by quoting them,
+and that you no longer need to worry about whether or not the device accepts a newline.
+In other words, you can say
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo message &gt; /dev/xx/ctl</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">instead of
+</span><span style="font-size: 10pt"><tt>echo</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>-n</tt></span><span style="font-size: 10pt">
+because
+</span><span style="font-size: 10pt"><tt>tokenize</tt></span><span style="font-size: 10pt">
+treats the newline character as white space and discards it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">While we&rsquo;re on the subject of quotes and strings, note that the implementation of
+</span><span style="font-size: 10pt"><tt>await</tt></span><span style="font-size: 10pt">
+used
+</span><span style="font-size: 10pt"><tt>snprint</tt></span><span style="font-size: 10pt">
+rather than
+</span><span style="font-size: 10pt"><tt>sprint</tt></span><span style="font-size: 10pt">.
+We now deprecate
+</span><span style="font-size: 10pt"><tt>sprint</tt></span><span style="font-size: 10pt">
+because it has no protection against buffer overflow.
+We prefer
+</span><span style="font-size: 10pt"><tt>snprint</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>seprint</tt></span><span style="font-size: 10pt">,
+to constrain the output.
+The
+</span><span style="font-size: 10pt"><tt>%q</tt></span><span style="font-size: 10pt">
+format is cleverer than most in this regard:
+if the string is too long to be represented in full,
+</span><span style="font-size: 10pt"><tt>%q</tt></span><span style="font-size: 10pt">
+is smart enough to produce a truncated but correctly quoted
+string within the available space.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Mount
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Although strings in 9P are now variable-length and not zero-terminated,
+this has little direct effect in most of the system interfaces.
+File and user names are still zero-terminated strings as always;
+the kernel does the work of translating them as necessary for
+transport.
+And of course, they are now free to be as long as you might want;
+the only hard limit is that their length must be represented in 16 bits.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">One example where this matters is that the file system specification in the
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">
+system call can now be much longer.
+Programs like
+</span><span style="font-size: 10pt"><tt>rio</tt></span><span style="font-size: 10pt">
+that used the specification string in creative ways were limited by the
+</span><span style="font-size: 10pt"><tt>NAMELEN</tt></span><span style="font-size: 10pt">
+restriction; now they can use the string more freely.
+</span><span style="font-size: 10pt"><tt>Rio</tt></span><span style="font-size: 10pt">
+now accepts a simple but less cryptic specification language for the window
+to be created by the
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">
+call, e.g.:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% mount $wsys /mnt/wsys &rsquo;new -dx 250 -dy 250 -pid 1234&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the old system, this sort of control was impossible through the
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">
+interface.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">While we&rsquo;re on the subject of
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">,
+note that with the new security architecture
+(see
+</span><span style="font-size: 10pt"><i>factotum</i></span><span style="font-size: 10pt">(4)),
+9P has moved its authentication outside the protocol proper.
+(For a full description of this change to 9P, see
+</span><span style="font-size: 10pt"><i>fauth</i></span><span style="font-size: 10pt">(2),
+</span><span style="font-size: 10pt"><i>attach</i></span><span style="font-size: 10pt">(5),
+and the paper
+</span><span style="font-size: 10pt"></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Security in Plan 9</i></span><span style="font-size: 10pt">.)</span><span style="font-size: 10pt">
+The most explicit effect of this change is that
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">
+now takes another argument,
+</span><span style="font-size: 10pt"><tt>afd</tt></span><span style="font-size: 10pt">,
+a file descriptor for the
+authentication file through which the authentication will be made.
+For most user-level file servers, which do not require authentication, it is
+sufficient to provide
+</span><span style="font-size: 10pt"><tt>-1</tt></span><span style="font-size: 10pt">
+as the value of
+</span><span style="font-size: 10pt"><tt>afd:</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if(mount(fd, -1, "/mnt/wsys", MREPL,</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>   "new -dx 250 -dy 250 -pid 1234") &lt; 0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    error("mount failed: %r");</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To connect to servers that require authentication, use the new
+</span><span style="font-size: 10pt"><tt>fauth</tt></span><span style="font-size: 10pt">
+system call or the reimplemented
+</span><span style="font-size: 10pt"><tt>amount</tt></span><span style="font-size: 10pt">
+(authenticated mount) library call.
+In fact, since
+</span><span style="font-size: 10pt"><tt>amount</tt></span><span style="font-size: 10pt">
+handles both authenticating and non-authenticating servers, it is often
+easiest just to replace calls to
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">
+by calls to
+</span><span style="font-size: 10pt"><tt>amount</tt></span><span style="font-size: 10pt">;
+see
+</span><span style="font-size: 10pt"><i>auth</i></span><span style="font-size: 10pt">(2)
+for details.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Print
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The C library has been heavily reworked in places.
+Besides the changes mentioned above, it
+now has a much more complete set of routines for handling
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+strings (that is, zero-terminated arrays of 16-bit character values).
+The most sweeping changes, however, are in the way formatted I/O is performed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+routine and all its relatives have been reimplemented to offer a number
+of improvements:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(1)    Better buffer management, including the provision of an internal flush
+routine, makes it unnecessary to provide large buffers.
+For example,
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+uses a much smaller buffer now (reducing stack load) while simultaneously
+removing the need to truncate the output string if it doesn&rsquo;t fit in the buffer.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(2)    Global variables have been eliminated so no locking is necessary.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(3)    The combination of (1) and (2) means that the standard implementation of
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+now works fine in threaded programs, and
+</span><span style="font-size: 10pt"><tt>threadprint</tt></span><span style="font-size: 10pt">
+is gone.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(4)    The new routine
+</span><span style="font-size: 10pt"><tt>smprint</tt></span><span style="font-size: 10pt">
+prints into, and returns, storage allocated on demand by
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(5)    It is now possible to print into a
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+string; for instance,
+</span><span style="font-size: 10pt"><tt>runesmprint</tt></span><span style="font-size: 10pt">
+is the
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+analog of
+</span><span style="font-size: 10pt"><tt>smprint</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(6)    There is improved support for custom
+print verbs and custom output routines such as error handlers.
+The routine
+</span><span style="font-size: 10pt"><tt>doprint</tt></span><span style="font-size: 10pt">
+is gone, but
+</span><span style="font-size: 10pt"><tt>vseprint</tt></span><span style="font-size: 10pt">
+can always be used instead.
+However, the new routines
+</span><span style="font-size: 10pt"><tt>fmtfdinit</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>fmtstrinit</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>fmtprint</tt></span><span style="font-size: 10pt">,
+and friends
+are often a better replacement.
+The details are too long for exposition here;
+</span><span style="font-size: 10pt"><i>fmtinstall</i></span><span style="font-size: 10pt">(2)
+explains the new interface and provides examples.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(7)    Two new format flags, space and comma, close somewhat the gap between
+Plan 9 and ANSI C.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Despite these changes, most programs will be unaffected;
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+is still
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">.
+Don&rsquo;t forget, though, that
+you should eliminate calls to
+</span><span style="font-size: 10pt"><tt>sprint</tt></span><span style="font-size: 10pt">
+and use the
+</span><span style="font-size: 10pt"><tt>%q</tt></span><span style="font-size: 10pt">
+format when appropriate.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Binary compatibility
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The discussion so far has been about changes at the source level.
+Existing binaries will probably run without change in the new
+environment, since the kernel provides backward-compatible
+system calls for
+</span><span style="font-size: 10pt"><tt>errstr</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>wait</tt></span><span style="font-size: 10pt">,
+etc.
+The only exceptions are programs that do either a
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">
+system call, because of the security changes and because
+the file descriptor in
+</span><span style="font-size: 10pt"><tt>mount</tt></span><span style="font-size: 10pt">
+must point to a new 9P connection; or a
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">
+system call on a directory, since the returned data will
+be in the new format.
+A moment&rsquo;s reflection will discover that this means old
+user-level file servers will need to be fixed to run on the new system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>File servers
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A full description of what user-level servers must do to provide service with
+the new 9P is beyond the scope of this paper.
+Your best source of information is section 5 of the manual,
+combined with study of a few examples.
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/ramfs.c</tt></span><span style="font-size: 10pt">
+is a simple example; it has a counterpart
+</span><span style="font-size: 10pt"><tt>/sys/src/lib9p/ramfs.c</tt></span><span style="font-size: 10pt">
+that implements the same service using the new
+</span><span style="font-size: 10pt"><i>9p</i></span><span style="font-size: 10pt">(2)
+library.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">That said, it&rsquo;s worth summarizing what to watch for when converting a file server.
+The
+</span><span style="font-size: 10pt"><tt>session</tt></span><span style="font-size: 10pt">
+message is gone, and there is a now a
+</span><span style="font-size: 10pt"><tt>version</tt></span><span style="font-size: 10pt">
+message that is exchanged at the start of a connection to establish
+the version of the protocol to use (there&rsquo;s only one at the moment, identified by
+the string
+</span><span style="font-size: 10pt"><tt>9P2000</tt></span><span style="font-size: 10pt">)
+and what the maximum message size will be.
+This negotiation makes it easier to handle 9P encapsulation, such as with
+</span><span style="font-size: 10pt"><tt>exportfs</tt></span><span style="font-size: 10pt">,
+and also permits larger message sizes when appropriate.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If your server wants to authenticate, it will need to implement an authentication file
+and implement the
+</span><span style="font-size: 10pt"><tt>auth</tt></span><span style="font-size: 10pt">
+message; otherwise it should return a helpful error string to the
+</span><span style="font-size: 10pt"><tt>Tauth</tt></span><span style="font-size: 10pt">
+request to signal that authentication is not required.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The handling of
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+and directory reads will require some changes but they should not be fundamental.
+Be aware that seeking on directories is forbidden, so it is fine if you disregard the
+file offset when implementing directory reads; this makes it a little easier to handle
+the variable-length entries.
+You should still never return a partial directory entry; if the I/O count is too small
+to return even one entry, you should return two bytes containing the byte count
+required to represent the next entry in the directory.
+User code can use this value to formulate a retry if it desires.
+See the
+DIAGNOSTICS section of
+</span><span style="font-size: 10pt"><i>stat</i></span><span style="font-size: 10pt">(2)
+for a description of this process.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The trickiest part of updating a file server is that the
+</span><span style="font-size: 10pt"><tt>clone</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>walk</tt></span><span style="font-size: 10pt">
+messages have been merged into a single message, a sort of &lsquo;clone-multiwalk&rsquo;.
+The new message, still called
+</span><span style="font-size: 10pt"><tt>walk</tt></span><span style="font-size: 10pt">,
+proposes a sequence of file name elements to be evaluated using a possibly
+cloned fid.
+The return message contains the qids of the files reached by
+walking to the sequential elements.
+If all the elements can be walked, the fid will be cloned if requested.
+If a non-zero number of elements are requested, but none
+can be walked, an error should be returned.
+If only some can be walked, the fid is not cloned, the original fid is left
+where it was, and the returned
+</span><span style="font-size: 10pt"><tt>Rwalk</tt></span><span style="font-size: 10pt">
+message should contain the partial list of successfully reached qids.
+See
+</span><span style="font-size: 10pt"><i>walk</i></span><span style="font-size: 10pt">(5)
+for a full description.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

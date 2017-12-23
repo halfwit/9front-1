@@ -1,0 +1,3553 @@
+sizeof_1_ = 8;
+aggr _1_
+{
+	'U' 0 lo;
+	'U' 4 hi;
+};
+
+defn
+_1_(addr) {
+	complex _1_ addr;
+	print("	lo	", addr.lo, "\n");
+	print("	hi	", addr.hi, "\n");
+};
+
+sizeofFPdbleword = 8;
+aggr FPdbleword
+{
+	'F' 0 x;
+	{
+	'U' 0 lo;
+	'U' 4 hi;
+	};
+};
+
+defn
+FPdbleword(addr) {
+	complex FPdbleword addr;
+	print("	x	", addr.x, "\n");
+	print("_1_ {\n");
+		_1_(addr+0);
+	print("}\n");
+};
+
+UTFmax = 4;
+Runesync = 128;
+Runeself = 128;
+Runeerror = 65533;
+Runemax = 1114111;
+sizeofFmt = 48;
+aggr Fmt
+{
+	'b' 0 runes;
+	'X' 4 start;
+	'X' 8 to;
+	'X' 12 stop;
+	'X' 16 flush;
+	'X' 20 farg;
+	'D' 24 nfmt;
+	'X' 28 args;
+	'D' 32 r;
+	'D' 36 width;
+	'D' 40 prec;
+	'U' 44 flags;
+};
+
+defn
+Fmt(addr) {
+	complex Fmt addr;
+	print("	runes	", addr.runes, "\n");
+	print("	start	", addr.start\X, "\n");
+	print("	to	", addr.to\X, "\n");
+	print("	stop	", addr.stop\X, "\n");
+	print("	flush	", addr.flush\X, "\n");
+	print("	farg	", addr.farg\X, "\n");
+	print("	nfmt	", addr.nfmt, "\n");
+	print("	args	", addr.args\X, "\n");
+	print("	r	", addr.r, "\n");
+	print("	width	", addr.width, "\n");
+	print("	prec	", addr.prec, "\n");
+	print("	flags	", addr.flags, "\n");
+};
+
+sizeofQid = 16;
+aggr Qid
+{
+	'W' 0 path;
+	'U' 8 vers;
+	'b' 12 type;
+};
+
+defn
+Qid(addr) {
+	complex Qid addr;
+	print("	path	", addr.path, "\n");
+	print("	vers	", addr.vers, "\n");
+	print("	type	", addr.type, "\n");
+};
+
+sizeofDir = 60;
+aggr Dir
+{
+	'u' 0 type;
+	'U' 4 dev;
+	Qid 8 qid;
+	'U' 24 mode;
+	'U' 28 atime;
+	'U' 32 mtime;
+	'V' 36 length;
+	'X' 44 name;
+	'X' 48 uid;
+	'X' 52 gid;
+	'X' 56 muid;
+};
+
+defn
+Dir(addr) {
+	complex Dir addr;
+	print("	type	", addr.type, "\n");
+	print("	dev	", addr.dev, "\n");
+	print("Qid qid {\n");
+	Qid(addr.qid);
+	print("}\n");
+	print("	mode	", addr.mode, "\n");
+	print("	atime	", addr.atime, "\n");
+	print("	mtime	", addr.mtime, "\n");
+	print("	length	", addr.length, "\n");
+	print("	name	", addr.name\X, "\n");
+	print("	uid	", addr.uid\X, "\n");
+	print("	gid	", addr.gid\X, "\n");
+	print("	muid	", addr.muid\X, "\n");
+};
+
+sizeofOWaitmsg = 112;
+aggr OWaitmsg
+{
+	'a' 0 pid;
+	'a' 12 time;
+	'a' 48 msg;
+};
+
+defn
+OWaitmsg(addr) {
+	complex OWaitmsg addr;
+	print("	pid	", addr.pid, "\n");
+	print("	time	", addr.time, "\n");
+	print("	msg	", addr.msg, "\n");
+};
+
+sizeofWaitmsg = 144;
+aggr Waitmsg
+{
+	'D' 0 pid;
+	'a' 4 time;
+	'a' 16 msg;
+};
+
+defn
+Waitmsg(addr) {
+	complex Waitmsg addr;
+	print("	pid	", addr.pid, "\n");
+	print("	time	", addr.time, "\n");
+	print("	msg	", addr.msg, "\n");
+};
+
+sizeofLock = 28;
+aggr Lock
+{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+};
+
+defn
+Lock(addr) {
+	complex Lock addr;
+	print("	key	", addr.key, "\n");
+	print("	sr	", addr.sr, "\n");
+	print("	pc	", addr.pc, "\n");
+	print("	p	", addr.p\X, "\n");
+	print("	m	", addr.m\X, "\n");
+	print("	isilock	", addr.isilock, "\n");
+	print("	lockcycles	", addr.lockcycles, "\n");
+};
+
+sizeofLabel = 8;
+aggr Label
+{
+	'U' 0 sp;
+	'U' 4 pc;
+};
+
+defn
+Label(addr) {
+	complex Label addr;
+	print("	sp	", addr.sp, "\n");
+	print("	pc	", addr.pc, "\n");
+};
+
+sizeofFPx87state = 108;
+aggr FPx87state
+{
+	'u' 0 control;
+	'u' 2 r1;
+	'u' 4 status;
+	'u' 6 r2;
+	'u' 8 tag;
+	'u' 10 r3;
+	'U' 12 pc;
+	'u' 16 selector;
+	'u' 18 opcode;
+	'U' 20 operand;
+	'u' 24 oselector;
+	'u' 26 r4;
+	'a' 28 regs;
+};
+
+defn
+FPx87state(addr) {
+	complex FPx87state addr;
+	print("	control	", addr.control, "\n");
+	print("	r1	", addr.r1, "\n");
+	print("	status	", addr.status, "\n");
+	print("	r2	", addr.r2, "\n");
+	print("	tag	", addr.tag, "\n");
+	print("	r3	", addr.r3, "\n");
+	print("	pc	", addr.pc, "\n");
+	print("	selector	", addr.selector, "\n");
+	print("	opcode	", addr.opcode, "\n");
+	print("	operand	", addr.operand, "\n");
+	print("	oselector	", addr.oselector, "\n");
+	print("	r4	", addr.r4, "\n");
+	print("	regs	", addr.regs, "\n");
+};
+
+sizeofFPssestate = 512;
+aggr FPssestate
+{
+	'u' 0 fcw;
+	'u' 2 fsw;
+	'u' 4 ftw;
+	'u' 6 fop;
+	'U' 8 fpuip;
+	'u' 12 cs;
+	'u' 14 rsrvd1;
+	'U' 16 fpudp;
+	'u' 20 ds;
+	'u' 22 rsrvd2;
+	'U' 24 mxcsr;
+	'U' 28 mxcsr_mask;
+	'a' 32 xregs;
+};
+
+defn
+FPssestate(addr) {
+	complex FPssestate addr;
+	print("	fcw	", addr.fcw, "\n");
+	print("	fsw	", addr.fsw, "\n");
+	print("	ftw	", addr.ftw, "\n");
+	print("	fop	", addr.fop, "\n");
+	print("	fpuip	", addr.fpuip, "\n");
+	print("	cs	", addr.cs, "\n");
+	print("	rsrvd1	", addr.rsrvd1, "\n");
+	print("	fpudp	", addr.fpudp, "\n");
+	print("	ds	", addr.ds, "\n");
+	print("	rsrvd2	", addr.rsrvd2, "\n");
+	print("	mxcsr	", addr.mxcsr, "\n");
+	print("	mxcsr_mask	", addr.mxcsr_mask, "\n");
+	print("	xregs	", addr.xregs, "\n");
+};
+
+sizeofFPsave = 512;
+aggr FPsave
+{
+	{
+	'u' 0 control;
+	'u' 2 r1;
+	'u' 4 status;
+	'u' 6 r2;
+	'u' 8 tag;
+	'u' 10 r3;
+	'U' 12 pc;
+	'u' 16 selector;
+	'u' 18 opcode;
+	'U' 20 operand;
+	'u' 24 oselector;
+	'u' 26 r4;
+	'a' 28 regs;
+	};
+	{
+	'u' 0 fcw;
+	'u' 2 fsw;
+	'u' 4 ftw;
+	'u' 6 fop;
+	'U' 8 fpuip;
+	'u' 12 cs;
+	'u' 14 rsrvd1;
+	'U' 16 fpudp;
+	'u' 20 ds;
+	'u' 22 rsrvd2;
+	'U' 24 mxcsr;
+	'U' 28 mxcsr_mask;
+	'a' 32 xregs;
+	};
+};
+
+defn
+FPsave(addr) {
+	complex FPsave addr;
+	print("FPx87state {\n");
+		FPx87state(addr+0);
+	print("}\n");
+	print("FPssestate {\n");
+		FPssestate(addr+0);
+	print("}\n");
+};
+
+sizeofPFPU = 8;
+aggr PFPU
+{
+	'D' 0 fpstate;
+	'A' FPsave 4 fpsave;
+};
+
+defn
+PFPU(addr) {
+	complex PFPU addr;
+	print("	fpstate	", addr.fpstate, "\n");
+	print("	fpsave	", addr.fpsave\X, "\n");
+};
+
+FPinit = 0;
+FPactive = 1;
+FPinactive = 2;
+FPillegal = 256;
+sizeofConfmem = 16;
+aggr Confmem
+{
+	'U' 0 base;
+	'U' 4 npage;
+	'U' 8 kbase;
+	'U' 12 klimit;
+};
+
+defn
+Confmem(addr) {
+	complex Confmem addr;
+	print("	base	", addr.base, "\n");
+	print("	npage	", addr.npage, "\n");
+	print("	kbase	", addr.kbase, "\n");
+	print("	klimit	", addr.klimit, "\n");
+};
+
+sizeofConf = 120;
+aggr Conf
+{
+	'U' 0 nmach;
+	'U' 4 nproc;
+	'U' 8 monitor;
+	'a' 12 mem;
+	'U' 76 npage;
+	'U' 80 upages;
+	'U' 84 nimage;
+	'U' 88 nswap;
+	'D' 92 nswppo;
+	'U' 96 base0;
+	'U' 100 base1;
+	'U' 104 copymode;
+	'U' 108 ialloc;
+	'U' 112 pipeqsize;
+	'D' 116 nuart;
+};
+
+defn
+Conf(addr) {
+	complex Conf addr;
+	print("	nmach	", addr.nmach, "\n");
+	print("	nproc	", addr.nproc, "\n");
+	print("	monitor	", addr.monitor, "\n");
+	print("	mem	", addr.mem, "\n");
+	print("	npage	", addr.npage, "\n");
+	print("	upages	", addr.upages, "\n");
+	print("	nimage	", addr.nimage, "\n");
+	print("	nswap	", addr.nswap, "\n");
+	print("	nswppo	", addr.nswppo, "\n");
+	print("	base0	", addr.base0, "\n");
+	print("	base1	", addr.base1, "\n");
+	print("	copymode	", addr.copymode, "\n");
+	print("	ialloc	", addr.ialloc, "\n");
+	print("	pipeqsize	", addr.pipeqsize, "\n");
+	print("	nuart	", addr.nuart, "\n");
+};
+
+sizeofSegdesc = 8;
+aggr Segdesc
+{
+	'U' 0 d0;
+	'U' 4 d1;
+};
+
+defn
+Segdesc(addr) {
+	complex Segdesc addr;
+	print("	d0	", addr.d0, "\n");
+	print("	d1	", addr.d1, "\n");
+};
+
+sizeofPMMU = 92;
+aggr PMMU
+{
+	'X' 0 mmupdb;
+	'X' 4 mmufree;
+	'X' 8 mmuused;
+	'X' 12 kmaptable;
+	'U' 16 lastkmap;
+	'D' 20 nkmap;
+	'a' 24 gdt;
+	'A' Segdesc 48 ldt;
+	'D' 52 nldt;
+	'a' 56 dr;
+	'X' 88 vmx;
+};
+
+defn
+PMMU(addr) {
+	complex PMMU addr;
+	print("	mmupdb	", addr.mmupdb\X, "\n");
+	print("	mmufree	", addr.mmufree\X, "\n");
+	print("	mmuused	", addr.mmuused\X, "\n");
+	print("	kmaptable	", addr.kmaptable\X, "\n");
+	print("	lastkmap	", addr.lastkmap, "\n");
+	print("	nkmap	", addr.nkmap, "\n");
+	print("	gdt	", addr.gdt, "\n");
+	print("	ldt	", addr.ldt\X, "\n");
+	print("	nldt	", addr.nldt, "\n");
+	print("	dr	", addr.dr, "\n");
+	print("	vmx	", addr.vmx\X, "\n");
+};
+
+sizeof_2_ = 8;
+aggr _2_
+{
+	'U' 0 msize;
+	'X' 4 version;
+};
+
+defn
+_2_(addr) {
+	complex _2_ addr;
+	print("	msize	", addr.msize, "\n");
+	print("	version	", addr.version\X, "\n");
+};
+
+sizeof_3_ = 4;
+aggr _3_
+{
+	'u' 0 oldtag;
+};
+
+defn
+_3_(addr) {
+	complex _3_ addr;
+	print("	oldtag	", addr.oldtag, "\n");
+};
+
+sizeof_4_ = 4;
+aggr _4_
+{
+	'X' 0 ename;
+};
+
+defn
+_4_(addr) {
+	complex _4_ addr;
+	print("	ename	", addr.ename\X, "\n");
+};
+
+sizeof_5_ = 20;
+aggr _5_
+{
+	Qid 0 qid;
+	'U' 16 iounit;
+};
+
+defn
+_5_(addr) {
+	complex _5_ addr;
+	print("Qid qid {\n");
+	Qid(addr.qid);
+	print("}\n");
+	print("	iounit	", addr.iounit, "\n");
+};
+
+sizeof_6_ = 16;
+aggr _6_
+{
+	Qid 0 aqid;
+};
+
+defn
+_6_(addr) {
+	complex _6_ addr;
+	print("Qid aqid {\n");
+	Qid(addr.aqid);
+	print("}\n");
+};
+
+sizeof_7_ = 12;
+aggr _7_
+{
+	'U' 0 afid;
+	'X' 4 uname;
+	'X' 8 aname;
+};
+
+defn
+_7_(addr) {
+	complex _7_ addr;
+	print("	afid	", addr.afid, "\n");
+	print("	uname	", addr.uname\X, "\n");
+	print("	aname	", addr.aname\X, "\n");
+};
+
+sizeof_8_ = 12;
+aggr _8_
+{
+	'U' 0 perm;
+	'X' 4 name;
+	'b' 8 mode;
+};
+
+defn
+_8_(addr) {
+	complex _8_ addr;
+	print("	perm	", addr.perm, "\n");
+	print("	name	", addr.name\X, "\n");
+	print("	mode	", addr.mode, "\n");
+};
+
+sizeof_9_ = 72;
+aggr _9_
+{
+	'U' 0 newfid;
+	'u' 4 nwname;
+	'a' 8 wname;
+};
+
+defn
+_9_(addr) {
+	complex _9_ addr;
+	print("	newfid	", addr.newfid, "\n");
+	print("	nwname	", addr.nwname, "\n");
+	print("	wname	", addr.wname, "\n");
+};
+
+sizeof_10_ = 260;
+aggr _10_
+{
+	'u' 0 nwqid;
+	'a' 4 wqid;
+};
+
+defn
+_10_(addr) {
+	complex _10_ addr;
+	print("	nwqid	", addr.nwqid, "\n");
+	print("	wqid	", addr.wqid, "\n");
+};
+
+sizeof_11_ = 16;
+aggr _11_
+{
+	'V' 0 offset;
+	'U' 8 count;
+	'X' 12 data;
+};
+
+defn
+_11_(addr) {
+	complex _11_ addr;
+	print("	offset	", addr.offset, "\n");
+	print("	count	", addr.count, "\n");
+	print("	data	", addr.data\X, "\n");
+};
+
+sizeof_12_ = 8;
+aggr _12_
+{
+	'u' 0 nstat;
+	'X' 4 stat;
+};
+
+defn
+_12_(addr) {
+	complex _12_ addr;
+	print("	nstat	", addr.nstat, "\n");
+	print("	stat	", addr.stat\X, "\n");
+};
+
+sizeof_13_ = 260;
+aggr _13_
+{
+	{
+	'U' 0 msize;
+	'X' 4 version;
+	};
+	{
+	'u' 0 oldtag;
+	};
+	{
+	'X' 0 ename;
+	};
+	{
+	Qid 0 qid;
+	'U' 16 iounit;
+	};
+	{
+	Qid 0 aqid;
+	};
+	{
+	'U' 0 afid;
+	'X' 4 uname;
+	'X' 8 aname;
+	};
+	{
+	'U' 0 perm;
+	'X' 4 name;
+	'b' 8 mode;
+	};
+	{
+	'U' 0 newfid;
+	'u' 4 nwname;
+	'a' 8 wname;
+	};
+	{
+	'u' 0 nwqid;
+	'a' 4 wqid;
+	};
+	{
+	'V' 0 offset;
+	'U' 8 count;
+	'X' 12 data;
+	};
+	{
+	'u' 0 nstat;
+	'X' 4 stat;
+	};
+};
+
+defn
+_13_(addr) {
+	complex _13_ addr;
+	print("_2_ {\n");
+		_2_(addr+0);
+	print("}\n");
+	print("_3_ {\n");
+		_3_(addr+0);
+	print("}\n");
+	print("_4_ {\n");
+		_4_(addr+0);
+	print("}\n");
+	print("_5_ {\n");
+		_5_(addr+0);
+	print("}\n");
+	print("_6_ {\n");
+		_6_(addr+0);
+	print("}\n");
+	print("_7_ {\n");
+		_7_(addr+0);
+	print("}\n");
+	print("_8_ {\n");
+		_8_(addr+0);
+	print("}\n");
+	print("_9_ {\n");
+		_9_(addr+0);
+	print("}\n");
+	print("_10_ {\n");
+		_10_(addr+0);
+	print("}\n");
+	print("_11_ {\n");
+		_11_(addr+0);
+	print("}\n");
+	print("_12_ {\n");
+		_12_(addr+0);
+	print("}\n");
+};
+
+sizeofFcall = 272;
+aggr Fcall
+{
+	'b' 0 type;
+	'U' 4 fid;
+	'u' 8 tag;
+	{
+	{
+	'U' 12 msize;
+	'X' 16 version;
+	};
+	{
+	'u' 12 oldtag;
+	};
+	{
+	'X' 12 ename;
+	};
+	{
+	Qid 12 qid;
+	'U' 28 iounit;
+	};
+	{
+	Qid 12 aqid;
+	};
+	{
+	'U' 12 afid;
+	'X' 16 uname;
+	'X' 20 aname;
+	};
+	{
+	'U' 12 perm;
+	'X' 16 name;
+	'b' 20 mode;
+	};
+	{
+	'U' 12 newfid;
+	'u' 16 nwname;
+	'a' 20 wname;
+	};
+	{
+	'u' 12 nwqid;
+	'a' 16 wqid;
+	};
+	{
+	'V' 12 offset;
+	'U' 20 count;
+	'X' 24 data;
+	};
+	{
+	'u' 12 nstat;
+	'X' 16 stat;
+	};
+	};
+};
+
+defn
+Fcall(addr) {
+	complex Fcall addr;
+	print("	type	", addr.type, "\n");
+	print("	fid	", addr.fid, "\n");
+	print("	tag	", addr.tag, "\n");
+	print("_13_ {\n");
+		_13_(addr+12);
+	print("}\n");
+};
+
+Tversion = 100;
+Rversion = 101;
+Tauth = 102;
+Rauth = 103;
+Tattach = 104;
+Rattach = 105;
+Terror = 106;
+Rerror = 107;
+Tflush = 108;
+Rflush = 109;
+Twalk = 110;
+Rwalk = 111;
+Topen = 112;
+Ropen = 113;
+Tcreate = 114;
+Rcreate = 115;
+Tread = 116;
+Rread = 117;
+Twrite = 118;
+Rwrite = 119;
+Tclunk = 120;
+Rclunk = 121;
+Tremove = 122;
+Rremove = 123;
+Tstat = 124;
+Rstat = 125;
+Twstat = 126;
+Rwstat = 127;
+Tmax = 128;
+sizeofRef = 4;
+aggr Ref
+{
+	'D' 0 ref;
+};
+
+defn
+Ref(addr) {
+	complex Ref addr;
+	print("	ref	", addr.ref, "\n");
+};
+
+sizeofRendez = 32;
+aggr Rendez
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'X' 28 p;
+};
+
+defn
+Rendez(addr) {
+	complex Rendez addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	p	", addr.p\X, "\n");
+};
+
+sizeofQLock = 40;
+aggr QLock
+{
+	Lock 0 use;
+	'X' 28 $head;
+	'X' 32 $tail;
+	'D' 36 locked;
+};
+
+defn
+QLock(addr) {
+	complex QLock addr;
+	print("Lock use {\n");
+	Lock(addr.use);
+	print("}\n");
+	print("	$head	", addr.$head\X, "\n");
+	print("	$tail	", addr.$tail\X, "\n");
+	print("	locked	", addr.locked, "\n");
+};
+
+sizeofRendezq = 72;
+aggr Rendezq
+{
+	{
+	Lock 0 use;
+	'X' 28 $head;
+	'X' 32 $tail;
+	'D' 36 locked;
+	};
+	{
+	{
+	'U' 40 key;
+	'U' 44 sr;
+	'U' 48 pc;
+	'X' 52 p;
+	'X' 56 m;
+	'u' 60 isilock;
+	'D' 64 lockcycles;
+	};
+	'X' 68 p;
+	};
+};
+
+defn
+Rendezq(addr) {
+	complex Rendezq addr;
+	print("QLock {\n");
+		QLock(addr+0);
+	print("}\n");
+	print("Rendez {\n");
+		Rendez(addr+40);
+	print("}\n");
+};
+
+sizeofRWlock = 52;
+aggr RWlock
+{
+	Lock 0 use;
+	'X' 28 $head;
+	'X' 32 $tail;
+	'U' 36 wpc;
+	'X' 40 wproc;
+	'D' 44 readers;
+	'D' 48 writer;
+};
+
+defn
+RWlock(addr) {
+	complex RWlock addr;
+	print("Lock use {\n");
+	Lock(addr.use);
+	print("}\n");
+	print("	$head	", addr.$head\X, "\n");
+	print("	$tail	", addr.$tail\X, "\n");
+	print("	wpc	", addr.wpc, "\n");
+	print("	wproc	", addr.wproc\X, "\n");
+	print("	readers	", addr.readers, "\n");
+	print("	writer	", addr.writer, "\n");
+};
+
+sizeofAlarms = 44;
+aggr Alarms
+{
+	{
+	Lock 0 use;
+	'X' 28 $head;
+	'X' 32 $tail;
+	'D' 36 locked;
+	};
+	'X' 40 $head;
+};
+
+defn
+Alarms(addr) {
+	complex Alarms addr;
+	print("QLock {\n");
+		QLock(addr+0);
+	print("}\n");
+	print("	$head	", addr.$head\X, "\n");
+};
+
+sizeofSargs = 20;
+aggr Sargs
+{
+	'a' 0 args;
+};
+
+defn
+Sargs(addr) {
+	complex Sargs addr;
+	print("	args	", addr.args, "\n");
+};
+
+Aaccess = 0;
+Abind = 1;
+Atodir = 2;
+Aopen = 3;
+Amount = 4;
+Acreate = 5;
+Aremove = 6;
+COPEN = 1;
+CMSG = 2;
+CCEXEC = 8;
+CFREE = 16;
+CRCLOSE = 32;
+CCACHE = 128;
+BINTR = 1;
+BFREE = 2;
+Bipck = 4;
+Budpck = 8;
+Btcpck = 16;
+Bpktck = 32;
+sizeofBlock = 32;
+aggr Block
+{
+	'A' Block 0 next;
+	'A' Block 4 list;
+	'X' 8 rp;
+	'X' 12 wp;
+	'X' 16 lim;
+	'X' 20 base;
+	'X' 24 free;
+	'u' 28 flag;
+	'u' 30 checksum;
+};
+
+defn
+Block(addr) {
+	complex Block addr;
+	print("	next	", addr.next\X, "\n");
+	print("	list	", addr.list\X, "\n");
+	print("	rp	", addr.rp\X, "\n");
+	print("	wp	", addr.wp\X, "\n");
+	print("	lim	", addr.lim\X, "\n");
+	print("	base	", addr.base\X, "\n");
+	print("	free	", addr.free\X, "\n");
+	print("	flag	", addr.flag, "\n");
+	print("	checksum	", addr.checksum, "\n");
+};
+
+sizeof_14_ = 16;
+aggr _14_
+{
+	'X' 0 aux;
+	Qid 0 pgrpid;
+	'U' 0 mid;
+};
+
+defn
+_14_(addr) {
+	complex _14_ addr;
+	print("	aux	", addr.aux\X, "\n");
+	print("Qid pgrpid {\n");
+	Qid(addr.pgrpid);
+	print("}\n");
+	print("	mid	", addr.mid, "\n");
+};
+
+sizeofChan = 252;
+aggr Chan
+{
+	{
+	'D' 0 ref;
+	};
+	{
+	'U' 4 key;
+	'U' 8 sr;
+	'U' 12 pc;
+	'X' 16 p;
+	'X' 20 m;
+	'u' 24 isilock;
+	'D' 28 lockcycles;
+	};
+	'A' Chan 32 next;
+	'A' Chan 36 link;
+	'V' 40 offset;
+	'V' 48 devoffset;
+	'u' 56 type;
+	'U' 60 dev;
+	'u' 64 mode;
+	'u' 66 flag;
+	Qid 68 qid;
+	'D' 84 fid;
+	'U' 88 iounit;
+	'X' 92 umh;
+	'A' Chan 96 umc;
+	QLock 100 umqlock;
+	'D' 140 uri;
+	'D' 144 dri;
+	'X' 148 dirrock;
+	'D' 152 nrock;
+	'D' 156 mrock;
+	QLock 160 rockqlock;
+	'D' 200 ismtpt;
+	'X' 204 mcp;
+	'X' 208 mux;
+	{
+	'X' 212 aux;
+	Qid 212 pgrpid;
+	'U' 212 mid;
+	};
+	'A' Chan 228 mchan;
+	Qid 232 mqid;
+	'X' 248 path;
+};
+
+defn
+Chan(addr) {
+	complex Chan addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("Lock {\n");
+		Lock(addr+4);
+	print("}\n");
+	print("	next	", addr.next\X, "\n");
+	print("	link	", addr.link\X, "\n");
+	print("	offset	", addr.offset, "\n");
+	print("	devoffset	", addr.devoffset, "\n");
+	print("	type	", addr.type, "\n");
+	print("	dev	", addr.dev, "\n");
+	print("	mode	", addr.mode, "\n");
+	print("	flag	", addr.flag, "\n");
+	print("Qid qid {\n");
+	Qid(addr.qid);
+	print("}\n");
+	print("	fid	", addr.fid, "\n");
+	print("	iounit	", addr.iounit, "\n");
+	print("	umh	", addr.umh\X, "\n");
+	print("	umc	", addr.umc\X, "\n");
+	print("QLock umqlock {\n");
+	QLock(addr.umqlock);
+	print("}\n");
+	print("	uri	", addr.uri, "\n");
+	print("	dri	", addr.dri, "\n");
+	print("	dirrock	", addr.dirrock\X, "\n");
+	print("	nrock	", addr.nrock, "\n");
+	print("	mrock	", addr.mrock, "\n");
+	print("QLock rockqlock {\n");
+	QLock(addr.rockqlock);
+	print("}\n");
+	print("	ismtpt	", addr.ismtpt, "\n");
+	print("	mcp	", addr.mcp\X, "\n");
+	print("	mux	", addr.mux\X, "\n");
+	print("_14_ {\n");
+		_14_(addr+212);
+	print("}\n");
+	print("	mchan	", addr.mchan\X, "\n");
+	print("Qid mqid {\n");
+	Qid(addr.mqid);
+	print("}\n");
+	print("	path	", addr.path\X, "\n");
+};
+
+sizeofPath = 28;
+aggr Path
+{
+	{
+	'D' 0 ref;
+	};
+	'X' 4 s;
+	'A' Chan 8 mtpt;
+	'D' 12 len;
+	'D' 16 alen;
+	'D' 20 mlen;
+	'D' 24 malen;
+};
+
+defn
+Path(addr) {
+	complex Path addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("	s	", addr.s\X, "\n");
+	print("	mtpt	", addr.mtpt\X, "\n");
+	print("	len	", addr.len, "\n");
+	print("	alen	", addr.alen, "\n");
+	print("	mlen	", addr.mlen, "\n");
+	print("	malen	", addr.malen, "\n");
+};
+
+sizeofDev = 76;
+aggr Dev
+{
+	'D' 0 dc;
+	'X' 4 name;
+	'X' 8 reset;
+	'X' 12 init;
+	'X' 16 shutdown;
+	'X' 20 attach;
+	'X' 24 walk;
+	'X' 28 stat;
+	'X' 32 open;
+	'X' 36 create;
+	'X' 40 close;
+	'X' 44 read;
+	'X' 48 bread;
+	'X' 52 write;
+	'X' 56 bwrite;
+	'X' 60 remove;
+	'X' 64 wstat;
+	'X' 68 power;
+	'X' 72 config;
+};
+
+defn
+Dev(addr) {
+	complex Dev addr;
+	print("	dc	", addr.dc, "\n");
+	print("	name	", addr.name\X, "\n");
+	print("	reset	", addr.reset\X, "\n");
+	print("	init	", addr.init\X, "\n");
+	print("	shutdown	", addr.shutdown\X, "\n");
+	print("	attach	", addr.attach\X, "\n");
+	print("	walk	", addr.walk\X, "\n");
+	print("	stat	", addr.stat\X, "\n");
+	print("	open	", addr.open\X, "\n");
+	print("	create	", addr.create\X, "\n");
+	print("	close	", addr.close\X, "\n");
+	print("	read	", addr.read\X, "\n");
+	print("	bread	", addr.bread\X, "\n");
+	print("	write	", addr.write\X, "\n");
+	print("	bwrite	", addr.bwrite\X, "\n");
+	print("	remove	", addr.remove\X, "\n");
+	print("	wstat	", addr.wstat\X, "\n");
+	print("	power	", addr.power\X, "\n");
+	print("	config	", addr.config\X, "\n");
+};
+
+sizeofDirtab = 56;
+aggr Dirtab
+{
+	'a' 0 name;
+	Qid 28 qid;
+	'V' 44 length;
+	'D' 52 perm;
+};
+
+defn
+Dirtab(addr) {
+	complex Dirtab addr;
+	print("	name	", addr.name, "\n");
+	print("Qid qid {\n");
+	Qid(addr.qid);
+	print("}\n");
+	print("	length	", addr.length, "\n");
+	print("	perm	", addr.perm, "\n");
+};
+
+sizeofWalkqid = 24;
+aggr Walkqid
+{
+	'A' Chan 0 clone;
+	'D' 4 nqid;
+	'a' 8 qid;
+};
+
+defn
+Walkqid(addr) {
+	complex Walkqid addr;
+	print("	clone	", addr.clone\X, "\n");
+	print("	nqid	", addr.nqid, "\n");
+	print("	qid	", addr.qid, "\n");
+};
+
+sizeofMount = 24;
+aggr Mount
+{
+	'U' 0 mountid;
+	'D' 4 mflag;
+	'A' Mount 8 next;
+	'A' Mount 12 order;
+	'A' Chan 16 to;
+	'X' 20 spec;
+};
+
+defn
+Mount(addr) {
+	complex Mount addr;
+	print("	mountid	", addr.mountid, "\n");
+	print("	mflag	", addr.mflag, "\n");
+	print("	next	", addr.next\X, "\n");
+	print("	order	", addr.order\X, "\n");
+	print("	to	", addr.to\X, "\n");
+	print("	spec	", addr.spec\X, "\n");
+};
+
+sizeofMhead = 68;
+aggr Mhead
+{
+	{
+	'D' 0 ref;
+	};
+	RWlock 4 lock;
+	'A' Chan 56 from;
+	'A' Mount 60 mount;
+	'A' Mhead 64 hash;
+};
+
+defn
+Mhead(addr) {
+	complex Mhead addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("RWlock lock {\n");
+	RWlock(addr.lock);
+	print("}\n");
+	print("	from	", addr.from\X, "\n");
+	print("	mount	", addr.mount\X, "\n");
+	print("	hash	", addr.hash\X, "\n");
+};
+
+sizeofMntrah = 88;
+aggr Mntrah
+{
+	{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'X' 28 p;
+	};
+	'U' 32 vers;
+	'V' 36 off;
+	'V' 44 seq;
+	'U' 52 i;
+	'a' 56 r;
+};
+
+defn
+Mntrah(addr) {
+	complex Mntrah addr;
+	print("Rendez {\n");
+		Rendez(addr+0);
+	print("}\n");
+	print("	vers	", addr.vers, "\n");
+	print("	off	", addr.off, "\n");
+	print("	seq	", addr.seq, "\n");
+	print("	i	", addr.i, "\n");
+	print("	r	", addr.r, "\n");
+};
+
+sizeofMntproc = 48;
+aggr Mntproc
+{
+	{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'X' 28 p;
+	};
+	'X' 32 m;
+	'X' 36 r;
+	'X' 40 a;
+	'X' 44 f;
+};
+
+defn
+Mntproc(addr) {
+	complex Mntproc addr;
+	print("Rendez {\n");
+		Rendez(addr+0);
+	print("}\n");
+	print("	m	", addr.m\X, "\n");
+	print("	r	", addr.r\X, "\n");
+	print("	a	", addr.a\X, "\n");
+	print("	f	", addr.f\X, "\n");
+};
+
+sizeofMnt = 448;
+aggr Mnt
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'A' Chan 28 c;
+	'X' 32 rip;
+	'X' 36 queue;
+	'a' 40 defered;
+	'U' 424 id;
+	'A' Mnt 428 list;
+	'D' 432 flags;
+	'D' 436 msize;
+	'X' 440 version;
+	'X' 444 q;
+};
+
+defn
+Mnt(addr) {
+	complex Mnt addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	c	", addr.c\X, "\n");
+	print("	rip	", addr.rip\X, "\n");
+	print("	queue	", addr.queue\X, "\n");
+	print("	defered	", addr.defered, "\n");
+	print("	id	", addr.id, "\n");
+	print("	list	", addr.list\X, "\n");
+	print("	flags	", addr.flags, "\n");
+	print("	msize	", addr.msize, "\n");
+	print("	version	", addr.version\X, "\n");
+	print("	q	", addr.q\X, "\n");
+};
+
+NUser = 0;
+NExit = 1;
+NDebug = 2;
+sizeofNote = 132;
+aggr Note
+{
+	'a' 0 msg;
+	'D' 128 flag;
+};
+
+defn
+Note(addr) {
+	complex Note addr;
+	print("	msg	", addr.msg, "\n");
+	print("	flag	", addr.flag, "\n");
+};
+
+PG_MOD = 1;
+PG_REF = 2;
+sizeofPage = 32;
+aggr Page
+{
+	{
+	'D' 0 ref;
+	};
+	'A' Page 4 next;
+	'U' 8 pa;
+	'U' 12 va;
+	'U' 16 daddr;
+	'X' 20 image;
+	'U' 24 txtflush;
+	'u' 28 refage;
+	'C' 30 modref;
+	'C' 31 color;
+};
+
+defn
+Page(addr) {
+	complex Page addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("	next	", addr.next\X, "\n");
+	print("	pa	", addr.pa, "\n");
+	print("	va	", addr.va, "\n");
+	print("	daddr	", addr.daddr, "\n");
+	print("	image	", addr.image\X, "\n");
+	print("	txtflush	", addr.txtflush, "\n");
+	print("	refage	", addr.refage, "\n");
+	print("	modref	", addr.modref, "\n");
+	print("	color	", addr.color, "\n");
+};
+
+sizeofSwapalloc = 92;
+aggr Swapalloc
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'D' 28 free;
+	'X' 32 swmap;
+	'X' 36 alloc;
+	'X' 40 last;
+	'X' 44 top;
+	Rendez 48 r;
+	'U' 80 highwater;
+	'U' 84 headroom;
+	'U' 88 xref;
+};
+
+defn
+Swapalloc(addr) {
+	complex Swapalloc addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	free	", addr.free, "\n");
+	print("	swmap	", addr.swmap\X, "\n");
+	print("	alloc	", addr.alloc\X, "\n");
+	print("	last	", addr.last\X, "\n");
+	print("	top	", addr.top\X, "\n");
+	print("Rendez r {\n");
+	Rendez(addr.r);
+	print("}\n");
+	print("	highwater	", addr.highwater, "\n");
+	print("	headroom	", addr.headroom, "\n");
+	print("	xref	", addr.xref, "\n");
+};
+
+complex Swapalloc swapalloc;
+sizeofPte = 1032;
+aggr Pte
+{
+	'a' 0 pages;
+	'A' Page 1024 first;
+	'A' Page 1028 last;
+};
+
+defn
+Pte(addr) {
+	complex Pte addr;
+	print("	pages	", addr.pages, "\n");
+	print("	first	", addr.first\X, "\n");
+	print("	last	", addr.last\X, "\n");
+};
+
+SG_TYPE = 7;
+SG_TEXT = 0;
+SG_DATA = 1;
+SG_BSS = 2;
+SG_STACK = 3;
+SG_SHARED = 4;
+SG_PHYSICAL = 5;
+SG_FIXED = 6;
+SG_STICKY = 7;
+SG_RONLY = 32;
+SG_CEXEC = 64;
+SG_FAULT = 128;
+sizeofPhysseg = 16;
+aggr Physseg
+{
+	'D' 0 attr;
+	'X' 4 name;
+	'U' 8 pa;
+	'U' 12 size;
+};
+
+defn
+Physseg(addr) {
+	complex Physseg addr;
+	print("	attr	", addr.attr, "\n");
+	print("	name	", addr.name\X, "\n");
+	print("	pa	", addr.pa, "\n");
+	print("	size	", addr.size, "\n");
+};
+
+sizeofSema = 48;
+aggr Sema
+{
+	{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'X' 28 p;
+	};
+	'X' 32 addr;
+	'D' 36 waiting;
+	'A' Sema 40 next;
+	'A' Sema 44 prev;
+};
+
+defn
+Sema(addr) {
+	complex Sema addr;
+	print("Rendez {\n");
+		Rendez(addr+0);
+	print("}\n");
+	print("	addr	", addr.addr\X, "\n");
+	print("	waiting	", addr.waiting, "\n");
+	print("	next	", addr.next\X, "\n");
+	print("	prev	", addr.prev\X, "\n");
+};
+
+sizeofSegment = 208;
+aggr Segment
+{
+	{
+	'D' 0 ref;
+	};
+	{
+	Lock 4 use;
+	'X' 32 $head;
+	'X' 36 $tail;
+	'D' 40 locked;
+	};
+	'D' 44 type;
+	'U' 48 base;
+	'U' 52 top;
+	'U' 56 size;
+	'U' 60 fstart;
+	'U' 64 flen;
+	'D' 68 flushme;
+	'X' 72 image;
+	'A' Physseg 76 pseg;
+	'X' 80 profile;
+	'A' Pte 84 map;
+	'D' 88 mapsize;
+	'a' 92 ssegmap;
+	Sema 156 sema;
+	'U' 204 mark;
+};
+
+defn
+Segment(addr) {
+	complex Segment addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("QLock {\n");
+		QLock(addr+4);
+	print("}\n");
+	print("	type	", addr.type, "\n");
+	print("	base	", addr.base, "\n");
+	print("	top	", addr.top, "\n");
+	print("	size	", addr.size, "\n");
+	print("	fstart	", addr.fstart, "\n");
+	print("	flen	", addr.flen, "\n");
+	print("	flushme	", addr.flushme, "\n");
+	print("	image	", addr.image\X, "\n");
+	print("	pseg	", addr.pseg\X, "\n");
+	print("	profile	", addr.profile\X, "\n");
+	print("	map	", addr.map\X, "\n");
+	print("	mapsize	", addr.mapsize, "\n");
+	print("	ssegmap	", addr.ssegmap, "\n");
+	print("Sema sema {\n");
+	Sema(addr.sema);
+	print("}\n");
+	print("	mark	", addr.mark, "\n");
+};
+
+sizeofSegio = 132;
+aggr Segio
+{
+	{
+	Lock 0 use;
+	'X' 28 $head;
+	'X' 32 $tail;
+	'D' 36 locked;
+	};
+	Rendez 40 cmdwait;
+	Rendez 72 replywait;
+	'X' 104 p;
+	'A' Segment 108 s;
+	'X' 112 data;
+	'X' 116 addr;
+	'D' 120 dlen;
+	'D' 124 cmd;
+	'X' 128 err;
+};
+
+defn
+Segio(addr) {
+	complex Segio addr;
+	print("QLock {\n");
+		QLock(addr+0);
+	print("}\n");
+	print("Rendez cmdwait {\n");
+	Rendez(addr.cmdwait);
+	print("}\n");
+	print("Rendez replywait {\n");
+	Rendez(addr.replywait);
+	print("}\n");
+	print("	p	", addr.p\X, "\n");
+	print("	s	", addr.s\X, "\n");
+	print("	data	", addr.data\X, "\n");
+	print("	addr	", addr.addr\X, "\n");
+	print("	dlen	", addr.dlen, "\n");
+	print("	cmd	", addr.cmd, "\n");
+	print("	err	", addr.err\X, "\n");
+};
+
+RENDLOG = 5;
+RENDHASH = 32;
+MNTLOG = 5;
+MNTHASH = 32;
+NFD = 100;
+PGHLOG = 9;
+PGHSIZE = 512;
+sizeofImage = 2124;
+aggr Image
+{
+	{
+	'D' 0 ref;
+	};
+	{
+	'U' 4 key;
+	'U' 8 sr;
+	'U' 12 pc;
+	'X' 16 p;
+	'X' 20 m;
+	'u' 24 isilock;
+	'D' 28 lockcycles;
+	};
+	'A' Chan 32 c;
+	Qid 36 qid;
+	'U' 52 dev;
+	'u' 56 type;
+	'C' 58 notext;
+	'A' Segment 60 s;
+	'A' Image 64 hash;
+	'A' Image 68 next;
+	'D' 72 pgref;
+	'a' 76 pghash;
+};
+
+defn
+Image(addr) {
+	complex Image addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("Lock {\n");
+		Lock(addr+4);
+	print("}\n");
+	print("	c	", addr.c\X, "\n");
+	print("Qid qid {\n");
+	Qid(addr.qid);
+	print("}\n");
+	print("	dev	", addr.dev, "\n");
+	print("	type	", addr.type, "\n");
+	print("	notext	", addr.notext, "\n");
+	print("	s	", addr.s\X, "\n");
+	print("	hash	", addr.hash\X, "\n");
+	print("	next	", addr.next\X, "\n");
+	print("	pgref	", addr.pgref, "\n");
+	print("	pghash	", addr.pghash, "\n");
+};
+
+sizeofPgrp = 192;
+aggr Pgrp
+{
+	{
+	'D' 0 ref;
+	};
+	RWlock 4 ns;
+	'D' 56 noattach;
+	'U' 60 pgrpid;
+	'a' 64 mnthash;
+};
+
+defn
+Pgrp(addr) {
+	complex Pgrp addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("RWlock ns {\n");
+	RWlock(addr.ns);
+	print("}\n");
+	print("	noattach	", addr.noattach, "\n");
+	print("	pgrpid	", addr.pgrpid, "\n");
+	print("	mnthash	", addr.mnthash, "\n");
+};
+
+sizeofRgrp = 160;
+aggr Rgrp
+{
+	{
+	'D' 0 ref;
+	};
+	{
+	'U' 4 key;
+	'U' 8 sr;
+	'U' 12 pc;
+	'X' 16 p;
+	'X' 20 m;
+	'u' 24 isilock;
+	'D' 28 lockcycles;
+	};
+	'a' 32 rendhash;
+};
+
+defn
+Rgrp(addr) {
+	complex Rgrp addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("Lock {\n");
+		Lock(addr+4);
+	print("}\n");
+	print("	rendhash	", addr.rendhash, "\n");
+};
+
+sizeofEgrp = 76;
+aggr Egrp
+{
+	{
+	'D' 0 ref;
+	};
+	{
+	Lock 4 use;
+	'X' 32 $head;
+	'X' 36 $tail;
+	'U' 40 wpc;
+	'X' 44 wproc;
+	'D' 48 readers;
+	'D' 52 writer;
+	};
+	'X' 56 ent;
+	'D' 60 nent;
+	'D' 64 ment;
+	'U' 68 path;
+	'U' 72 vers;
+};
+
+defn
+Egrp(addr) {
+	complex Egrp addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("RWlock {\n");
+		RWlock(addr+4);
+	print("}\n");
+	print("	ent	", addr.ent\X, "\n");
+	print("	nent	", addr.nent, "\n");
+	print("	ment	", addr.ment, "\n");
+	print("	path	", addr.path, "\n");
+	print("	vers	", addr.vers, "\n");
+};
+
+sizeofEvalue = 28;
+aggr Evalue
+{
+	'X' 0 name;
+	'X' 4 value;
+	'D' 8 len;
+	Qid 12 qid;
+};
+
+defn
+Evalue(addr) {
+	complex Evalue addr;
+	print("	name	", addr.name\X, "\n");
+	print("	value	", addr.value\X, "\n");
+	print("	len	", addr.len, "\n");
+	print("Qid qid {\n");
+	Qid(addr.qid);
+	print("}\n");
+};
+
+sizeofFgrp = 48;
+aggr Fgrp
+{
+	{
+	'D' 0 ref;
+	};
+	{
+	'U' 4 key;
+	'U' 8 sr;
+	'U' 12 pc;
+	'X' 16 p;
+	'X' 20 m;
+	'u' 24 isilock;
+	'D' 28 lockcycles;
+	};
+	'A' Chan 32 fd;
+	'D' 36 nfd;
+	'D' 40 maxfd;
+	'D' 44 exceed;
+};
+
+defn
+Fgrp(addr) {
+	complex Fgrp addr;
+	print("Ref {\n");
+		Ref(addr+0);
+	print("}\n");
+	print("Lock {\n");
+		Lock(addr+4);
+	print("}\n");
+	print("	fd	", addr.fd\X, "\n");
+	print("	nfd	", addr.nfd, "\n");
+	print("	maxfd	", addr.maxfd, "\n");
+	print("	exceed	", addr.exceed, "\n");
+};
+
+DELTAFD = 20;
+sizeofPallocmem = 8;
+aggr Pallocmem
+{
+	'U' 0 base;
+	'U' 4 npage;
+};
+
+defn
+Pallocmem(addr) {
+	complex Pallocmem addr;
+	print("	base	", addr.base, "\n");
+	print("	npage	", addr.npage, "\n");
+};
+
+sizeofPalloc = 316;
+aggr Palloc
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'A' Page 28 $head;
+	'U' 32 freecount;
+	'A' Page 36 pages;
+	'U' 40 user;
+	'a' 44 pwait;
+	'a' 188 mem;
+};
+
+defn
+Palloc(addr) {
+	complex Palloc addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	$head	", addr.$head\X, "\n");
+	print("	freecount	", addr.freecount, "\n");
+	print("	pages	", addr.pages\X, "\n");
+	print("	user	", addr.user, "\n");
+	print("	pwait	", addr.pwait, "\n");
+	print("	mem	", addr.mem, "\n");
+};
+
+sizeofWaitq = 148;
+aggr Waitq
+{
+	Waitmsg 0 w;
+	'A' Waitq 144 next;
+};
+
+defn
+Waitq(addr) {
+	complex Waitq addr;
+	print("Waitmsg w {\n");
+	Waitmsg(addr.w);
+	print("}\n");
+	print("	next	", addr.next\X, "\n");
+};
+
+Trelative = 0;
+Tperiodic = 1;
+sizeofTimer = 76;
+aggr Timer
+{
+	'D' 0 tmode;
+	'V' 4 tns;
+	'X' 12 tf;
+	'X' 16 ta;
+	{
+	'U' 20 key;
+	'U' 24 sr;
+	'U' 28 pc;
+	'X' 32 p;
+	'X' 36 m;
+	'u' 40 isilock;
+	'D' 44 lockcycles;
+	};
+	'X' 48 tactive;
+	'X' 52 tt;
+	'V' 56 tticks;
+	'V' 64 twhen;
+	'A' Timer 72 tnext;
+};
+
+defn
+Timer(addr) {
+	complex Timer addr;
+	print("	tmode	", addr.tmode, "\n");
+	print("	tns	", addr.tns, "\n");
+	print("	tf	", addr.tf\X, "\n");
+	print("	ta	", addr.ta\X, "\n");
+	print("Lock {\n");
+		Lock(addr+20);
+	print("}\n");
+	print("	tactive	", addr.tactive\X, "\n");
+	print("	tt	", addr.tt\X, "\n");
+	print("	tticks	", addr.tticks, "\n");
+	print("	twhen	", addr.twhen, "\n");
+	print("	tnext	", addr.tnext\X, "\n");
+};
+
+RFNAMEG = 1;
+RFENVG = 2;
+RFFDG = 4;
+RFNOTEG = 8;
+RFPROC = 16;
+RFMEM = 32;
+RFNOWAIT = 64;
+RFCNAMEG = 1024;
+RFCENVG = 2048;
+RFCFDG = 4096;
+RFREND = 8192;
+RFNOMNT = 16384;
+SSEG = 0;
+TSEG = 1;
+DSEG = 2;
+BSEG = 3;
+ESEG = 4;
+LSEG = 5;
+SEG1 = 6;
+SEG2 = 7;
+SEG3 = 8;
+SEG4 = 9;
+NSEG = 10;
+Dead = 0;
+Moribund = 1;
+Ready = 2;
+Scheding = 3;
+Running = 4;
+Queueing = 5;
+QueueingR = 6;
+QueueingW = 7;
+Wakeme = 8;
+Broken = 9;
+Stopped = 10;
+Rendezvous = 11;
+Waitrelease = 12;
+Proc_stopme = 1;
+Proc_exitme = 2;
+Proc_traceme = 3;
+Proc_exitbig = 4;
+Proc_tracesyscall = 5;
+TUser = 0;
+TSys = 1;
+TReal = 2;
+TCUser = 3;
+TCSys = 4;
+TCReal = 5;
+NERR = 64;
+NNOTE = 5;
+Npriq = 20;
+Nrq = 22;
+PriRelease = 20;
+PriEdf = 21;
+PriNormal = 10;
+PriExtra = 19;
+PriKproc = 13;
+PriRoot = 13;
+sizeofSchedq = 40;
+aggr Schedq
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'X' 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'X' 28 $head;
+	'X' 32 $tail;
+	'D' 36 n;
+};
+
+defn
+Schedq(addr) {
+	complex Schedq addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	$head	", addr.$head\X, "\n");
+	print("	$tail	", addr.$tail\X, "\n");
+	print("	n	", addr.n, "\n");
+};
+
+sizeofProc = 2528;
+aggr Proc
+{
+	Label 0 sched;
+	'X' 8 kstack;
+	'X' 12 mach;
+	'X' 16 text;
+	'X' 20 user;
+	'X' 24 args;
+	'D' 28 nargs;
+	'D' 32 setargs;
+	'A' Proc 36 rnext;
+	'A' Proc 40 qnext;
+	'A' QLock 44 qlock;
+	'D' 48 state;
+	'X' 52 psstate;
+	'a' 56 seg;
+	QLock 96 seglock;
+	'U' 136 pid;
+	'U' 140 noteid;
+	'A' Proc 144 pidhash;
+	Lock 148 exl;
+	'A' Waitq 176 waitq;
+	'D' 180 nchild;
+	'D' 184 nwait;
+	QLock 188 qwaitr;
+	Rendez 228 waitr;
+	'A' Proc 260 parent;
+	'A' Pgrp 264 pgrp;
+	'A' Egrp 268 egrp;
+	'A' Fgrp 272 fgrp;
+	'A' Rgrp 276 rgrp;
+	'A' Fgrp 280 closingfgrp;
+	'U' 284 parentpid;
+	'D' 288 insyscall;
+	'a' 292 time;
+	'W' 316 kentry;
+	'V' 324 pcycles;
+	QLock 332 debug;
+	'A' Proc 372 pdbg;
+	'U' 376 procmode;
+	'D' 380 privatemem;
+	'D' 384 hang;
+	'D' 388 procctl;
+	'U' 392 pc;
+	Lock 396 rlock;
+	'A' Rendez 424 r;
+	Rendez 428 sleep;
+	'D' 460 notepending;
+	'D' 464 kp;
+	'A' Proc 468 palarm;
+	'U' 472 alarm;
+	'D' 476 newtlb;
+	'D' 480 noswap;
+	'U' 484 rendtag;
+	'U' 488 rendval;
+	'A' Proc 492 rendhash;
+	{
+	'D' 496 tmode;
+	'V' 500 tns;
+	'X' 508 tf;
+	'X' 512 ta;
+	{
+	'U' 516 key;
+	'U' 520 sr;
+	'U' 524 pc;
+	'A' Proc 528 p;
+	'X' 532 m;
+	'u' 536 isilock;
+	'D' 540 lockcycles;
+	};
+	'X' 544 tactive;
+	'X' 548 tt;
+	'V' 552 tticks;
+	'V' 560 twhen;
+	'A' Timer 568 tnext;
+	};
+	'A' Rendez 572 trend;
+	'X' 576 tfn;
+	'X' 580 kpfun;
+	'X' 584 kparg;
+	'D' 588 scallnr;
+	Sargs 592 s;
+	'D' 612 nerrlab;
+	'a' 616 errlab;
+	'X' 1128 syserrstr;
+	'X' 1132 errstr;
+	'a' 1136 errbuf0;
+	'a' 1264 errbuf1;
+	'a' 1392 genbuf;
+	'A' Chan 1520 slash;
+	'A' Chan 1524 dot;
+	'a' 1528 note;
+	'd' 2188 nnote;
+	'd' 2190 notified;
+	Note 2192 lastnote;
+	'X' 2324 notify;
+	'A' Lock 2328 lockwait;
+	'A' Lock 2332 lastlock;
+	'A' Lock 2336 lastilock;
+	'X' 2340 wired;
+	'X' 2344 mp;
+	'D' 2348 nlocks;
+	'U' 2352 delaysched;
+	'U' 2356 priority;
+	'U' 2360 basepri;
+	'b' 2364 fixedpri;
+	'U' 2368 cpu;
+	'U' 2372 lastupdate;
+	'b' 2376 yield;
+	'U' 2380 readytime;
+	'U' 2384 movetime;
+	'D' 2388 preempted;
+	'X' 2392 edf;
+	'D' 2396 trace;
+	'U' 2400 qpc;
+	'A' QLock 2404 eql;
+	'X' 2408 ureg;
+	'X' 2412 dbgreg;
+	{
+	'D' 2416 fpstate;
+	'A' FPsave 2420 fpsave;
+	};
+	{
+	'A' Page 2424 mmupdb;
+	'A' Page 2428 mmufree;
+	'A' Page 2432 mmuused;
+	'A' Page 2436 kmaptable;
+	'U' 2440 lastkmap;
+	'D' 2444 nkmap;
+	'a' 2448 gdt;
+	'A' Segdesc 2472 ldt;
+	'D' 2476 nldt;
+	'a' 2480 dr;
+	'X' 2512 vmx;
+	};
+	'X' 2516 syscalltrace;
+	'X' 2520 watchpt;
+	'D' 2524 nwatchpt;
+};
+
+defn
+Proc(addr) {
+	complex Proc addr;
+	print("Label sched {\n");
+	Label(addr.sched);
+	print("}\n");
+	print("	kstack	", addr.kstack\X, "\n");
+	print("	mach	", addr.mach\X, "\n");
+	print("	text	", addr.text\X, "\n");
+	print("	user	", addr.user\X, "\n");
+	print("	args	", addr.args\X, "\n");
+	print("	nargs	", addr.nargs, "\n");
+	print("	setargs	", addr.setargs, "\n");
+	print("	rnext	", addr.rnext\X, "\n");
+	print("	qnext	", addr.qnext\X, "\n");
+	print("	qlock	", addr.qlock\X, "\n");
+	print("	state	", addr.state, "\n");
+	print("	psstate	", addr.psstate\X, "\n");
+	print("	seg	", addr.seg, "\n");
+	print("QLock seglock {\n");
+	QLock(addr.seglock);
+	print("}\n");
+	print("	pid	", addr.pid, "\n");
+	print("	noteid	", addr.noteid, "\n");
+	print("	pidhash	", addr.pidhash\X, "\n");
+	print("Lock exl {\n");
+	Lock(addr.exl);
+	print("}\n");
+	print("	waitq	", addr.waitq\X, "\n");
+	print("	nchild	", addr.nchild, "\n");
+	print("	nwait	", addr.nwait, "\n");
+	print("QLock qwaitr {\n");
+	QLock(addr.qwaitr);
+	print("}\n");
+	print("Rendez waitr {\n");
+	Rendez(addr.waitr);
+	print("}\n");
+	print("	parent	", addr.parent\X, "\n");
+	print("	pgrp	", addr.pgrp\X, "\n");
+	print("	egrp	", addr.egrp\X, "\n");
+	print("	fgrp	", addr.fgrp\X, "\n");
+	print("	rgrp	", addr.rgrp\X, "\n");
+	print("	closingfgrp	", addr.closingfgrp\X, "\n");
+	print("	parentpid	", addr.parentpid, "\n");
+	print("	insyscall	", addr.insyscall, "\n");
+	print("	time	", addr.time, "\n");
+	print("	kentry	", addr.kentry, "\n");
+	print("	pcycles	", addr.pcycles, "\n");
+	print("QLock debug {\n");
+	QLock(addr.debug);
+	print("}\n");
+	print("	pdbg	", addr.pdbg\X, "\n");
+	print("	procmode	", addr.procmode, "\n");
+	print("	privatemem	", addr.privatemem, "\n");
+	print("	hang	", addr.hang, "\n");
+	print("	procctl	", addr.procctl, "\n");
+	print("	pc	", addr.pc, "\n");
+	print("Lock rlock {\n");
+	Lock(addr.rlock);
+	print("}\n");
+	print("	r	", addr.r\X, "\n");
+	print("Rendez sleep {\n");
+	Rendez(addr.sleep);
+	print("}\n");
+	print("	notepending	", addr.notepending, "\n");
+	print("	kp	", addr.kp, "\n");
+	print("	palarm	", addr.palarm\X, "\n");
+	print("	alarm	", addr.alarm, "\n");
+	print("	newtlb	", addr.newtlb, "\n");
+	print("	noswap	", addr.noswap, "\n");
+	print("	rendtag	", addr.rendtag, "\n");
+	print("	rendval	", addr.rendval, "\n");
+	print("	rendhash	", addr.rendhash\X, "\n");
+	print("Timer {\n");
+		Timer(addr+496);
+	print("}\n");
+	print("	trend	", addr.trend\X, "\n");
+	print("	tfn	", addr.tfn\X, "\n");
+	print("	kpfun	", addr.kpfun\X, "\n");
+	print("	kparg	", addr.kparg\X, "\n");
+	print("	scallnr	", addr.scallnr, "\n");
+	print("Sargs s {\n");
+	Sargs(addr.s);
+	print("}\n");
+	print("	nerrlab	", addr.nerrlab, "\n");
+	print("	errlab	", addr.errlab, "\n");
+	print("	syserrstr	", addr.syserrstr\X, "\n");
+	print("	errstr	", addr.errstr\X, "\n");
+	print("	errbuf0	", addr.errbuf0, "\n");
+	print("	errbuf1	", addr.errbuf1, "\n");
+	print("	genbuf	", addr.genbuf, "\n");
+	print("	slash	", addr.slash\X, "\n");
+	print("	dot	", addr.dot\X, "\n");
+	print("	note	", addr.note, "\n");
+	print("	nnote	", addr.nnote, "\n");
+	print("	notified	", addr.notified, "\n");
+	print("Note lastnote {\n");
+	Note(addr.lastnote);
+	print("}\n");
+	print("	notify	", addr.notify\X, "\n");
+	print("	lockwait	", addr.lockwait\X, "\n");
+	print("	lastlock	", addr.lastlock\X, "\n");
+	print("	lastilock	", addr.lastilock\X, "\n");
+	print("	wired	", addr.wired\X, "\n");
+	print("	mp	", addr.mp\X, "\n");
+	print("	nlocks	", addr.nlocks, "\n");
+	print("	delaysched	", addr.delaysched, "\n");
+	print("	priority	", addr.priority, "\n");
+	print("	basepri	", addr.basepri, "\n");
+	print("	fixedpri	", addr.fixedpri, "\n");
+	print("	cpu	", addr.cpu, "\n");
+	print("	lastupdate	", addr.lastupdate, "\n");
+	print("	yield	", addr.yield, "\n");
+	print("	readytime	", addr.readytime, "\n");
+	print("	movetime	", addr.movetime, "\n");
+	print("	preempted	", addr.preempted, "\n");
+	print("	edf	", addr.edf\X, "\n");
+	print("	trace	", addr.trace, "\n");
+	print("	qpc	", addr.qpc, "\n");
+	print("	eql	", addr.eql\X, "\n");
+	print("	ureg	", addr.ureg\X, "\n");
+	print("	dbgreg	", addr.dbgreg\X, "\n");
+	print("PFPU {\n");
+		PFPU(addr+2416);
+	print("}\n");
+	print("PMMU {\n");
+		PMMU(addr+2424);
+	print("}\n");
+	print("	syscalltrace	", addr.syscalltrace\X, "\n");
+	print("	watchpt	", addr.watchpt\X, "\n");
+	print("	nwatchpt	", addr.nwatchpt, "\n");
+};
+
+PRINTSIZE = 256;
+NUMSIZE = 12;
+MB = 1048576;
+READSTR = 8000;
+complex Conf conf;
+complex Palloc palloc;
+complex Image swapimage;
+complex Image fscache;
+LRESPROF = 3;
+sizeofLog = 132;
+aggr Log
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'A' Proc 12 p;
+	'X' 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'D' 28 opens;
+	'X' 32 buf;
+	'X' 36 end;
+	'X' 40 rptr;
+	'D' 44 len;
+	'D' 48 nlog;
+	'D' 52 minread;
+	'D' 56 logmask;
+	QLock 60 readq;
+	Rendez 100 readr;
+};
+
+defn
+Log(addr) {
+	complex Log addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	opens	", addr.opens, "\n");
+	print("	buf	", addr.buf\X, "\n");
+	print("	end	", addr.end\X, "\n");
+	print("	rptr	", addr.rptr\X, "\n");
+	print("	len	", addr.len, "\n");
+	print("	nlog	", addr.nlog, "\n");
+	print("	minread	", addr.minread, "\n");
+	print("	logmask	", addr.logmask, "\n");
+	print("QLock readq {\n");
+	QLock(addr.readq);
+	print("}\n");
+	print("Rendez readr {\n");
+	Rendez(addr.readr);
+	print("}\n");
+};
+
+sizeofLogflag = 8;
+aggr Logflag
+{
+	'X' 0 name;
+	'D' 4 mask;
+};
+
+defn
+Logflag(addr) {
+	complex Logflag addr;
+	print("	name	", addr.name\X, "\n");
+	print("	mask	", addr.mask, "\n");
+};
+
+NCMDFIELD = 128;
+sizeofCmdbuf = 12;
+aggr Cmdbuf
+{
+	'X' 0 buf;
+	'X' 4 f;
+	'D' 8 nf;
+};
+
+defn
+Cmdbuf(addr) {
+	complex Cmdbuf addr;
+	print("	buf	", addr.buf\X, "\n");
+	print("	f	", addr.f\X, "\n");
+	print("	nf	", addr.nf, "\n");
+};
+
+sizeofCmdtab = 12;
+aggr Cmdtab
+{
+	'D' 0 index;
+	'X' 4 cmd;
+	'D' 8 narg;
+};
+
+defn
+Cmdtab(addr) {
+	complex Cmdtab addr;
+	print("	index	", addr.index, "\n");
+	print("	cmd	", addr.cmd\X, "\n");
+	print("	narg	", addr.narg, "\n");
+};
+
+sizeofPhysUart = 72;
+aggr PhysUart
+{
+	'X' 0 name;
+	'X' 4 pnp;
+	'X' 8 enable;
+	'X' 12 disable;
+	'X' 16 kick;
+	'X' 20 dobreak;
+	'X' 24 baud;
+	'X' 28 bits;
+	'X' 32 stop;
+	'X' 36 parity;
+	'X' 40 modemctl;
+	'X' 44 rts;
+	'X' 48 dtr;
+	'X' 52 status;
+	'X' 56 fifo;
+	'X' 60 power;
+	'X' 64 getc;
+	'X' 68 putc;
+};
+
+defn
+PhysUart(addr) {
+	complex PhysUart addr;
+	print("	name	", addr.name\X, "\n");
+	print("	pnp	", addr.pnp\X, "\n");
+	print("	enable	", addr.enable\X, "\n");
+	print("	disable	", addr.disable\X, "\n");
+	print("	kick	", addr.kick\X, "\n");
+	print("	dobreak	", addr.dobreak\X, "\n");
+	print("	baud	", addr.baud\X, "\n");
+	print("	bits	", addr.bits\X, "\n");
+	print("	stop	", addr.stop\X, "\n");
+	print("	parity	", addr.parity\X, "\n");
+	print("	modemctl	", addr.modemctl\X, "\n");
+	print("	rts	", addr.rts\X, "\n");
+	print("	dtr	", addr.dtr\X, "\n");
+	print("	status	", addr.status\X, "\n");
+	print("	fifo	", addr.fifo\X, "\n");
+	print("	power	", addr.power\X, "\n");
+	print("	getc	", addr.getc\X, "\n");
+	print("	putc	", addr.putc\X, "\n");
+};
+
+Stagesize = 2048;
+sizeofUart = 4388;
+aggr Uart
+{
+	'X' 0 regs;
+	'X' 4 saveregs;
+	'X' 8 name;
+	'U' 12 freq;
+	'D' 16 bits;
+	'D' 20 stop;
+	'D' 24 parity;
+	'D' 28 baud;
+	'A' PhysUart 32 phys;
+	'D' 36 console;
+	'D' 40 special;
+	'A' Uart 44 next;
+	{
+	Lock 48 use;
+	'A' Proc 76 $head;
+	'A' Proc 80 $tail;
+	'D' 84 locked;
+	};
+	'D' 88 type;
+	'D' 92 dev;
+	'D' 96 opens;
+	'D' 100 enabled;
+	'A' Uart 104 elist;
+	'D' 108 perr;
+	'D' 112 ferr;
+	'D' 116 oerr;
+	'D' 120 berr;
+	'D' 124 serr;
+	'X' 128 putc;
+	'X' 132 iq;
+	'X' 136 oq;
+	Lock 140 rlock;
+	'a' 168 istage;
+	'X' 2216 iw;
+	'X' 2220 ir;
+	'X' 2224 ie;
+	Lock 2228 tlock;
+	'a' 2256 ostage;
+	'X' 4304 op;
+	'X' 4308 oe;
+	'D' 4312 drain;
+	'D' 4316 modem;
+	'D' 4320 xonoff;
+	'D' 4324 blocked;
+	'D' 4328 cts;
+	'D' 4332 dsr;
+	'D' 4336 dcd;
+	'D' 4340 ctsbackoff;
+	'D' 4344 hup_dsr;
+	'D' 4348 hup_dcd;
+	'D' 4352 dohup;
+	Rendez 4356 r;
+};
+
+defn
+Uart(addr) {
+	complex Uart addr;
+	print("	regs	", addr.regs\X, "\n");
+	print("	saveregs	", addr.saveregs\X, "\n");
+	print("	name	", addr.name\X, "\n");
+	print("	freq	", addr.freq, "\n");
+	print("	bits	", addr.bits, "\n");
+	print("	stop	", addr.stop, "\n");
+	print("	parity	", addr.parity, "\n");
+	print("	baud	", addr.baud, "\n");
+	print("	phys	", addr.phys\X, "\n");
+	print("	console	", addr.console, "\n");
+	print("	special	", addr.special, "\n");
+	print("	next	", addr.next\X, "\n");
+	print("QLock {\n");
+		QLock(addr+48);
+	print("}\n");
+	print("	type	", addr.type, "\n");
+	print("	dev	", addr.dev, "\n");
+	print("	opens	", addr.opens, "\n");
+	print("	enabled	", addr.enabled, "\n");
+	print("	elist	", addr.elist\X, "\n");
+	print("	perr	", addr.perr, "\n");
+	print("	ferr	", addr.ferr, "\n");
+	print("	oerr	", addr.oerr, "\n");
+	print("	berr	", addr.berr, "\n");
+	print("	serr	", addr.serr, "\n");
+	print("	putc	", addr.putc\X, "\n");
+	print("	iq	", addr.iq\X, "\n");
+	print("	oq	", addr.oq\X, "\n");
+	print("Lock rlock {\n");
+	Lock(addr.rlock);
+	print("}\n");
+	print("	istage	", addr.istage, "\n");
+	print("	iw	", addr.iw\X, "\n");
+	print("	ir	", addr.ir\X, "\n");
+	print("	ie	", addr.ie\X, "\n");
+	print("Lock tlock {\n");
+	Lock(addr.tlock);
+	print("}\n");
+	print("	ostage	", addr.ostage, "\n");
+	print("	op	", addr.op\X, "\n");
+	print("	oe	", addr.oe\X, "\n");
+	print("	drain	", addr.drain, "\n");
+	print("	modem	", addr.modem, "\n");
+	print("	xonoff	", addr.xonoff, "\n");
+	print("	blocked	", addr.blocked, "\n");
+	print("	cts	", addr.cts, "\n");
+	print("	dsr	", addr.dsr, "\n");
+	print("	dcd	", addr.dcd, "\n");
+	print("	ctsbackoff	", addr.ctsbackoff, "\n");
+	print("	hup_dsr	", addr.hup_dsr, "\n");
+	print("	hup_dcd	", addr.hup_dcd, "\n");
+	print("	dohup	", addr.dohup, "\n");
+	print("Rendez r {\n");
+	Rendez(addr.r);
+	print("}\n");
+};
+
+complex Uart consuart;
+sizeofPerf = 28;
+aggr Perf
+{
+	'U' 0 intrts;
+	'U' 4 inintr;
+	'U' 8 avg_inintr;
+	'U' 12 inidle;
+	'U' 16 avg_inidle;
+	'U' 20 last;
+	'U' 24 period;
+};
+
+defn
+Perf(addr) {
+	complex Perf addr;
+	print("	intrts	", addr.intrts, "\n");
+	print("	inintr	", addr.inintr, "\n");
+	print("	avg_inintr	", addr.avg_inintr, "\n");
+	print("	inidle	", addr.inidle, "\n");
+	print("	avg_inidle	", addr.avg_inidle, "\n");
+	print("	last	", addr.last, "\n");
+	print("	period	", addr.period, "\n");
+};
+
+sizeofWatchdog = 16;
+aggr Watchdog
+{
+	'X' 0 enable;
+	'X' 4 disable;
+	'X' 8 restart;
+	'X' 12 stat;
+};
+
+defn
+Watchdog(addr) {
+	complex Watchdog addr;
+	print("	enable	", addr.enable\X, "\n");
+	print("	disable	", addr.disable\X, "\n");
+	print("	restart	", addr.restart\X, "\n");
+	print("	stat	", addr.stat\X, "\n");
+};
+
+WATCHRD = 1;
+WATCHWR = 2;
+WATCHEX = 4;
+sizeofWatchpt = 12;
+aggr Watchpt
+{
+	'D' 0 type;
+	'U' 4 addr;
+	'U' 8 len;
+};
+
+defn
+Watchpt(addr) {
+	complex Watchpt addr;
+	print("	type	", addr.type, "\n");
+	print("	addr	", addr.addr, "\n");
+	print("	len	", addr.len, "\n");
+};
+
+Qstarve = 1;
+Qmsg = 2;
+Qclosed = 4;
+Qflow = 8;
+Qcoalesce = 16;
+Qkick = 32;
+sizeof_15_ = 16416;
+aggr _15_
+{
+	Lock 0 lk;
+	'U' 28 n;
+	'a' 32 buf;
+};
+
+defn
+_15_(addr) {
+	complex _15_ addr;
+	print("Lock lk {\n");
+	Lock(addr.lk);
+	print("}\n");
+	print("	n	", addr.n, "\n");
+	print("	buf	", addr.buf, "\n");
+};
+
+complex _15_ kmesg;
+sizeof_16_ = 104;
+aggr _16_
+{
+	'U' 0 link;
+	'U' 4 esp0;
+	'U' 8 ss0;
+	'U' 12 esp1;
+	'U' 16 ss1;
+	'U' 20 esp2;
+	'U' 24 ss2;
+	'U' 28 xcr3;
+	'U' 32 eip;
+	'U' 36 eflags;
+	'U' 40 eax;
+	'U' 44 ecx;
+	'U' 48 edx;
+	'U' 52 ebx;
+	'U' 56 esp;
+	'U' 60 ebp;
+	'U' 64 esi;
+	'U' 68 edi;
+	'U' 72 es;
+	'U' 76 cs;
+	'U' 80 ss;
+	'U' 84 ds;
+	'U' 88 fs;
+	'U' 92 gs;
+	'U' 96 ldt;
+	'U' 100 iomap;
+};
+
+defn
+_16_(addr) {
+	complex _16_ addr;
+	print("	link	", addr.link, "\n");
+	print("	esp0	", addr.esp0, "\n");
+	print("	ss0	", addr.ss0, "\n");
+	print("	esp1	", addr.esp1, "\n");
+	print("	ss1	", addr.ss1, "\n");
+	print("	esp2	", addr.esp2, "\n");
+	print("	ss2	", addr.ss2, "\n");
+	print("	xcr3	", addr.xcr3, "\n");
+	print("	eip	", addr.eip, "\n");
+	print("	eflags	", addr.eflags, "\n");
+	print("	eax	", addr.eax, "\n");
+	print("	ecx	", addr.ecx, "\n");
+	print("	edx	", addr.edx, "\n");
+	print("	ebx	", addr.ebx, "\n");
+	print("	esp	", addr.esp, "\n");
+	print("	ebp	", addr.ebp, "\n");
+	print("	esi	", addr.esi, "\n");
+	print("	edi	", addr.edi, "\n");
+	print("	es	", addr.es, "\n");
+	print("	cs	", addr.cs, "\n");
+	print("	ss	", addr.ss, "\n");
+	print("	ds	", addr.ds, "\n");
+	print("	fs	", addr.fs, "\n");
+	print("	gs	", addr.gs, "\n");
+	print("	ldt	", addr.ldt, "\n");
+	print("	iomap	", addr.iomap, "\n");
+};
+
+sizeofMach = 260;
+aggr Mach
+{
+	'D' 0 machno;
+	'U' 4 splpc;
+	'X' 8 pdb;
+	'A' _16_ 12 tss;
+	'A' Segdesc 16 gdt;
+	'A' Proc 20 proc;
+	'A' Proc 24 externup;
+	'A' Page 28 pdbpool;
+	'D' 32 pdbcnt;
+	'U' 36 ticks;
+	Label 40 sched;
+	Lock 48 alarmlock;
+	'X' 76 alarm;
+	'D' 80 inclockintr;
+	'A' Proc 84 readied;
+	'U' 88 schedticks;
+	'D' 92 tlbfault;
+	'D' 96 tlbpurge;
+	'D' 100 pfault;
+	'D' 104 cs;
+	'D' 108 syscall;
+	'D' 112 load;
+	'D' 116 intr;
+	'D' 120 flushmmu;
+	'D' 124 ilockdepth;
+	Perf 128 perf;
+	'U' 156 spuriousintr;
+	'D' 160 lastintr;
+	'D' 164 loopconst;
+	'D' 168 cpumhz;
+	'W' 172 cyclefreq;
+	'W' 180 cpuhz;
+	'D' 188 cpuidax;
+	'D' 192 cpuidcx;
+	'D' 196 cpuiddx;
+	'a' 200 cpuidid;
+	'X' 216 cpuidtype;
+	'D' 220 havetsc;
+	'D' 224 havepge;
+	'D' 228 havewatchpt8;
+	'W' 232 tscticks;
+	'D' 240 pdballoc;
+	'D' 244 pdbfree;
+	'U' 248 dr7;
+	'X' 252 vmx;
+	'a' 256 stack;
+};
+
+defn
+Mach(addr) {
+	complex Mach addr;
+	print("	machno	", addr.machno, "\n");
+	print("	splpc	", addr.splpc, "\n");
+	print("	pdb	", addr.pdb\X, "\n");
+	print("	tss	", addr.tss\X, "\n");
+	print("	gdt	", addr.gdt\X, "\n");
+	print("	proc	", addr.proc\X, "\n");
+	print("	externup	", addr.externup\X, "\n");
+	print("	pdbpool	", addr.pdbpool\X, "\n");
+	print("	pdbcnt	", addr.pdbcnt, "\n");
+	print("	ticks	", addr.ticks, "\n");
+	print("Label sched {\n");
+	Label(addr.sched);
+	print("}\n");
+	print("Lock alarmlock {\n");
+	Lock(addr.alarmlock);
+	print("}\n");
+	print("	alarm	", addr.alarm\X, "\n");
+	print("	inclockintr	", addr.inclockintr, "\n");
+	print("	readied	", addr.readied\X, "\n");
+	print("	schedticks	", addr.schedticks, "\n");
+	print("	tlbfault	", addr.tlbfault, "\n");
+	print("	tlbpurge	", addr.tlbpurge, "\n");
+	print("	pfault	", addr.pfault, "\n");
+	print("	cs	", addr.cs, "\n");
+	print("	syscall	", addr.syscall, "\n");
+	print("	load	", addr.load, "\n");
+	print("	intr	", addr.intr, "\n");
+	print("	flushmmu	", addr.flushmmu, "\n");
+	print("	ilockdepth	", addr.ilockdepth, "\n");
+	print("Perf perf {\n");
+	Perf(addr.perf);
+	print("}\n");
+	print("	spuriousintr	", addr.spuriousintr, "\n");
+	print("	lastintr	", addr.lastintr, "\n");
+	print("	loopconst	", addr.loopconst, "\n");
+	print("	cpumhz	", addr.cpumhz, "\n");
+	print("	cyclefreq	", addr.cyclefreq, "\n");
+	print("	cpuhz	", addr.cpuhz, "\n");
+	print("	cpuidax	", addr.cpuidax, "\n");
+	print("	cpuidcx	", addr.cpuidcx, "\n");
+	print("	cpuiddx	", addr.cpuiddx, "\n");
+	print("	cpuidid	", addr.cpuidid, "\n");
+	print("	cpuidtype	", addr.cpuidtype\X, "\n");
+	print("	havetsc	", addr.havetsc, "\n");
+	print("	havepge	", addr.havepge, "\n");
+	print("	havewatchpt8	", addr.havewatchpt8, "\n");
+	print("	tscticks	", addr.tscticks, "\n");
+	print("	pdballoc	", addr.pdballoc, "\n");
+	print("	pdbfree	", addr.pdbfree, "\n");
+	print("	dr7	", addr.dr7, "\n");
+	print("	vmx	", addr.vmx\X, "\n");
+	print("	stack	", addr.stack, "\n");
+};
+
+sizeof_17_ = 36;
+aggr _17_
+{
+	'a' 0 machs;
+	'D' 32 exiting;
+};
+
+defn
+_17_(addr) {
+	complex _17_ addr;
+	print("	machs	", addr.machs, "\n");
+	print("	exiting	", addr.exiting, "\n");
+};
+
+complex _17_ active;
+sizeofPCArch = 56;
+aggr PCArch
+{
+	'X' 0 id;
+	'X' 4 ident;
+	'X' 8 reset;
+	'X' 12 serialpower;
+	'X' 16 modempower;
+	'X' 20 intrinit;
+	'X' 24 intrenable;
+	'X' 28 intrvecno;
+	'X' 32 intrdisable;
+	'X' 36 introff;
+	'X' 40 intron;
+	'X' 44 clockenable;
+	'X' 48 fastclock;
+	'X' 52 timerset;
+};
+
+defn
+PCArch(addr) {
+	complex PCArch addr;
+	print("	id	", addr.id\X, "\n");
+	print("	ident	", addr.ident\X, "\n");
+	print("	reset	", addr.reset\X, "\n");
+	print("	serialpower	", addr.serialpower\X, "\n");
+	print("	modempower	", addr.modempower\X, "\n");
+	print("	intrinit	", addr.intrinit\X, "\n");
+	print("	intrenable	", addr.intrenable\X, "\n");
+	print("	intrvecno	", addr.intrvecno\X, "\n");
+	print("	intrdisable	", addr.intrdisable\X, "\n");
+	print("	introff	", addr.introff\X, "\n");
+	print("	intron	", addr.intron\X, "\n");
+	print("	clockenable	", addr.clockenable\X, "\n");
+	print("	fastclock	", addr.fastclock\X, "\n");
+	print("	timerset	", addr.timerset\X, "\n");
+};
+
+Monitor = 8;
+Fpuonchip = 1;
+Vmex = 2;
+Pse = 8;
+Tsc = 16;
+Cpumsr = 32;
+Pae = 64;
+Mce = 128;
+Cmpxchg8b = 256;
+Cpuapic = 512;
+Mtrr = 4096;
+Pge = 8192;
+Mca = 16384;
+Pat = 65536;
+Pse2 = 131072;
+Clflush = 524288;
+Acpif = 4194304;
+Mmx = 8388608;
+Fxsr = 16777216;
+Sse = 33554432;
+Sse2 = 67108864;
+Rdrnd = 1073741824;
+Efer = 3221225600;
+Star = 3221225601;
+Lstar = 3221225602;
+Cstar = 3221225603;
+Sfmask = 3221225604;
+FSbase = 3221225728;
+GSbase = 3221225729;
+KernelGSbase = 3221225730;
+sizeofISAConf = 64;
+aggr ISAConf
+{
+	'X' 0 type;
+	'U' 4 port;
+	'D' 8 irq;
+	'U' 12 dma;
+	'U' 16 mem;
+	'U' 20 size;
+	'U' 24 freq;
+	'D' 28 nopt;
+	'a' 32 opt;
+};
+
+defn
+ISAConf(addr) {
+	complex ISAConf addr;
+	print("	type	", addr.type\X, "\n");
+	print("	port	", addr.port, "\n");
+	print("	irq	", addr.irq, "\n");
+	print("	dma	", addr.dma, "\n");
+	print("	mem	", addr.mem, "\n");
+	print("	size	", addr.size, "\n");
+	print("	freq	", addr.freq, "\n");
+	print("	nopt	", addr.nopt, "\n");
+	print("	opt	", addr.opt, "\n");
+};
+
+complex PCArch arch;
+complex Mach m;
+sizeof_18_ = 8;
+aggr _18_
+{
+	'U' 0 port;
+	'D' 4 size;
+};
+
+defn
+_18_(addr) {
+	complex _18_ addr;
+	print("	port	", addr.port, "\n");
+	print("	size	", addr.size, "\n");
+};
+
+sizeofDevConf = 16;
+aggr DevConf
+{
+	'U' 0 intnum;
+	'X' 4 type;
+	'D' 8 nports;
+	'A' _18_ 12 ports;
+};
+
+defn
+DevConf(addr) {
+	complex DevConf addr;
+	print("	intnum	", addr.intnum, "\n");
+	print("	type	", addr.type\X, "\n");
+	print("	nports	", addr.nports, "\n");
+	print("	ports	", addr.ports\X, "\n");
+};
+
+sizeofBIOS32ci = 24;
+aggr BIOS32ci
+{
+	'U' 0 eax;
+	'U' 4 ebx;
+	'U' 8 ecx;
+	'U' 12 edx;
+	'U' 16 esi;
+	'U' 20 edi;
+};
+
+defn
+BIOS32ci(addr) {
+	complex BIOS32ci addr;
+	print("	eax	", addr.eax, "\n");
+	print("	ebx	", addr.ebx, "\n");
+	print("	ecx	", addr.ecx, "\n");
+	print("	edx	", addr.edx, "\n");
+	print("	esi	", addr.esi, "\n");
+	print("	edi	", addr.edi, "\n");
+};
+
+VectorDE = 1;
+VectorNMI = 2;
+VectorBPT = 3;
+VectorUD = 6;
+VectorCNA = 7;
+Vector2F = 8;
+VectorCSO = 9;
+VectorSNP = 11;
+VectorGPF = 13;
+VectorPF = 14;
+Vector15 = 15;
+VectorCERR = 16;
+VectorAC = 17;
+VectorMC = 18;
+VectorSIMD = 19;
+VectorPIC = 32;
+IrqCLOCK = 0;
+IrqKBD = 1;
+IrqUART1 = 3;
+IrqUART0 = 4;
+IrqPCMCIA = 5;
+IrqFLOPPY = 6;
+IrqLPT = 7;
+IrqIRQ7 = 7;
+IrqAUX = 12;
+IrqIRQ13 = 13;
+IrqATA0 = 14;
+IrqATA1 = 15;
+MaxIrqPIC = 15;
+VectorLAPIC = 48;
+IrqLINT0 = 16;
+IrqLINT1 = 17;
+IrqTIMER = 18;
+IrqERROR = 19;
+IrqPCINT = 20;
+IrqSPURIOUS = 31;
+MaxIrqLAPIC = 31;
+VectorSYSCALL = 64;
+VectorAPIC = 65;
+MaxVectorAPIC = 255;
+sizeofVctl = 60;
+aggr Vctl
+{
+	'A' Vctl 0 next;
+	'a' 4 name;
+	'D' 32 isintr;
+	'D' 36 irq;
+	'D' 40 tbdf;
+	'X' 44 isr;
+	'X' 48 eoi;
+	'X' 52 f;
+	'X' 56 a;
+};
+
+defn
+Vctl(addr) {
+	complex Vctl addr;
+	print("	next	", addr.next\X, "\n");
+	print("	name	", addr.name, "\n");
+	print("	isintr	", addr.isintr, "\n");
+	print("	irq	", addr.irq, "\n");
+	print("	tbdf	", addr.tbdf, "\n");
+	print("	isr	", addr.isr\X, "\n");
+	print("	eoi	", addr.eoi\X, "\n");
+	print("	f	", addr.f\X, "\n");
+	print("	a	", addr.a\X, "\n");
+};
+
+BusCBUS = 0;
+BusCBUSII = 1;
+BusEISA = 2;
+BusFUTURE = 3;
+BusINTERN = 4;
+BusISA = 5;
+BusMBI = 6;
+BusMBII = 7;
+BusMCA = 8;
+BusMPI = 9;
+BusMPSA = 10;
+BusNUBUS = 11;
+BusPCI = 12;
+BusPCMCIA = 13;
+BusTC = 14;
+BusVL = 15;
+BusVME = 16;
+BusXPRESS = 17;
+MaxEISA = 16;
+CfgEISA = 3200;
+PciVID = 0;
+PciDID = 2;
+PciPCR = 4;
+PciPSR = 6;
+PciRID = 8;
+PciCCRp = 9;
+PciCCRu = 10;
+PciCCRb = 11;
+PciCLS = 12;
+PciLTR = 13;
+PciHDT = 14;
+PciBST = 15;
+PciBAR0 = 16;
+PciBAR1 = 20;
+PciCAP = 52;
+PciINTL = 60;
+PciINTP = 61;
+Pcibcpci1 = 0;
+Pcibcstore = 1;
+Pcibcnet = 2;
+Pcibcdisp = 3;
+Pcibcmmedia = 4;
+Pcibcmem = 5;
+Pcibcbridge = 6;
+Pcibccomm = 7;
+Pcibcbasesys = 8;
+Pcibcinput = 9;
+Pcibcdock = 10;
+Pcibcproc = 11;
+Pcibcserial = 12;
+Pcibcwireless = 13;
+Pcibcintell = 14;
+Pcibcsatcom = 15;
+Pcibccrypto = 16;
+Pcibcdacq = 17;
+Pciscscsi = 0;
+Pciscide = 1;
+Pciscether = 0;
+Pciscvga = 0;
+Pciscxga = 1;
+Pcisc3d = 2;
+Pcischostpci = 0;
+Pciscpcicpci = 1;
+Pciscserial = 0;
+Pciscmultiser = 1;
+Pciscusb = 3;
+PciCIS = 40;
+PciSVID = 44;
+PciSID = 46;
+PciEBAR0 = 48;
+PciMGNT = 62;
+PciMLT = 63;
+PciPBN = 24;
+PciSBN = 25;
+PciUBN = 26;
+PciSLTR = 27;
+PciIBR = 28;
+PciILR = 29;
+PciSPSR = 30;
+PciMBR = 32;
+PciMLR = 34;
+PciPMBR = 36;
+PciPMLR = 38;
+PciPUBR = 40;
+PciPULR = 44;
+PciIUBR = 48;
+PciIULR = 50;
+PciEBAR1 = 40;
+PciBCR = 62;
+PciCBExCA = 16;
+PciCBSPSR = 22;
+PciCBPBN = 24;
+PciCBSBN = 25;
+PciCBUBN = 26;
+PciCBSLTR = 27;
+PciCBMBR0 = 28;
+PciCBMLR0 = 32;
+PciCBMBR1 = 36;
+PciCBMLR1 = 40;
+PciCBIBR0 = 44;
+PciCBILR0 = 48;
+PciCBIBR1 = 52;
+PciCBILR1 = 56;
+PciCBSVID = 64;
+PciCBSID = 66;
+PciCBLMBAR = 68;
+PciCapPMG = 1;
+PciCapAGP = 2;
+PciCapVPD = 3;
+PciCapSID = 4;
+PciCapMSI = 5;
+PciCapCHS = 6;
+PciCapPCIX = 7;
+PciCapHTC = 8;
+PciCapVND = 9;
+PciCapPCIe = 16;
+PciCapMSIX = 17;
+PciCapSATA = 18;
+PciCapHSW = 12;
+sizeofPcisiz = 12;
+aggr Pcisiz
+{
+	'X' 0 dev;
+	'D' 4 siz;
+	'D' 8 bar;
+};
+
+defn
+Pcisiz(addr) {
+	complex Pcisiz addr;
+	print("	dev	", addr.dev\X, "\n");
+	print("	siz	", addr.siz, "\n");
+	print("	bar	", addr.bar, "\n");
+};
+
+sizeof_19_ = 8;
+aggr _19_
+{
+	'U' 0 bar;
+	'D' 4 size;
+};
+
+defn
+_19_(addr) {
+	complex _19_ addr;
+	print("	bar	", addr.bar, "\n");
+	print("	size	", addr.size, "\n");
+};
+
+sizeof_20_ = 8;
+aggr _20_
+{
+	'U' 0 bar;
+	'D' 4 size;
+};
+
+defn
+_20_(addr) {
+	complex _20_ addr;
+	print("	bar	", addr.bar, "\n");
+	print("	size	", addr.size, "\n");
+};
+
+sizeof_21_ = 8;
+aggr _21_
+{
+	'U' 0 bar;
+	'D' 4 size;
+};
+
+defn
+_21_(addr) {
+	complex _21_ addr;
+	print("	bar	", addr.bar, "\n");
+	print("	size	", addr.size, "\n");
+};
+
+sizeofPcidev = 112;
+aggr Pcidev
+{
+	'D' 0 tbdf;
+	'u' 4 vid;
+	'u' 6 did;
+	'u' 8 pcr;
+	'b' 10 rid;
+	'b' 11 ccrp;
+	'b' 12 ccru;
+	'b' 13 ccrb;
+	'b' 14 cls;
+	'b' 15 ltr;
+	'a' 16 mem;
+	_20_ 64 rom;
+	'b' 72 intl;
+	'A' Pcidev 76 list;
+	'A' Pcidev 80 link;
+	'A' Pcidev 84 parent;
+	'A' Pcidev 88 bridge;
+	_21_ 92 ioa;
+	_21_ 100 mema;
+	'D' 108 pmrb;
+};
+
+defn
+Pcidev(addr) {
+	complex Pcidev addr;
+	print("	tbdf	", addr.tbdf, "\n");
+	print("	vid	", addr.vid, "\n");
+	print("	did	", addr.did, "\n");
+	print("	pcr	", addr.pcr, "\n");
+	print("	rid	", addr.rid, "\n");
+	print("	ccrp	", addr.ccrp, "\n");
+	print("	ccru	", addr.ccru, "\n");
+	print("	ccrb	", addr.ccrb, "\n");
+	print("	cls	", addr.cls, "\n");
+	print("	ltr	", addr.ltr, "\n");
+	print("	mem	", addr.mem, "\n");
+	print("_20_ rom {\n");
+	_20_(addr.rom);
+	print("}\n");
+	print("	intl	", addr.intl, "\n");
+	print("	list	", addr.list\X, "\n");
+	print("	link	", addr.link\X, "\n");
+	print("	parent	", addr.parent\X, "\n");
+	print("	bridge	", addr.bridge\X, "\n");
+	print("_21_ ioa {\n");
+	_21_(addr.ioa);
+	print("}\n");
+	print("_21_ mema {\n");
+	_21_(addr.mema);
+	print("}\n");
+	print("	pmrb	", addr.pmrb, "\n");
+};
+
+Vintel = 32902;
+Vmyricom = 5313;
+SMBquick = 0;
+SMBsend = 1;
+SMBbytewrite = 2;
+SMBwordwrite = 3;
+SMBrecv = 4;
+SMBbyteread = 5;
+SMBwordread = 6;
+sizeofSMBus = 88;
+aggr SMBus
+{
+	{
+	Lock 0 use;
+	'A' Proc 28 $head;
+	'A' Proc 32 $tail;
+	'D' 36 locked;
+	};
+	Rendez 40 r;
+	'X' 72 arg;
+	'U' 76 base;
+	'D' 80 busy;
+	'X' 84 transact;
+};
+
+defn
+SMBus(addr) {
+	complex SMBus addr;
+	print("QLock {\n");
+		QLock(addr+0);
+	print("}\n");
+	print("Rendez r {\n");
+	Rendez(addr.r);
+	print("}\n");
+	print("	arg	", addr.arg\X, "\n");
+	print("	base	", addr.base, "\n");
+	print("	busy	", addr.busy, "\n");
+	print("	transact	", addr.transact\X, "\n");
+};
+
+sizeofPCMmap = 24;
+aggr PCMmap
+{
+	'U' 0 ca;
+	'U' 4 cea;
+	'U' 8 isa;
+	'D' 12 len;
+	'D' 16 attr;
+	'D' 20 ref;
+};
+
+defn
+PCMmap(addr) {
+	complex PCMmap addr;
+	print("	ca	", addr.ca, "\n");
+	print("	cea	", addr.cea, "\n");
+	print("	isa	", addr.isa, "\n");
+	print("	len	", addr.len, "\n");
+	print("	attr	", addr.attr, "\n");
+	print("	ref	", addr.ref, "\n");
+};
+
+sizeof_22_ = 8;
+aggr _22_
+{
+	'U' 0 start;
+	'U' 4 len;
+};
+
+defn
+_22_(addr) {
+	complex _22_ addr;
+	print("	start	", addr.start, "\n");
+	print("	len	", addr.len, "\n");
+};
+
+sizeofPCMconftab = 156;
+aggr PCMconftab
+{
+	'D' 0 index;
+	'u' 4 irqs;
+	'b' 6 irqtype;
+	'b' 7 bit16;
+	'a' 8 io;
+	'D' 136 nio;
+	'b' 140 vpp1;
+	'b' 141 vpp2;
+	'b' 142 memwait;
+	'U' 144 maxwait;
+	'U' 148 readywait;
+	'U' 152 otherwait;
+};
+
+defn
+PCMconftab(addr) {
+	complex PCMconftab addr;
+	print("	index	", addr.index, "\n");
+	print("	irqs	", addr.irqs, "\n");
+	print("	irqtype	", addr.irqtype, "\n");
+	print("	bit16	", addr.bit16, "\n");
+	print("	io	", addr.io, "\n");
+	print("	nio	", addr.nio, "\n");
+	print("	vpp1	", addr.vpp1, "\n");
+	print("	vpp2	", addr.vpp2, "\n");
+	print("	memwait	", addr.memwait, "\n");
+	print("	maxwait	", addr.maxwait, "\n");
+	print("	readywait	", addr.readywait, "\n");
+	print("	otherwait	", addr.otherwait, "\n");
+};
+
+sizeof_23_ = 8;
+aggr _23_
+{
+	'u' 0 cpresent;
+	'U' 4 caddr;
+};
+
+defn
+_23_(addr) {
+	complex _23_ addr;
+	print("	cpresent	", addr.cpresent, "\n");
+	print("	caddr	", addr.caddr, "\n");
+};
+
+sizeofPCMslot = 2020;
+aggr PCMslot
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'A' Proc 12 p;
+	'A' Mach 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'D' 28 ref;
+	'X' 32 cp;
+	'D' 36 memlen;
+	'b' 40 base;
+	'b' 41 slotno;
+	'b' 42 special;
+	'b' 43 already;
+	'b' 44 occupied;
+	'b' 45 battery;
+	'b' 46 wrprot;
+	'b' 47 powered;
+	'b' 48 configed;
+	'b' 49 enabled;
+	'b' 50 busy;
+	'U' 52 msec;
+	'a' 56 verstr;
+	'D' 568 ncfg;
+	'a' 572 cfg;
+	'D' 636 nctab;
+	'a' 640 ctab;
+	'A' PCMconftab 1888 def;
+	Lock 1892 mlock;
+	'D' 1920 time;
+	'a' 1924 mmap;
+};
+
+defn
+PCMslot(addr) {
+	complex PCMslot addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	ref	", addr.ref, "\n");
+	print("	cp	", addr.cp\X, "\n");
+	print("	memlen	", addr.memlen, "\n");
+	print("	base	", addr.base, "\n");
+	print("	slotno	", addr.slotno, "\n");
+	print("	special	", addr.special, "\n");
+	print("	already	", addr.already, "\n");
+	print("	occupied	", addr.occupied, "\n");
+	print("	battery	", addr.battery, "\n");
+	print("	wrprot	", addr.wrprot, "\n");
+	print("	powered	", addr.powered, "\n");
+	print("	configed	", addr.configed, "\n");
+	print("	enabled	", addr.enabled, "\n");
+	print("	busy	", addr.busy, "\n");
+	print("	msec	", addr.msec, "\n");
+	print("	verstr	", addr.verstr, "\n");
+	print("	ncfg	", addr.ncfg, "\n");
+	print("	cfg	", addr.cfg, "\n");
+	print("	nctab	", addr.nctab, "\n");
+	print("	ctab	", addr.ctab, "\n");
+	print("	def	", addr.def\X, "\n");
+	print("Lock mlock {\n");
+	Lock(addr.mlock);
+	print("}\n");
+	print("	time	", addr.time, "\n");
+	print("	mmap	", addr.mmap, "\n");
+};
+
+T0cntr = 64;
+T1cntr = 65;
+T2cntr = 66;
+Tmode = 67;
+T2ctl = 97;
+Latch0 = 0;
+Load0l = 16;
+Load0m = 32;
+Load0 = 48;
+Latch1 = 64;
+Load1l = 80;
+Load1m = 96;
+Load1 = 112;
+Latch2 = 128;
+Load2l = 144;
+Load2m = 160;
+Load2 = 176;
+Rdback = 192;
+Rdnstat = 16;
+Rdncnt = 32;
+Rd0cntr = 2;
+Rd1cntr = 4;
+Rd2cntr = 8;
+ModeMsk = 14;
+Square = 6;
+Trigger = 0;
+Sstrobe = 8;
+T2gate = 1;
+T2spkr = 2;
+T2out = 32;
+Freq = 1193182;
+Tickshift = 8;
+MaxPeriod = 11931;
+MinPeriod = 119;
+sizeofI8253 = 48;
+aggr I8253
+{
+	{
+	'U' 0 key;
+	'U' 4 sr;
+	'U' 8 pc;
+	'A' Proc 12 p;
+	'A' Mach 16 m;
+	'u' 20 isilock;
+	'D' 24 lockcycles;
+	};
+	'U' 28 period;
+	'u' 32 last;
+	'W' 36 ticks;
+	'U' 44 periodset;
+};
+
+defn
+I8253(addr) {
+	complex I8253 addr;
+	print("Lock {\n");
+		Lock(addr+0);
+	print("}\n");
+	print("	period	", addr.period, "\n");
+	print("	last	", addr.last, "\n");
+	print("	ticks	", addr.ticks, "\n");
+	print("	periodset	", addr.periodset, "\n");
+};
+
+complex I8253 i8253;

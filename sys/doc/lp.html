@@ -1,0 +1,891 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>A Guide to the Lp Printer Spooler</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>A Guide to the Lp</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Printer Spooler</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Paul Glick</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>pg@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.35in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+is a collection of programs used to provide an easy-to-use
+interface for printing a variety of document types on a variety
+of printers.
+</span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+is the glue that connects various document language
+translators and printer communication programs together so that
+the users may have a consistent view of printers.
+Most of the glue
+is shell script, which can be easily modified.
+The user need not
+specify options to get sensible output in most cases.
+</span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+is described here
+so that others may make additions and changes.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>1.
+Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+is used to format and print data on a variety of output devices.
+The need for
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+was rooted in the inability of other printer spoolers to do simple
+tasks without a great deal of user specification of options.
+At the time
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+was written, there were several printer
+languages, such as ImPress and PostScript, and
+an internally developed printer that would accept
+</span><span style="font-size: 10pt"><i>troff</i></span><span style="font-size: 10pt">
+output.
+Now, all our printers take PostScript,
+but printers that use HPCL and HPGL abound and
+support for those printers may be added easily.
+A great deal of what underlies
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+is taken from BSD&rsquo;s
+</span><span style="font-size: 10pt"><i>lpr</i></span><span style="font-size: 10pt">
+and System V&rsquo;s
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">.
+The important features of this system are that most of the programs
+are easily modified shell scripts and the user need not
+learn to use the large amount of underlying software developed by others.
+</span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+runs under Plan 9 and several flavors of
+UNIX.
+This document deals with
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+as it relates to Plan 9.
+</span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+was developed using both Datakit and Ethernet to transport data between machines.
+Now only the Ethernet transport mechanism remains.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Text, graphics, and formatted text files are appropriately processed and
+placed into a spool directory from which they are taken to be printed by a daemon process.
+Additional functions include checking the status of a printer queue
+and removing jobs from the printer queue.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">All the shell scripts (see
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">(1))
+associated with
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+reside in the spool directory
+</span><span style="font-size: 10pt"><tt>/sys/lib/lp</tt></span><span style="font-size: 10pt">
+except for the
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+command itself, which resides in
+</span><span style="font-size: 10pt"><tt>/rc/bin</tt></span><span style="font-size: 10pt">.
+Commands related to
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+that are not shell scripts can most often be found
+in
+</span><span style="font-size: 10pt"><tt>/$cputype/bin/aux</tt></span><span style="font-size: 10pt">.
+The directory where all the
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+scripts  reside is defined within
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+by the shell variable
+</span><span style="font-size: 10pt"><tt>LPLIB</tt></span><span style="font-size: 10pt">.
+In the remainder of this document, file names will be specified
+with this shell variable as their root.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.
+Usage
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+requires an output device to be specified
+before it will process input.
+This can be done in any of three ways described here.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">1) The file
+</span><span style="font-size: 10pt"><tt>$LPLIB/defdevice</tt></span><span style="font-size: 10pt">
+may contain the name of a default output device.
+This may not be practical for environments where
+there are many printers.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">2) The user&rsquo;s environment variable
+</span><span style="font-size: 10pt"><tt>LPDEST</tt></span><span style="font-size: 10pt">
+may be set to the name of the device to be used.
+This is often a more practical solution when there are several printers
+available.
+This overrides a
+</span><span style="font-size: 10pt"><tt>defdevice</tt></span><span style="font-size: 10pt">
+specification.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">3) The
+</span><span style="font-size: 10pt"><tt>-d</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>printer</i></span><span style="font-size: 10pt">
+option to the
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+command specifies
+</span><span style="font-size: 10pt"><i>printer</i></span><span style="font-size: 10pt">
+as the device to which output should be directed, overriding the
+previous two specifications.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If
+</span><span style="font-size: 10pt"><i>printer</i></span><span style="font-size: 10pt">
+is
+</span><span style="font-size: 10pt"><tt>?</tt></span><span style="font-size: 10pt">,
+a list of printers and other information in the
+</span><span style="font-size: 10pt"><tt>devices</tt></span><span style="font-size: 10pt">
+file is printed, as shown in Figure 1.
+Quote the question mark to prevent it from being
+interpreted by the shell language as a metacharacter.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% lp -d&rsquo;?&rsquo;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>device   location  host             class</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn       2C-501    helix            post/2+600dpi+duplex</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>pcclone  -         -                post+nohead</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>peacock  2C-501    cetus            post/2+300dpi+nohead+color</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ps83     st8_fl3   rice             post+300dpi+reverse</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>psu      2C-501    cetus            post/2+1200dpi</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>     .</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>     .</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>     .</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Figure 1.  Sample listing of installed printers</i></span><span style="font-size: 10pt"></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Normally,
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+uses the
+</span><span style="font-size: 10pt"><tt>file</tt></span><span style="font-size: 10pt">
+command to figure out what type of input it is receiving.
+This is done within the
+</span><span style="font-size: 10pt"><tt>generic</tt></span><span style="font-size: 10pt">
+process which is discussed later in this paper in the
+</span><span style="font-size: 10pt"><b>Process directory</b></span><span style="font-size: 10pt">
+section.
+To select a specific input processor the
+</span><span style="font-size: 10pt"><tt>-p</tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>process</i></span><span style="font-size: 10pt">
+option is used where
+</span><span style="font-size: 10pt"><i>process</i></span><span style="font-size: 10pt">
+is one of the shell scripts in the
+</span><span style="font-size: 10pt"><tt>process</tt></span><span style="font-size: 10pt">
+directory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Troff
+output can be printed, in this case, on printer
+</span><span style="font-size: 10pt"><i>fn</i></span><span style="font-size: 10pt">
+with
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% troff -ms lp.ms | lp -dfn</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A file can be converted to PostScript using the pseudo-printer
+</span><span style="font-size: 10pt"><tt>stdout</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% troff -ms lp.ms | lp -dstdout &gt; lp.ps</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">LaTeX (and analogously TeX)
+documents are printed in two steps:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% latex lp.tex</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>     .</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>     .</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% lp lp.dvi</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>     .</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>     .</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">LaTeX
+produces a &lsquo;.dvi&rsquo; file and
+does not permit the use of a pipe
+connection to the standard input of
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">.
+To look at the status and queue of a device, use
+</span><span style="font-size: 10pt"><tt>-q</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% lp -dpsu -q</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>daemon status:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>:  67.17% sent</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>printer status:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%%[ status: busy; source: lpd ]%%</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>queue on cetus:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>job     user    try size</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>rice29436.1 pg  0   17454</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>slocum17565.1   ches    1   49995</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This command can print the status and queue of the local
+and remote hosts.
+Administrators should be advised that working in an environment where the
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+spool directory is shared among the local and remote hosts,
+no spooling should be done on the local hosts.
+The format of the status and queue printout is up to the administrator.
+The job started above can be killed with
+</span><span style="font-size: 10pt"><tt>-k</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$ lp -dpsu -k rice29436.1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>rice29436.1 removed from psu queue on cetus</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.
+Options
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are options available to modify the way in which a job is handled.
+It is the job of the
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+programs to convert the option settings so they may be used by each of the
+different translation and interface programs.
+Not all options are applicable to all printer environments.
+Table 1 lists the standard
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+options, the shell variable settings, and description of the options.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<center><img src="lp0.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Table 1. Lp Option List</i></span><span style="font-size: 10pt"></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.
+Devices file
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>devices</tt></span><span style="font-size: 10pt">
+file is found in the spool directory.
+Each line in the file is composed of 12 fields, separated
+by tabs or spaces, that describe the attributes
+of the printer and how it should be serviced.
+Within the
+</span><span style="font-size: 10pt"><tt>lp</tt></span><span style="font-size: 10pt">
+command, a shell variable is set for each attribute;
+the following list describes them:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>LPDEST</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">     is the name of the device as given to
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+with the
+</span><span style="font-size: 10pt"><tt>-d</tt></span><span style="font-size: 10pt">
+option
+or as specified by the shell environment variable
+</span><span style="font-size: 10pt"><tt>LPDEST</tt></span><span style="font-size: 10pt">
+or as specified by
+the file
+</span><span style="font-size: 10pt"><tt>$LPLIB/defdevice</tt></span><span style="font-size: 10pt">.
+This name is used in creating directories and log files that are associated with
+the printers operation.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>LOC</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">    just describes where the printer is physically located.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>DEST_HOST</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">  is the host from which the files are printed.
+Files may be spooled on other machines before being transferred to the
+destination host.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>OUT_DEV</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">    is the physical device name or network address needed by the printer daemon
+to connect to the printer.
+This field depends on the requirements of the daemon and may contain a &lsquo;&ndash;&rsquo;
+if not required.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>SPEED</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">  is the baud rate setting for the port.
+This field depends on the requirements of the daemon and may contain a &lsquo;&ndash;&rsquo;
+if not required.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>LPCLASS</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">    is used to encode minor printer differences.
+The keyword
+</span><span style="font-size: 10pt"><tt>reverse</tt></span><span style="font-size: 10pt">
+is used by some of the preprocessors
+to reverse the order the pages are printed to accommodate different output
+trays (either face up or face down).
+The keyword
+</span><span style="font-size: 10pt"><tt>nohead</tt></span><span style="font-size: 10pt">
+is used to suppress the header page.
+This is used for special and color printers.
+The keyword
+</span><span style="font-size: 10pt"><tt>duplex</tt></span><span style="font-size: 10pt">
+is used to coax double sided output from duplex printers.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>LPPROC</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">     is the command from the
+</span><span style="font-size: 10pt"><tt>LPLIB/process</tt></span><span style="font-size: 10pt">
+directory to be used to convert input to a format
+that will be accepted by the device.
+The preprocessor is invoked by the spooler.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>SPOOLER</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">    is the command from the
+</span><span style="font-size: 10pt"><tt>LPLIB/spooler</tt></span><span style="font-size: 10pt">
+directory which will select files using the
+</span><span style="font-size: 10pt"><tt>SCHED</tt></span><span style="font-size: 10pt">
+command and invoke the
+</span><span style="font-size: 10pt"><tt>LPPROC</tt></span><span style="font-size: 10pt">
+command, putting its output
+into the remote spool directory.
+The output is sent directly to the spool directory on the
+destination machine to avoid conflicts when client and
+server machines share spool directories.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>STAT</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">   is the command from the
+</span><span style="font-size: 10pt"><tt>LPLIB/stat</tt></span><span style="font-size: 10pt">
+directory that prints the status of the device and the list of jobs
+waiting on the queue for the device.
+The status information depends on what is available from the printer
+and interface software.
+The queue information should be changed to show information
+useful in tracking down problems.
+The
+</span><span style="font-size: 10pt"><tt>SCHED</tt></span><span style="font-size: 10pt">
+command is used to show the jobs in the order
+in which they will be printed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>KILL</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">   is the command from the
+</span><span style="font-size: 10pt"><tt>LPLIB/kill</tt></span><span style="font-size: 10pt">
+that removes jobs from the queue.
+The jobs to be removed are given as arguments to the
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+command.
+When possible, it should also abort the currently running job
+if it has to be killed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>DAEMON</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">     is the command from the
+</span><span style="font-size: 10pt"><tt>LPLIB/daemon</tt></span><span style="font-size: 10pt">
+that is meant to run asynchronously to remove
+jobs from the queue.
+Jobs may either be passed on to another host or sent to the
+printing device.
+</span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+always tries to start a daemon process when one is specified.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.83in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 9pt"><tt>SCHED</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">  is the command from the
+</span><span style="font-size: 10pt"><tt>LPLIB/sched</tt></span><span style="font-size: 10pt">
+that is used to present the job names to the
+daemon and stat programs
+in some order, e.g., first-in-first-out, smallest first.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.
+Support programs
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following sections describe the basic functions of the programs
+that are found in the subdirectories of
+</span><span style="font-size: 10pt"><tt>$LPLIB</tt></span><span style="font-size: 10pt">.
+The programs in a specific directory vary with the
+type of output device or networks that have to be used.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.1.
+Process directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>generic</tt></span><span style="font-size: 10pt">
+preprocessor
+is the default preprocessor for most printers.
+It uses the
+</span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt">(1)
+command to determine the format of the input file.
+The appropriate preprocessor is then selected to transform the
+file to a format suitable for the printer.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here is a list of some of the preprocessors and
+a description of their function.
+A complete list of preprocessors and their descriptions can be found in the manual page
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">(8).
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.97in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>dvipost</tt></span><span style="font-size: 10pt">    Converts TeX or LaTeX output (</span><span style="font-size: 10pt"><tt>.dvi</tt></span><span style="font-size: 10pt"> files) to PostScript
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.97in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>ppost</tt></span><span style="font-size: 10pt">  Converts UTF text to PostScript.
+The default font is Courier with Lucida fonts filling in
+the remainder of the (available) Unicode character space.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.97in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>tr2post</tt></span><span style="font-size: 10pt">    Converts (device independent) troff output for the device type
+</span><span style="font-size: 10pt"><tt>utf</tt></span><span style="font-size: 10pt">.
+See
+</span><span style="font-size: 10pt"><tt>/sys/lib/troff/font/devutf</tt></span><span style="font-size: 10pt">
+directory for troff font width table descriptions.
+See also the
+</span><span style="font-size: 10pt"><tt>/sys/lib/postscript/troff</tt></span><span style="font-size: 10pt">
+directory for mappings of
+troff
+</span><span style="font-size: 10pt"><tt>UTF</tt></span><span style="font-size: 10pt">
+character space to PostScript font space.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.97in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>p9bitpost</tt></span><span style="font-size: 10pt">  Converts Plan 9 bitmaps (see
+</span><span style="font-size: 10pt"><i>bitfile</i></span><span style="font-size: 10pt">(9.6))
+to PostScript.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.97in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>g3post</tt></span><span style="font-size: 10pt"> Converts fax (CCITT-G31 format) to PostScript.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.97in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>hpost</tt></span><span style="font-size: 10pt">  Does header page processing and page reversal processing, if
+necessary.
+Page reversal is done here so the header page always comes
+out at the beginning of the job.
+Header page processing is very location-dependent.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.2.
+Spool directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>generic</tt></span><span style="font-size: 10pt">
+spooler is responsible for executing the preprocessor
+and directing its output to a file in the printer&rsquo;s queue.
+An additional file is created containing information such as the system name,
+user id, job number, and number of times this job was attempted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Certain printer handling programs do not require separate
+preprocessing and spooling.
+For such circumstances a
+</span><span style="font-size: 10pt"><tt>nospool</tt></span><span style="font-size: 10pt">
+spooler is available that just executes the preprocessing program.
+The processing and spooling functions are assumed by this program and the output is sent to
+</span><span style="font-size: 10pt"><tt>OUT_DEV</tt></span><span style="font-size: 10pt">
+or standard output if
+</span><span style="font-size: 10pt"><tt>OUT_DEV</tt></span><span style="font-size: 10pt">
+is &rsquo;-&rsquo;.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>pcclone</tt></span><span style="font-size: 10pt">
+spooler is used to send print jobs directly to a printer connected
+to a 386 compatible printer port (See
+</span><span style="font-size: 10pt"><i>lpt</i></span><span style="font-size: 10pt">(3)).
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.3.
+Stat directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The function of the shell scripts in the
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+directory is to present status information about the
+printer and its queue.
+When necessary, the
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+scripts may be designed
+to return information about the local queue as well as the remote queue.
+This is not done on Plan 9 because many systems share the same queue directory.
+The scheduler is used to print the queue in the order in which the jobs
+will be executed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.4.
+Kill directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>kill</tt></span><span style="font-size: 10pt">
+scripts receive command line arguments passed to them by
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+and remove the job and id files which match the arguments
+for the particular queue.
+When a job is killed, the generic kill procedure:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">1) kills the daemon for this queue if the job being killed
+is first in the queue,
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">2) removes the files associated with the job from the queue,
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">3) attempts to restart the daemon.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.5.
+Daemon directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>daemon</tt></span><span style="font-size: 10pt">
+shell scripts are the last to be invoked by
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+if the
+</span><span style="font-size: 10pt"><tt>-Q</tt></span><span style="font-size: 10pt">
+option has not been given.
+The daemon process is executed asynchronously
+with its standard output and standard error appended to
+the printer log file.
+The log file is described in a subsequent section.
+Because the daemon runs asynchronously, it must
+catch signals that could cause it to terminate abnormally.
+The daemon first checks to see that it is the only one running
+by using the
+</span><span style="font-size: 10pt"><tt>LOCK</tt></span><span style="font-size: 10pt">
+program found in the
+</span><span style="font-size: 10pt"><tt>/$cputype/bin/aux</tt></span><span style="font-size: 10pt">
+directory.
+The
+</span><span style="font-size: 10pt"><tt>LOCK</tt></span><span style="font-size: 10pt">
+command creates a
+</span><span style="font-size: 10pt"><tt>LOCK</tt></span><span style="font-size: 10pt">
+file in the printer&rsquo;s queue directory.
+The daemon then executes the scheduler to obtain the name of the
+next job on the queue.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The processing of jobs may entail transfer to another host
+or transmission to a printer.
+The details of this are specific to the individual daemons.
+If a job is processed without error, it is removed from the queue.
+If a job does not succeed, the associated files may be
+moved to a printer specific directory in
+</span><span style="font-size: 10pt"><tt>$LPLIB/prob</tt></span><span style="font-size: 10pt">.
+In either case, the daemon can make an entry in the printer&rsquo;s
+log file.
+Before exiting, the daemon should clean up lock files by calling
+</span><span style="font-size: 10pt"><tt>UNLOCK</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Several non-standard daemon programs have been designed
+to suit various requirements and whims.
+One such program announces job completion and empty paper trays
+by causing icons to appear in peoples&rsquo;
+</span><span style="font-size: 10pt"><tt>seemail</tt></span><span style="font-size: 10pt">
+window.
+Another, using a voice synthesizer, makes verbal announcements.
+Other daemons may be designed to taste.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.6.
+Sched directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The scheduler must decide which job files should be executed and
+in what order.
+The most commonly used scheduler program is
+</span><span style="font-size: 10pt"><tt>FIFO</tt></span><span style="font-size: 10pt">,
+which looks like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ls -tr $* | sed -n -e &rsquo;s/.*  *//&rsquo; \</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>  -e &rsquo;/^[0-9][0-9]*.[1-9][0-9]*$/p&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This lists all the job files in this printer&rsquo;s queue in modification
+time order.
+Jobs entering the queue have a dot (.) prefixed to their name
+to keep the scheduler from selecting them before they are complete.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.
+Where Things Go Wrong
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are four directories where
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+writes files.
+On the Plan 9 release these directories may be found
+in a directory on a scratch filesystem that is not
+backed-up.
+This directory is
+</span><span style="font-size: 10pt"><tt>/n/emelieother/lp</tt></span><span style="font-size: 10pt">.
+It is built on top of a file system
+</span><span style="font-size: 10pt"><tt>other</tt></span><span style="font-size: 10pt">
+that is mounted on the file server
+</span><span style="font-size: 10pt"><tt>emelie</tt></span><span style="font-size: 10pt">.
+The four directories in
+this scratch directory
+are
+</span><span style="font-size: 10pt"><tt>log</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>prob</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>queue</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>tmp</tt></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><i>Lp</i></span><span style="font-size: 10pt">
+binds (see
+</span><span style="font-size: 10pt"><i>bind</i></span><span style="font-size: 10pt">(1))
+the first three into the directory
+</span><span style="font-size: 10pt"><tt>/sys/lib/lp</tt></span><span style="font-size: 10pt">
+for its processes and their children.
+The
+</span><span style="font-size: 10pt"><tt>tmp</tt></span><span style="font-size: 10pt">
+directory is bound to the
+</span><span style="font-size: 10pt"><tt>/tmp</tt></span><span style="font-size: 10pt">
+directory so that the lp daemons, which run as user &lsquo;none&rsquo;,
+may write into this directory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On any new installation, it is important that these directories
+be set up and that the
+</span><span style="font-size: 10pt"><i>/rc/bin/lp</i></span><span style="font-size: 10pt">
+command be editted to reflect the change.
+If you do not have a scratch filesystem for these directories,
+create the four directories
+</span><span style="font-size: 10pt"><tt>log</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>prob</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>queue</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>tmp</tt></span><span style="font-size: 10pt">
+in
+</span><span style="font-size: 10pt"><tt>$LPLIB</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>(/sys/lib/lp)</tt></span><span style="font-size: 10pt">
+so that they are writable by anyone.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.1.
+Log directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The log files for a particular
+</span><span style="font-size: 10pt"><i>printer</i></span><span style="font-size: 10pt">
+appear in a subdirectory of the spool directory
+</span><span style="font-size: 10pt"><tt>log</tt></span><span style="font-size: 10pt">/</span><span style="font-size: 10pt"><i>printer</i></span><span style="font-size: 10pt">.
+There are currently two types of log files.
+One is for the daemon to log errors and successful completions
+of jobs.
+These are named
+</span><span style="font-size: 10pt"><i>printer.day</i></span><span style="font-size: 10pt">
+where
+</span><span style="font-size: 10pt"><i>day</i></span><span style="font-size: 10pt">
+is the three letter abbreviation for the day of the week.
+These are overwritten once a week to avoid the need for regular
+cleanup.
+The other type of log file contains the status of the printer and
+is written by the program that communicates with the printer itself.
+These are named
+</span><span style="font-size: 10pt"><i>printer</i></span><span style="font-size: 10pt">.</span><span style="font-size: 10pt"><tt>st</tt></span><span style="font-size: 10pt">.
+These are overwritten with each new job and are saved in the
+</span><span style="font-size: 10pt"><tt>$LPLIB/prob</tt></span><span style="font-size: 10pt">
+directory along with the job under circumstances described below.
+When a printer does not appear to be functioning these files are the
+place to look first.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.2.
+Prob directory
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a job fails to produce output,
+the log files should be checked for any obvious problems.
+If none can be found, a directory with full read and write permissions
+should be created with the name of the printer in the
+</span><span style="font-size: 10pt"><tt>$LPLIB/prob</tt></span><span style="font-size: 10pt">
+directory.
+Subsequent failure of a job will cause the daemon to leave a
+copy of the job and the printer communication log in
+</span><span style="font-size: 10pt"><tt>$LPLIB/prob/</tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>printer</i></span><span style="font-size: 10pt">
+directory.
+It is common for a printer to enter states from which
+it cannot be rescued except by manually cycling the power on the printer.
+After this is done the print daemon should recover by itself
+(give it a minute).
+If it does not recover, remove the
+</span><span style="font-size: 10pt"><tt>LOCK</tt></span><span style="font-size: 10pt">
+file from the printer&rsquo;s spool directory to kill the daemon.
+The daemon will have to be restarted by sending another job
+to the printer.
+For PostScript printers just use:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo &rsquo;%!PS&rsquo; | lp</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.3.
+Repairing Stuck Daemons
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are conditions that occur which are not handled
+by the daemons.
+One such problem can only be described as the printer entering a
+comatose state.
+The printer does not respond to any messages sent to it.
+The daemon should recover from the reset and an error message
+will appear in the log files.
+If all else fails, one can kill the first job in the queue
+or remove the
+</span><span style="font-size: 10pt"><tt>LOCK</tt></span><span style="font-size: 10pt">
+file from the queue directory.
+This will kill the daemon, which will have to be restarted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>7.
+Interprocessor Communication
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A Plan 9 CPU server can be set up as a printer&rsquo;s spooling host.
+That is, the machine where jobs are spooled and from which those jobs
+are sent directly to the printer.
+To do this, the CPU must listen on TCP port 515 which is the well known
+port for the BSD line printer daemon.
+The file
+</span><span style="font-size: 10pt"><tt>/rc/bin/service/tcp515</tt></span><span style="font-size: 10pt">
+is executed when a call comes in on that port.
+The Plan 9
+</span><span style="font-size: 10pt"><tt>lpdaemon</tt></span><span style="font-size: 10pt">
+will accept jobs sent from BSD LPR/LPD systems.
+The
+</span><span style="font-size: 10pt"><tt>/$cputype/bin/aux/lpdaemon</tt></span><span style="font-size: 10pt">
+command is executed from the service call and it accepts print jobs, requests for status,
+and requests to kill jobs.
+The command
+</span><span style="font-size: 10pt"><tt>/$cputype/bin/aux/lpsend</tt></span><span style="font-size: 10pt">
+is used to send jobs
+to other Plan 9 machines and is usually called from
+within a spooler or daemon script.
+The command
+</span><span style="font-size: 10pt"><tt>/$cputype/bin/aux/lpdsend</tt></span><span style="font-size: 10pt">
+is used to send jobs
+to machines and printers that use the BSD LPR/LPD protocol and is also usually called from
+within a spooler or daemon script.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>8.
+Acknowledgements
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Special thanks to Rich Drechsler for supplying and maintaining most of
+the PostScript translation and interface programs,
+without which
+</span><span style="font-size: 10pt"><i>lp</i></span><span style="font-size: 10pt">
+would be an empty shell.
+Tomas Rokicki provided the
+TeX
+to PostScript
+translation program.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>9.
+References
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Camp86] Ralph Campbell,
+&lsquo;&lsquo;4.3BSD Line Printer Spooler Manual&rsquo;&rsquo;, UNIX System Manager&rsquo;s Manual,
+May, 1986, Berkeley, CA
+</span></p><p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[RFC1179] Request for Comments: 1179, Line Printer Daemon Protocol, Aug 1990
+</span></p><p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Sys5] System V manual, date unknown
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

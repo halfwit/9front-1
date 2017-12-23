@@ -1,0 +1,877 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Plan 9 Mkfiles</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Plan 9 Mkfiles</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Bob Flandrena</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>bobf@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Every Plan 9 source directory contains a file, called
+</span><span style="font-size: 10pt"><tt>mkfile</tt></span><span style="font-size: 10pt">,
+specifying the rules for building the executable or
+library that is the product of the directory.
+</span><span style="font-size: 10pt"><i>Mk</i></span><span style="font-size: 10pt">(1)
+interprets the rules in the file, calculates
+the dependencies, and executes an
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">(1)
+script to construct the product.
+If necessary components are supplied by
+neighboring directories or sub-directories, the mkfiles in those
+directories are first executed to build the components
+before the local construction proceeds.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Most application source directories produce one of
+four types of product:
+a single executable, several
+executables, a local library, or
+a system library.
+Four generic
+mkfiles
+define the normal rules
+for building each type of product.  The simplest
+mkfiles need only
+list the components
+and include the appropriate
+generic
+mkfile 
+to do the work.
+More complex 
+mkfiles
+may supply additional rules
+to augment, modify, or override the generic rules.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Using a Mkfile
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To build a product, change to the directory containing
+its source and invoke
+</span><span style="font-size: 10pt"><i>mk</i></span><span style="font-size: 10pt">
+with the appropriate target as an argument.
+All mkfiles provide the following standard targets:
+</span></p><center><img src="mkfiles0.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If no target is specified on the
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+command line, the
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+target is built by default.  In a directory
+producing multiple executables, there is
+no default target.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In addition to the five standard targets,
+additional targets may be supplied by each
+generic mkfile or by the directory&rsquo;s mkfile.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The environment variable
+</span><span style="font-size: 10pt"><tt>NPROC</tt></span><span style="font-size: 10pt">
+is set by the system to the number of
+available processors.
+Setting
+this variable, either in the environment or in
+a mkfile, controls the amount of parallelism in
+the build.  For example, the command
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    NPROC=1 mk</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">restricts a build to a single thread of execution.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Creating a Mkfile
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The easiest way to build a new mkfile is to copy and modify
+an existing mkfile of the same type.
+Failing that, it is usually possible to create a new
+mkfile with minimal effort, since the appropriate
+generic mkfile predefines the rules that do all the work.
+In the simplest and most common cases, the new mkfile
+need only define a couple of variables and include the appropriate
+architecture-specific
+and generic mkfiles.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are four generic mkfiles containing commonly
+used rules for building a product:
+</span><span style="font-size: 10pt"><tt>mkone</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>mkmany</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>mklib</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>mksyslib</tt></span><span style="font-size: 10pt">.
+These rules
+perform such actions as compiling C source files,
+loading object files, archiving libraries, and
+installing executables in the
+</span><span style="font-size: 10pt"><tt>bin</tt></span><span style="font-size: 10pt">
+directory of the appropriate architecture.
+The generic mkfiles are stored in directory
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd</tt></span><span style="font-size: 10pt">.
+Mkfile
+</span><span style="font-size: 10pt"><tt>mkone</tt></span><span style="font-size: 10pt">
+builds a single executable,
+</span><span style="font-size: 10pt"><tt>mkmany</tt></span><span style="font-size: 10pt">
+builds several executables from the source in a single
+directory, and
+</span><span style="font-size: 10pt"><tt>mklib</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>mksyslib</tt></span><span style="font-size: 10pt">,
+maintain local and system libraries, respectively.
+The rules in the generic mkfiles are driven by
+the values of variables, some of which must be
+set by the product mkfile and some of which are
+supplied by the generic mkfile.  Variables in the
+latter class include:
+</span></p><center><img src="mkfiles1.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following variables are set by the product mkfile
+and used by the generic mkfile.
+Any may be empty depending on the specific product being
+made.
+</span></p><center><img src="mkfiles2.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Mkfile Organization
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">All
+mkfiles
+share the following common structure:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile   # </tt></span><span style="font-size: 9pt">architecture-dependent definitions</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>variable definitions</i></span><span style="font-size: 9pt"><tt>        # TARG</tt></span><span style="font-size: 9pt">, </span><span style="font-size: 9pt"><tt>OFILES</tt></span><span style="font-size: 9pt">, </span><span style="font-size: 9pt"><tt>HFILES</tt></span><span style="font-size: 9pt">, etc.</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/cmd/</tt></span><span style="font-size: 9pt"><i>generic</i></span><span style="font-size: 9pt"><tt>   # mkone</tt></span><span style="font-size: 9pt">, </span><span style="font-size: 9pt"><tt>mkmany</tt></span><span style="font-size: 9pt">, </span><span style="font-size: 9pt"><tt>mklib</tt></span><span style="font-size: 9pt">, or </span><span style="font-size: 9pt"><tt>mksyslib</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>variable overrides</i></span><span style="font-size: 9pt"><tt>      # CFLAGS</tt></span><span style="font-size: 9pt">, </span><span style="font-size: 9pt"><tt>objtype</tt></span><span style="font-size: 9pt">, etc.</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>extra rules</i></span><span style="font-size: 9pt"><tt>         # </tt></span><span style="font-size: 9pt">overrides, augmented rules, additional targets</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Note that the architecture-dependent mkfiles include file
+</span><span style="font-size: 10pt"><tt>/sys/src/mkfile.proto</tt></span><span style="font-size: 10pt">
+for system-wide variables that are common to all architectures.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The variables driving the expansion of the generic mkfile
+may be specified in any order as long as they are defined
+before the inclusion of the generic mkfile.  The value
+of a variable may be changed by assigning a new value
+following the inclusion of the generic mkfile, but the
+effects are sometimes counter-intuitive.
+Such variable assignments do not apply to the target and
+prerequisite portions of any previously defined rules;
+the new values only apply to the recipes of rules preceding
+the assignment statement and
+to all parts of any rules following it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The rules supplied by the generic mkfile may
+be overridden or augmented.  The new rules must
+be specified after the inclusion of the generic
+mkfile.  If the target and prerequisite portion
+of the rule exactly match the target and prerequisite
+portion of a previously defined rule and the new rule contains
+a recipe, the new rule replaces the old one.
+If the target of a new rule exactly matches the
+target of a previous rule and one or more new
+prerequisites are specified and the new rule contains
+no recipe, the new prerequisites are added to the prerequisites
+of the old rule.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Following sections discuss
+each generic mkfile in detail.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Mkone
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>mkone</tt></span><span style="font-size: 10pt">
+generic mkfile contains rules for building
+a single executable from one or more files
+in a directory.
+The variable
+</span><span style="font-size: 10pt"><tt>TARG</tt></span><span style="font-size: 10pt">
+specifies the name of the executable and
+variables
+</span><span style="font-size: 10pt"><tt>OFILES</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>YFILES</tt></span><span style="font-size: 10pt">
+specify the object files and
+</span><span style="font-size: 10pt"><tt>yacc</tt></span><span style="font-size: 10pt">
+source files used to build it.
+</span><span style="font-size: 10pt"><tt>HFILES</tt></span><span style="font-size: 10pt">
+contains the names of the local header files
+included in all source files.
+</span><span style="font-size: 10pt"><tt>BIN</tt></span><span style="font-size: 10pt">
+is the name of the directory where the executable
+is installed.
+</span><span style="font-size: 10pt"><tt>LIB</tt></span><span style="font-size: 10pt">
+contains the names of local libraries used by the
+linker.  This variable is rarely needed
+as libraries referenced by a
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+directive in an associated header file, including
+all system libraries, are automatically
+searched by the loader.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+is executed without a target, the
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+target is built; it
+produces an executable in
+</span><span style="font-size: 10pt"><tt>$O.out</tt></span><span style="font-size: 10pt">.
+Variable
+</span><span style="font-size: 10pt"><tt>HFILES</tt></span><span style="font-size: 10pt">
+identifies the header files that
+are included in all or most or
+the C source files.  Occasionally,
+a program has other header files
+that are only used in some
+source files.  A
+header can be added to the prerequisites for
+those object files by adding a rule of
+the following form following the inclusion of generic mkfile
+</span><span style="font-size: 10pt"><tt>mkone</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>file.$O:    header.h</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The mkfile for a directory producing a single
+executable using the normal set of rules is
+trivial: a list of some files followed by the
+inclusion of
+</span><span style="font-size: 10pt"><i>mkone.</i></span><span style="font-size: 10pt">
+For example, 
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/diff/mkfile</tt></span><span style="font-size: 10pt">
+contains:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt; /$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>TARG=diff</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OFILES=\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    diffdir.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    diffio.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    diffreg.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    main.$O\</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>HFILES=diff.h</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>BIN=/$objtype/bin</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/cmd/mkone</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The more complex mkfile in
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/awk</tt></span><span style="font-size: 10pt">
+overrides compiler and loader variables to
+select the ANSI/POSIX Computing Environment with appropriately
+defined command line variables.  It also overrides
+the default
+</span><span style="font-size: 10pt"><tt>yacc</tt></span><span style="font-size: 10pt">
+rule to place the output soure in file
+</span><span style="font-size: 10pt"><tt>awkgram.c</tt></span><span style="font-size: 10pt">
+and the
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>nuke</tt></span><span style="font-size: 10pt">
+rules, so it can remove the non-standard intermediate
+files.  Finally, the last three rules build a version of
+</span><span style="font-size: 10pt"><tt>maketab</tt></span><span style="font-size: 10pt">
+appropriate for the architecture where the
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+is being
+run and then executes it to create source file
+</span><span style="font-size: 10pt"><tt>proctab.c</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>TARG=awk</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OFILES=re.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    lex.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    main.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    parse.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    proctab.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    tran.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    lib.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    run.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    awkgram.$O\</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>HFILES=awk.h\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    y.tab.h\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    proto.h\</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>YFILES=awkgram.y</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>BIN=/$objtype/bin</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/cmd/mkone</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>CFLAGS=-c -D_REGEXP_EXTENSION -D_RESEARCH_SOURCE \</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    -D_BSD_EXTENSION -DUTF</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>YFLAGS=-S -d -v</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>CC=pcc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>LD=pcc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpuobjtype=&lsquo;{sed -n &rsquo;s/^O=//p&rsquo; /$cputype/mkfile}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>y.tab.h awkgram.c:  $YFILES</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $YACC -o awkgram.c $YFLAGS $prereq</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>clean:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f *.[$OS] [$OS].out [$OS].maketab y.tab.? y.debug\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>         y.output $TARG</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>nuke:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f *.[$OS] [$OS].out [$OS].maketab y.tab.? y.debug\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>         y.output awkgram.c $TARG</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>proctab.c:  $cpuobjtype.maketab</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ./$cpuobjtype.maketab &gt;proctab.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>$cpuobjtype.maketab:    y.tab.h maketab.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    objtype=$cputype</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    mk maketab.$cputype</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>maketab.$cputype:V: y.tab.h maketab.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    $LD -o $O.maketab maketab.$O</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Mkmany
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>mkmany</tt></span><span style="font-size: 10pt">
+generic mkfile builds several
+executables from the files in a
+directory.  It differs from the operation of
+</span><span style="font-size: 10pt"><tt>mkone</tt></span><span style="font-size: 10pt">
+in three respects:
+</span><span style="font-size: 10pt"><tt>TARG</tt></span><span style="font-size: 10pt">
+specifies the names of all executables,
+there is no default command-line target,
+and additional rules allow a single executable to
+be built or installed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>TARG</tt></span><span style="font-size: 10pt">
+variable specifies the names of all
+executables produced by the mkfile.  The
+rules assume the name of each executable is also
+the name of the file containing its
+</span><span style="font-size: 10pt"><tt>main</tt></span><span style="font-size: 10pt">
+function.
+</span><span style="font-size: 10pt"><tt>OFILES</tt></span><span style="font-size: 10pt">
+specifies files containing
+common subroutines loaded with all executables.
+Consider the mkfile:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>TARG=alpha beta</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OFILES=common.$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>BIN=/$objtype/bin</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/cmd/mkmany</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It assumes the main functions for executables
+</span><span style="font-size: 10pt"><tt>alpha</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>beta</tt></span><span style="font-size: 10pt">
+are in files
+</span><span style="font-size: 10pt"><tt>alpha.$O</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>beta.$O</tt></span><span style="font-size: 10pt">
+and that both programs use the subroutines
+in file
+</span><span style="font-size: 10pt"><tt>common.$O</tt></span><span style="font-size: 10pt">.
+The
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+target builds all executables, leaving each in
+a file with a name of the form
+</span><span style="font-size: 10pt"><tt>$O.</tt></span><span style="font-size: 10pt"><i>progname</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+where
+</span><span style="font-size: 10pt"><i>progname</i></span><span style="font-size: 10pt">
+is the name of the executable.  In this
+example the
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+target produces executables
+</span><span style="font-size: 10pt"><tt>$O.alpha</tt></span><span style="font-size: 10pt">
+and 
+</span><span style="font-size: 10pt"><tt>$O.beta</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>mkmany</tt></span><span style="font-size: 10pt">
+rules provide additional
+targets for building a single
+executable:
+</span></p><center><img src="mkfiles3.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Mklib
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>mklib</tt></span><span style="font-size: 10pt">
+generic mkfile builds a local library.
+Since this form of mkfile constructs no
+executable, the
+</span><span style="font-size: 10pt"><tt>TARG</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>BIN</tt></span><span style="font-size: 10pt">
+variables are not needed.  Instead, the
+</span><span style="font-size: 10pt"><tt>LIB</tt></span><span style="font-size: 10pt">
+variable specifies the library
+to be built or updated.  Variable
+</span><span style="font-size: 10pt"><tt>OFILES</tt></span><span style="font-size: 10pt">
+contains the names of the object files to be archived
+in the library.  The use of variables
+</span><span style="font-size: 10pt"><tt>YFILES</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>HFILES</tt></span><span style="font-size: 10pt">
+does not change.  When possible, only the
+out-of-date members of the library are updated.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The variable
+</span><span style="font-size: 10pt"><tt>LIBDIR</tt></span><span style="font-size: 10pt">
+contains the name of the directory where the
+library is installed; by default it selects
+the current directory.  It can be overridden
+by assigning the new directory name after the
+point where
+</span><span style="font-size: 10pt"><tt>mklib</tt></span><span style="font-size: 10pt">
+is included.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+target removes object files and
+</span><span style="font-size: 10pt"><tt>yacc</tt></span><span style="font-size: 10pt">
+intermediate files but does not touch the
+library.  The
+</span><span style="font-size: 10pt"><tt>nuke</tt></span><span style="font-size: 10pt">
+target removes the library as well as the
+files removed by the
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+target.  The command
+</span></p><p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>mk -s clean all</tt></span><span style="font-size: 10pt">
+</span></p><p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">causes the existing library to be updated, or
+created if it doesn&rsquo;t already exist.  The command
+</span></p><p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>mk -s nuke all</tt></span><span style="font-size: 10pt">
+</span></p><p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">forces the library to be rebuilt from scratch.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.69in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The mkfile from
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/upas/libString</tt></span><span style="font-size: 10pt">
+contains the following specifications to
+build the local library
+</span><span style="font-size: 10pt"><tt>libString.a$O</tt></span><span style="font-size: 10pt">
+for the object architecture referenced by
+</span><span style="font-size: 10pt"><tt>$O</tt></span><span style="font-size: 10pt">:</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>LIB=libString.a$O</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OFILES= s_alloc.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_append.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_array.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_copy.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_getline.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_grow.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_nappend.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_parse.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_read.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_read_line.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    s_tolower.$O\</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/cmd/mklib</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>nuke:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    mk clean</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    rm -f libString.a[$OS]</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The override of the rule for target
+</span><span style="font-size: 10pt"><tt>nuke</tt></span><span style="font-size: 10pt">
+removes the libraries for all architectures as
+opposed to the default recipe for this target
+which removes the library for the current architecture.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Mksyslib
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>mksyslib</tt></span><span style="font-size: 10pt">
+generic mkfile is similar to the
+</span><span style="font-size: 10pt"><tt>mklib</tt></span><span style="font-size: 10pt">
+mkfile except that it operates on a system library
+instead of a local library.
+The
+</span><span style="font-size: 10pt"><tt>install</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>all</tt></span><span style="font-size: 10pt">
+targets are the same; since there is no local copy of
+the library, all updates are performed on the
+installed library.
+The rule for the
+</span><span style="font-size: 10pt"><tt>nuke</tt></span><span style="font-size: 10pt">
+target is identical to that of the
+</span><span style="font-size: 10pt"><tt>clean</tt></span><span style="font-size: 10pt">
+target; unlike the
+</span><span style="font-size: 10pt"><tt>nuke</tt></span><span style="font-size: 10pt">
+target for local libraries,
+the library is never removed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">No attempt is made to determine if individual library
+members are up-to-date; all members of a
+library are always updated.
+Special targets support manipulation of a single
+object file; the target
+</span><span style="font-size: 10pt"><tt>objfile</tt></span><span style="font-size: 10pt">
+updates file
+</span><span style="font-size: 10pt"><tt>objfile</tt></span><span style="font-size: 10pt"><tt>.$O</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+in the library of the current architecture and the target
+</span><span style="font-size: 10pt"><tt>objfile.all</tt></span><span style="font-size: 10pt">
+updates
+</span><span style="font-size: 10pt"><tt>objfile</tt></span><span style="font-size: 10pt"><tt>.$O</tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+in the libraries of all architectures.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Overrides
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The rules provided by a generic mkfile or
+the variables used to control the evaluation
+of those rules may be overridden in most
+circumstances.  Overrides
+must be specified in the product mkfile
+after the point where the generic
+mkfile is included; in general, variable
+and rule overrides occupy the end of a
+product mkfile.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The value of a variable is overridden by
+assigning a new value to the variable.
+Most variable overrides modify the
+values of flags or the names of commands executed
+in recipes.  For example, the default value of
+</span><span style="font-size: 10pt"><tt>CFLAGS</tt></span><span style="font-size: 10pt">
+is often overridden or augmented and
+the ANSI/POSIX Computing Environment is selected by
+setting the
+</span><span style="font-size: 10pt"><tt>CC</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>LD</tt></span><span style="font-size: 10pt">
+variables to
+</span><span style="font-size: 10pt"><tt>pcc.</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Modifying rules is trickier than modifying
+variables.  Additional constraints can be added
+to a rule by specifying the target and
+the new prerequisite.  For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>%.$O:   header.h</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">adds file
+</span><span style="font-size: 10pt"><tt>header.h</tt></span><span style="font-size: 10pt">
+the set of prerequisites for all object files.
+There is no mechanism for adding additional
+commands to an existing recipe; if a
+recipe is unsatisfactory, the rule and its recipe
+must be completely overridden.
+A rule is overridden only when the replacement rule
+matches the target and prerequisite portions
+of the original rule exactly.  The recipe
+associated with the new rule
+then replaces the recipe of the original rule.
+For example,
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/lex/mkfile</tt></span><span style="font-size: 10pt">
+overrides the default
+</span><span style="font-size: 10pt"><tt>installall</tt></span><span style="font-size: 10pt">
+rule to perform the normal loop on all
+architectures and then copy a prototype file
+to the system library directory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/$objtype/mkfile</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>TARG=lex</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>OFILES=lmain.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    y.tab.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    sub1.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    sub2.$O\</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    header.$O\</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>HFILES=ldefs.h\</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>YFILES=parser.y\</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>BIN=/$objtype/bin</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;/sys/src/cmd/mkone</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>installall:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    for(objtype in $CPUS)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        mk install</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    cp ncform /sys/lib/lex</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another way to perform the same override is to
+add a dependency to the default
+</span><span style="font-size: 10pt"><tt>installall</tt></span><span style="font-size: 10pt">
+rule that executes an additional rule to
+install the prototype file:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>installall:V:   ncform.install</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ncform.install:V:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    cp ncform /sys/lib/lex</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Special Tricks
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Two special cases
+require extra deviousness.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the first, a file needed to build an
+executable is generated by a program that,
+in turn, is built from a source file that
+is not part of the product.  In this case,
+the
+executable must be built for the
+target architecture, but the intermediate
+executable must be built for the architecture
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+is executing on.  The intermediate executable
+is built by recursively invoking
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+with the appropriate target and the
+executing architecture as the target
+architecture.  When that
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+completes, the intermediate is
+executed to generate the source file to
+complete the build for the target architecture.
+The earlier example of
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/awk/mkfile</tt></span><span style="font-size: 10pt">
+illustrates this technique.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another awkward situation
+occurs when a directory contains
+source to build an executable as
+well as source for auxiliary executables
+that are not to be installed.  In this case
+the
+</span><span style="font-size: 10pt"><tt>mkmany</tt></span><span style="font-size: 10pt">
+generic rules are inappropriate, because
+all executables would be built and installed.
+Instead, use the
+</span><span style="font-size: 10pt"><tt>mkone</tt></span><span style="font-size: 10pt">
+generic file to build the primary executable
+and provide extra targets to
+build the auxiliary files.  This
+approach is also useful when the auxiliary
+files are not executables;
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/spell/mkfile</tt></span><span style="font-size: 10pt">
+augments the default rules to build and install the
+</span><span style="font-size: 10pt"><tt>spell</tt></span><span style="font-size: 10pt">
+executable with
+elaborate rules to generate
+and maintain the auxiliary spelling lists.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

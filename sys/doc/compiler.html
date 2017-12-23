@@ -1,0 +1,1429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Plan 9 C Compilers</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Plan 9 C Compilers</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Ken Thompson</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ken@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This paper describes the overall structure and function of the Plan 9 C compilers.
+A more detailed implementation document
+for any one of the compilers
+is yet to be written.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>1.
+Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are many compilers in the series.
+Six of the compilers (MIPS 3000, SPARC, Intel 386, Power PC, DEC Alpha, and Motorola 68020)
+are considered active and are used to compile
+current versions of Plan 9.
+Several others (Motorola 68000, Intel 960, ARM 7500, AMD 29000) have had only limited use, such as
+to program peripherals or experimental devices.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.
+Structure
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler is a single program that produces an
+object file.
+Combined in the compiler are the traditional
+roles of preprocessor, lexical analyzer, parser, code generator,
+local optimizer,
+and first half of the assembler.
+The object files are binary forms of assembly
+language,
+similar to what might be passed between
+the first and second passes of an assembler.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Object files and libraries
+are combined by a loader
+program to produce the executable binary.
+The loader combines the roles of second half
+of the assembler, global optimizer, and loader.
+The names of the compliers, loaders, and assemblers
+are as follows:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">SPARC   </span><span style="font-size: 10pt"><tt>kc</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>kl</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>ka</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Power   </span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>qc</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>ql</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">MIPS    </span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>vl</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>va</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Motorola    </span><span style="font-size: 10pt"><tt>68000</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>1c</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>1l</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Motorola    </span><span style="font-size: 10pt"><tt>68020</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>2c</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>2l</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">ARM </span><span style="font-size: 10pt"><tt>7500</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>5c</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>5l</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Intel   </span><span style="font-size: 10pt"><tt>960</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>6c</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>6l</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">DEC </span><span style="font-size: 10pt"><tt>Alpha</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>7c</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>7l</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Intel   </span><span style="font-size: 10pt"><tt>386</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>8c</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>8l</tt></span><span style="font-size: 10pt"></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">AMD </span><span style="font-size: 10pt"><tt>29000</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>9c</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><tt>9l</tt></span><span style="font-size: 10pt"></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is a further breakdown
+in the source of the compilers into
+object-independent and
+object-dependent
+parts.
+All of the object-independent parts
+are combined into source files in the
+directory
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/cc</tt></span><span style="font-size: 10pt">.
+The object-dependent parts are collected
+in a separate directory for each compiler,
+for example
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/vc</tt></span><span style="font-size: 10pt">.
+All of the code,
+both object-independent and
+object-dependent,
+is machine-independent
+and may be cross-compiled and executed on any
+of the architectures.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.
+The Language
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler implements ANSI C with some
+restrictions and extensions
+[ANSI90].
+Most of the restrictions are due to
+personal preference, while
+most of the extensions were to help in
+the implementation of Plan 9.
+There are other departures from the standard,
+particularly in the libraries,
+that are beyond the scope of this
+paper.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.1.
+Register, volatile, const
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The keyword
+</span><span style="font-size: 10pt"><tt>register</tt></span><span style="font-size: 10pt">
+is recognized syntactically
+but is semantically ignored.
+Thus taking the address of a
+</span><span style="font-size: 10pt"><tt>register</tt></span><span style="font-size: 10pt">
+variable is not diagnosed.
+The keyword
+</span><span style="font-size: 10pt"><tt>volatile</tt></span><span style="font-size: 10pt">
+disables all optimizations, in particular registerization, of the corresponding variable.
+The keyword
+</span><span style="font-size: 10pt"><tt>const</tt></span><span style="font-size: 10pt">
+generates warnings (if warnings are enabled by the compiler&rsquo;s
+</span><span style="font-size: 10pt"><tt>-w</tt></span><span style="font-size: 10pt">
+option) of non-constant use of the variable,
+but does not affect the generated code.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.2.
+The preprocessor
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The C preprocessor is probably the
+biggest departure from the ANSI standard.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The preprocessor built into the Plan 9 compilers does not support
+</span><span style="font-size: 10pt"><tt>#if</tt></span><span style="font-size: 10pt">,
+although it does handle
+</span><span style="font-size: 10pt"><tt>#ifdef</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>#include</tt></span><span style="font-size: 10pt">.
+If it is necessary to be more standard,
+the source text can first be run through the separate ANSI C
+preprocessor,
+</span><span style="font-size: 10pt"><tt>cpp</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.3.
+Unnamed substructures
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The most important and most heavily used of the
+extensions is the declaration of an
+unnamed substructure or subunion.
+For example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    typedef</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    struct  lock</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    {</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        int    locked;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    } Lock;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    typedef</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    struct  node</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    {</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        int type;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        union</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        {</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>            double dval;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>            float  fval;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>            long   lval;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        };</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        Lock;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    } Node;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    Lock*   lock;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    Node*   node;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The declaration of
+</span><span style="font-size: 10pt"><tt>Node</tt></span><span style="font-size: 10pt">
+has an unnamed substructure of type
+</span><span style="font-size: 10pt"><tt>Lock</tt></span><span style="font-size: 10pt">
+and an unnamed subunion.
+One use of this feature allows references to elements of the
+subunit to be accessed as if they were in
+the outer structure.
+Thus
+</span><span style="font-size: 10pt"><tt>node-&gt;dval</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>node-&gt;locked</tt></span><span style="font-size: 10pt">
+are legitimate references.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When an outer structure is used
+in a context that is only legal for
+an unnamed substructure,
+the compiler promotes the reference to the
+unnamed substructure.
+This is true for references to structures and
+to references to pointers to structures.
+This happens in assignment statements and
+in argument passing where prototypes have been
+declared.
+Thus, continuing with the example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    lock = node;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">would assign a pointer to the unnamed
+</span><span style="font-size: 10pt"><tt>Lock</tt></span><span style="font-size: 10pt">
+in
+the
+</span><span style="font-size: 10pt"><tt>Node</tt></span><span style="font-size: 10pt">
+to the variable
+</span><span style="font-size: 10pt"><tt>lock</tt></span><span style="font-size: 10pt">.
+Another example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    extern void lock(Lock*);</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    func(...)</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    {</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        ...</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        lock(node);</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        ...</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    }</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will pass a pointer to the
+</span><span style="font-size: 10pt"><tt>Lock</tt></span><span style="font-size: 10pt">
+substructure.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Finally, in places where context is insufficient to identify the unnamed structure,
+the type name (it must be a
+</span><span style="font-size: 10pt"><tt>typedef</tt></span><span style="font-size: 10pt">)
+of the unnamed structure can be used as an identifier.
+In our example,
+</span><span style="font-size: 10pt"><tt>&amp;node-&gt;Lock</tt></span><span style="font-size: 10pt">
+gives the address of the anonymous
+</span><span style="font-size: 10pt"><tt>Lock</tt></span><span style="font-size: 10pt">
+structure.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.4.
+Structure displays
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A structure cast followed by a list of expressions in braces is
+an expression with the type of the structure and elements assigned from
+the corresponding list.
+Structures are now almost first-class citizens of the language.
+It is common to see code like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    r = (Rectangle){point1, (Point){x,y+2}};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.5.
+Initialization indexes
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In initializers of arrays,
+one may place a constant expression
+in square brackets before an initializer.
+This causes the next initializer to assign
+the indicated element.
+For example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    enum    errors</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    {</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        Etoobig,</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        Ealarm,</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        Egreg</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    };</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    char* errstrings[] =</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    {</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        [Ealarm]    "Alarm call",</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        [Egreg] "Panic: out of mbufs",</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>        [Etoobig]   "Arg list too long",</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    };</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the same way,
+individual structures members may
+be initialized in any order by preceding the initialization with
+</span><span style="font-size: 10pt"><tt>.tagname</tt></span><span style="font-size: 10pt">.
+Both forms allow an optional
+</span><span style="font-size: 10pt"><tt>=</tt></span><span style="font-size: 10pt">,
+to be compatible with a proposed
+extension to ANSI C.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.6.
+External register
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The declaration
+</span><span style="font-size: 10pt"><tt>extern</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>register</tt></span><span style="font-size: 10pt">
+will dedicate a register to
+a variable on a global basis.
+It can be used only under special circumstances.
+External register variables must be identically
+declared in all modules and
+libraries.
+The feature is not intended for efficiency,
+although it can produce efficient code;
+rather it represents a unique storage class that
+would be hard to get any other way.
+On a shared-memory multi-processor,
+an external register is
+one-per-processor and neither one-per-procedure (automatic)
+or one-per-system (external).
+It is used for two variables in the Plan 9 kernel,
+</span><span style="font-size: 10pt"><tt>u</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>m</tt></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><tt>U</tt></span><span style="font-size: 10pt">
+is a pointer to the structure representing the currently running process
+and
+</span><span style="font-size: 10pt"><tt>m</tt></span><span style="font-size: 10pt">
+is a pointer to the per-machine data structure.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.7.
+Long long
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compilers accept
+</span><span style="font-size: 10pt"><tt>long</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>long</tt></span><span style="font-size: 10pt">
+as a basic type meaning 64-bit integer.
+On all of the machines
+this type is synthesized from 32-bit instructions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.8.
+Pragma
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compilers accept
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>lib</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>libname</i></span><span style="font-size: 10pt">
+and pass the
+library name string uninterpreted
+to the loader.
+The loader uses the library name to
+find libraries to load.
+If the name contains
+</span><span style="font-size: 10pt"><tt>%O</tt></span><span style="font-size: 10pt">,
+it is replaced with
+the single character object type of the compiler
+(e.g.,
+</span><span style="font-size: 10pt"><tt>v</tt></span><span style="font-size: 10pt">
+for the MIPS).
+If the name contains
+</span><span style="font-size: 10pt"><tt>%M</tt></span><span style="font-size: 10pt">,
+it is replaced with
+the architecture type for the compiler
+(e.g.,
+</span><span style="font-size: 10pt"><tt>mips</tt></span><span style="font-size: 10pt">
+for the MIPS).
+If the name starts with
+</span><span style="font-size: 10pt"><tt>/</tt></span><span style="font-size: 10pt">
+it is an absolute pathname;
+if it starts with
+</span><span style="font-size: 10pt"><tt>.</tt></span><span style="font-size: 10pt">
+then it is searched for in the loader&rsquo;s current directory.
+Otherwise, the name is searched from
+</span><span style="font-size: 10pt"><tt>/%M/lib</tt></span><span style="font-size: 10pt">.
+Such
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+statements in header files guarantee that the correct
+libraries are always linked with a program without the
+need to specify them explicitly at link time.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">They also accept
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>hjdicks</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>on</tt></span><span style="font-size: 10pt">
+(or
+</span><span style="font-size: 10pt"><tt>yes</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>1</tt></span><span style="font-size: 10pt">)
+to cause subsequently declared data, until
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>hjdicks</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>off</tt></span><span style="font-size: 10pt">
+(or
+</span><span style="font-size: 10pt"><tt>no</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>0</tt></span><span style="font-size: 10pt">),
+to be laid out in memory tightly packed in successive bytes, disregarding
+the usual alignment rules.
+Accessing such data can cause faults.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Similarly, 
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>profile</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>off</tt></span><span style="font-size: 10pt">
+(or
+</span><span style="font-size: 10pt"><tt>no</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>0</tt></span><span style="font-size: 10pt">)
+causes subsequently declared functions, until
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>profile</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>on</tt></span><span style="font-size: 10pt">
+(or
+</span><span style="font-size: 10pt"><tt>yes</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>1</tt></span><span style="font-size: 10pt">),
+to be marked as unprofiled.
+Such functions will not be profiled when 
+profiling is enabled for the rest of the program.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Two
+</span><span style="font-size: 10pt"><tt>#pragma</tt></span><span style="font-size: 10pt">
+statements allow type-checking of
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">-like
+functions.
+The first, of the form
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#pragma varargck argpos error 2</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">tells the compiler that the second argument to
+</span><span style="font-size: 10pt"><tt>error</tt></span><span style="font-size: 10pt">
+is a
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+format string (see the manual page
+</span><span style="font-size: 10pt"><i>print</i></span><span style="font-size: 10pt">(2))
+that specifies how to format
+</span><span style="font-size: 10pt"><tt>error</tt></span><span style="font-size: 10pt">&rsquo;s
+subsequent arguments.
+The second, of the form
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#pragma varargck type "s" char*</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">says that the
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+format verb
+</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+processes an argument of
+type
+</span><span style="font-size: 10pt"><tt>char*</tt></span><span style="font-size: 10pt">.
+If the compiler&rsquo;s
+</span><span style="font-size: 10pt"><tt>-F</tt></span><span style="font-size: 10pt">
+option is enabled, the compiler will use this information
+to report type violations in the arguments to
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>error</tt></span><span style="font-size: 10pt">,
+and similar routines.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.
+Object module conventions
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The overall conventions of the runtime environment
+are important
+to runtime efficiency.
+In this section,
+several of these conventions are discussed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.1.
+Register saving
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the Plan 9 compilers,
+the caller of a procedure saves the registers.
+With caller-saves,
+the leaf procedures can use all the
+registers and never save them.
+If you spend a lot of time at the leaves,
+this seems preferable.
+With callee-saves,
+the saving of the registers is done
+in the single point of entry and return.
+If you are interested in space,
+this seems preferable.
+In both,
+there is a degree of uncertainty
+about what registers need to be saved.
+Callee-saved registers make it difficult to
+find variables in registers in debuggers.
+Callee-saved registers also complicate
+the implementation of
+</span><span style="font-size: 10pt"><tt>longjmp</tt></span><span style="font-size: 10pt">.
+The convincing argument is
+that with caller-saves,
+the decision to registerize a variable
+can include the cost of saving the register
+across calls.
+For a further discussion of caller- vs. callee-saves,
+see the paper by Davidson and Whalley [Dav91].
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the Plan 9 operating system,
+calls to the kernel look like normal procedure
+calls, which means
+the caller
+has saved the registers and the system
+entry does not have to.
+This makes system calls considerably faster.
+Since this is a potential security hole,
+and can lead to non-determinism,
+the system may eventually save the registers
+on entry,
+or more likely clear the registers on return.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.2.
+Calling convention
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Older C compilers maintain a frame pointer, which is at a known constant
+offset from the stack pointer within each function.
+For machines where the stack grows towards zero,
+the argument pointer is at a known constant offset
+from the frame pointer.
+Since the stack grows down in Plan 9,
+the Plan 9 compilers
+keep neither an
+explicit frame pointer nor
+an explicit argument pointer;
+instead they generate addresses relative to the stack pointer.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On some architectures, the first argument to a subroutine is passed in a register.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.3.
+Functions returning structures
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Structures longer than one word are awkward to implement
+since they do not fit in registers and must
+be passed around in memory.
+Functions that return structures
+are particularly clumsy.
+The Plan 9 compilers pass the return address of
+a structure as the first argument of a
+function that has a structure return value.
+Thus
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    x = f(...)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">is rewritten as
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    f(&amp;x, ...)</tt></span><span style="font-size: 10pt">.</span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This saves a copy and makes the compilation
+much less clumsy.
+A disadvantage is that if you call this
+function without an assignment,
+a dummy location must be invented.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is also a danger of calling a function
+that returns a structure without declaring
+it as such.
+With ANSI C function prototypes,
+this error need never occur.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.
+Implementation
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The compiler is divided internally into
+four machine-independent passes,
+four machine-dependent passes,
+and an output pass.
+The next nine sections describe each pass in order.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.1.
+Parsing
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first pass is a YACC-based parser
+[Joh79].
+Declarations are interpreted immediately,
+building a block structured symbol table.
+Executable statements are put into a parse tree
+and collected,
+without interpretation.
+At the end of each procedure,
+the parse tree for the function is
+examined by the other passes of the compiler.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The input stream of the parser is
+a pushdown list of input activations.
+The preprocessor
+expansions of
+macros
+and
+</span><span style="font-size: 10pt"><tt>#include</tt></span><span style="font-size: 10pt">
+are implemented as pushdowns.
+Thus there is no separate
+pass for preprocessing.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.2.
+Typing
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The next pass distributes typing information
+to every node of the tree.
+Implicit operations on the tree are added,
+such as type promotions and taking the
+address of arrays and functions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.3.
+Machine-independent optimization
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The next pass performs optimizations
+and transformations of the tree, such as converting
+</span><span style="font-size: 10pt"><tt>&amp;*x</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>*&amp;x</tt></span><span style="font-size: 10pt">
+into
+</span><span style="font-size: 10pt"><tt>x</tt></span><span style="font-size: 10pt">.
+Constant expressions are converted to constants in this pass.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.4.
+Arithmetic rewrites
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is another machine-independent optimization.
+Subtrees of add, subtract, and multiply of integers are
+rewritten for easier compilation.
+The major transformation is factoring:
+</span><span style="font-size: 10pt"><tt>4+8*a+16*b+5</tt></span><span style="font-size: 10pt">
+is transformed into
+</span><span style="font-size: 10pt"><tt>9+8*(a+2*b)</tt></span><span style="font-size: 10pt">.
+Such expressions arise from address
+manipulation and array indexing.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.5.
+Addressability
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is the first of the machine-dependent passes.
+The addressability of a processor is defined as the set of
+expressions that is legal in the address field
+of a machine language instruction.
+The addressability of different processors varies widely.
+At one end of the spectrum are the 68020 and VAX,
+which allow a complex mix of incrementing,
+decrementing,
+indexing, and relative addressing.
+At the other end is the MIPS,
+which allows only registers and constant offsets from the
+contents of a register.
+The addressability can be different for different instructions
+within the same processor.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It is important to the code generator to know when a
+subtree represents an address of a particular type.
+This is done with a bottom-up walk of the tree.
+In this pass, the leaves are labeled with small integers.
+When an internal node is encountered,
+it is labeled by consulting a table indexed by the
+labels on the left and right subtrees.
+For example,
+on the 68020 processor,
+it is possible to address an
+offset from a named location.
+In C, this is represented by the expression
+</span><span style="font-size: 10pt"><tt>*(&amp;name+constant)</tt></span><span style="font-size: 10pt">.
+This is marked addressable by the following table.
+In the table,
+a node represented by the left column is marked
+with a small integer from the right column.
+Marks of the form
+</span><span style="font-size: 10pt"><tt>A</tt></span><span style="font-size: 8pt"><tt><sub>i</sub></tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+are addressable while
+marks of the form
+</span><span style="font-size: 10pt"><tt>N</tt></span><span style="font-size: 8pt"><tt><sub>i</sub></tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+are not addressable.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>    Node    Marked</b></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    name    A</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    const   A</tt></span><span style="font-size: 8pt"><tt><sub>2</sub></tt></span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    &amp;A</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt> A</tt></span><span style="font-size: 8pt"><tt><sub>3</sub></tt></span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    A</tt></span><span style="font-size: 8pt"><tt><sub>3</sub></tt></span><span style="font-size: 10pt"><tt>+A</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt>   N</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt> </tt></span><span style="font-size: 10pt">(note that this is not addressable)</span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    *N</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt> A</tt></span><span style="font-size: 8pt"><tt><sub>4</sub></tt></span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here there is a distinction between
+a node marked
+</span><span style="font-size: 10pt"><tt>A</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+and a node marked
+</span><span style="font-size: 10pt"><tt>A</tt></span><span style="font-size: 8pt"><tt><sub>4</sub></tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+because the address operator of an
+</span><span style="font-size: 10pt"><tt>A</tt></span><span style="font-size: 8pt"><tt><sub>4</sub></tt></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+node is not addressable.
+So to extend the table:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>    Node    Marked</b></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    &amp;A</tt></span><span style="font-size: 8pt"><tt><sub>4</sub></tt></span><span style="font-size: 10pt"><tt> N</tt></span><span style="font-size: 8pt"><tt><sub>2</sub></tt></span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    N</tt></span><span style="font-size: 8pt"><tt><sub>2</sub></tt></span><span style="font-size: 10pt"><tt>+N</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt>   N</tt></span><span style="font-size: 8pt"><tt><sub>1</sub></tt></span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The full addressability of the 68020 is expressed
+in 18 rules like this,
+while the addressability of the MIPS is expressed
+in 11 rules.
+When one ports the compiler,
+this table is usually initialized
+so that leaves are labeled as addressable and nothing else.
+The code produced is poor,
+but porting is easy.
+The table can be extended later.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This pass also rewrites some complex operators
+into procedure calls.
+Examples include 64-bit multiply and divide.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the same bottom-up pass of the tree,
+the nodes are labeled with a Sethi-Ullman complexity
+[Set70].
+This number is roughly the number of registers required
+to compile the tree on an ideal machine.
+An addressable node is marked 0.
+A function call is marked infinite.
+A unary operator is marked as the
+maximum of 1 and the mark of its subtree.
+A binary operator with equal marks on its subtrees is
+marked with a subtree mark plus 1.
+A binary operator with unequal marks on its subtrees is
+marked with the maximum mark of its subtrees.
+The actual values of the marks are not too important,
+but the relative values are.
+The goal is to compile the harder
+(larger mark)
+subtree first.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.6.
+Code generation
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Code is generated by recursive
+descent.
+The Sethi-Ullman complexity completely guides the
+order.
+The addressability defines the leaves.
+The only difficult part is compiling a tree
+that has two infinite (function call)
+subtrees.
+In this case,
+one subtree is compiled into the return register
+(usually the most convenient place for a function call)
+and then stored on the stack.
+The other subtree is compiled into the return register
+and then the operation is compiled with
+operands from the stack and the return register.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is a separate boolean code generator that compiles
+conditional expressions.
+This is fundamentally different from compiling an arithmetic expression.
+The result of the boolean code generator is the
+position of the program counter and not an expression.
+The boolean code generator makes extensive use of De Morgan&rsquo;s rule.
+The boolean code generator is an expanded version of that described
+in chapter 8 of Aho, Sethi, and Ullman
+[Aho87].
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is a considerable amount of talk in the literature
+about automating this part of a compiler with a machine
+description.
+Since this code generator is so small
+(less than 500 lines of C)
+and easy,
+it hardly seems worth the effort.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.7.
+Registerization
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Up to now,
+the compiler has operated on syntax trees
+that are roughly equivalent to the original source language.
+The previous pass has produced machine language in an internal
+format.
+The next two passes operate on the internal machine language
+structures.
+The purpose of the next pass is to reintroduce
+registers for heavily used variables.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">All of the variables that can be
+potentially registerized within a procedure are
+placed in a table.
+(Suitable variables are any automatic or external
+scalars that do not have their addresses extracted.
+Some constants that are hard to reference are also
+considered for registerization.)
+Four separate data flow equations are evaluated
+over the procedure on all of these variables.
+Two of the equations are the normal set-behind
+and used-ahead
+bits that define the life of a variable.
+The two new bits tell if a variable life
+crosses a function call ahead or behind.
+By examining a variable over its lifetime,
+it is possible to get a cost
+for registerizing.
+Loops are detected and the costs are multiplied
+by three for every level of loop nesting.
+Costs are sorted and the variables
+are replaced by available registers on a greedy basis.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The 68020 has two different
+types of registers.
+For the 68020,
+two different costs are calculated for
+each variable life and the register type that
+affords the better cost is used.
+Ties are broken by counting the number of available
+registers of each type.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Note that externals are registerized together with automatics.
+This is done by evaluating the semantics of a &lsquo;&lsquo;call&rsquo;&rsquo; instruction
+differently for externals and automatics.
+Since a call goes outside the local procedure,
+it is assumed that a call references all externals.
+Similarly,
+externals are assumed to be set before an &lsquo;&lsquo;entry&rsquo;&rsquo; instruction
+and assumed to be referenced after a &lsquo;&lsquo;return&rsquo;&rsquo; instruction.
+This makes sure that externals are in memory across calls.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The overall results are satisfactory.
+It would be nice to be able to do this processing in
+a machine-independent way,
+but it is impossible to get all of the costs and
+side effects of different choices by examining the parse tree.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Most of the code in the registerization pass is machine-independent.
+The major machine-dependency is in
+examining a machine instruction to ask if it sets or references
+a variable.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.8.
+Machine code optimization
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The next pass walks the machine code
+for opportunistic optimizations.
+For the most part,
+this is highly specific to a particular
+processor.
+One optimization that is performed
+on all of the processors is the
+removal of unnecessary &lsquo;&lsquo;move&rsquo;&rsquo;
+instructions.
+Ironically,
+most of these instructions were inserted by
+the previous pass.
+There are two patterns that are repetitively
+matched and replaced until no more matches are
+found.
+The first tries to remove &lsquo;&lsquo;move&rsquo;&rsquo; instructions
+by relabeling variables.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a &lsquo;&lsquo;move&rsquo;&rsquo; instruction is encountered,
+if the destination variable is set before the
+source variable is referenced,
+then all of the references to the destination
+variable can be renamed to the source and the &lsquo;&lsquo;move&rsquo;&rsquo;
+can be deleted.
+This transformation uses the reverse data flow
+set up in the previous pass.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An example of this pattern is depicted in the following
+table.
+The pattern is in the left column and the
+replacement action is in the right column.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    MOVE    a-&gt;b        </tt></span><span style="font-size: 10pt">(remove)</span><span style="font-size: 10pt"><tt></tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    (sequence with no mention of </span><span style="font-size: 10pt"><tt>a</tt></span><span style="font-size: 10pt">)</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    USE b       USE a</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    (sequence with no mention of </span><span style="font-size: 10pt"><tt>a</tt></span><span style="font-size: 10pt">)</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    SET b       SET b</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Experiments have shown that it is marginally
+worthwhile to rename uses of the destination variable
+with uses of the source variable up to
+the first use of the source variable.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The second transform will do relabeling
+without deleting instructions.
+When a &lsquo;&lsquo;move&rsquo;&rsquo; instruction is encountered,
+if the source variable has been set prior
+to the use of the destination variable
+then all of the references to the source
+variable are replaced by the destination and
+the &lsquo;&lsquo;move&rsquo;&rsquo; is inverted.
+Typically,
+this transformation will alter two &lsquo;&lsquo;move&rsquo;&rsquo;
+instructions and allow the first transformation
+another chance to remove code.
+This transformation uses the forward data flow
+set up in the previous pass.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Again,
+the following is a depiction of the transformation where
+the pattern is in the left column and the
+rewrite is in the right column.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    SET a       SET b</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    (sequence with no use of </span><span style="font-size: 10pt"><tt>b</tt></span><span style="font-size: 10pt">)</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    USE a       USE b</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    (sequence with no use of </span><span style="font-size: 10pt"><tt>b</tt></span><span style="font-size: 10pt">)</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><tt>    MOVE    a-&gt;b        MOVE    b-&gt;a</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Iterating these transformations
+will usually get rid of all redundant &lsquo;&lsquo;move&rsquo;&rsquo; instructions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A problem with this organization is that the costs
+of registerization calculated in the previous pass
+must depend on how well this pass can detect and remove
+redundant instructions.
+Often,
+a fine candidate for registerization is rejected
+because of the cost of instructions that are later
+removed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.9.
+Writing the object file
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The last pass walks the internal assembly language
+and writes the object file.
+The object file is reduced in size by about a factor
+of three with simple compression
+techniques.
+The most important aspect of the object file
+format is that it is independent of the compiling machine.
+All integer and floating numbers in the object
+code are converted to known formats and byte
+orders.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.
+The loader
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The loader is a multiple pass program that
+reads object files and libraries and produces
+an executable binary.
+The loader also does some minimal
+optimizations and code rewriting.
+Many of the operations performed by the
+loader are machine-dependent.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first pass of the loader reads the
+object modules into an internal data
+structure that looks like binary assembly language.
+As the instructions are read,
+code is reordered to remove
+unconditional branch instructions.
+Conditional branch instructions are inverted
+to prevent the insertion of unconditional branches.
+The loader will also make a copy of a few instructions
+to remove an unconditional branch.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The next pass allocates addresses for
+all external data.
+Typical of processors is the MIPS,
+which can reference &plusmn;32K bytes from a
+register.
+The loader allocates the register
+</span><span style="font-size: 10pt"><tt>R30</tt></span><span style="font-size: 10pt">
+as the static pointer.
+The value placed in
+</span><span style="font-size: 10pt"><tt>R30</tt></span><span style="font-size: 10pt">
+is the base of the data segment plus 32K.
+It is then cheap to reference all data in the
+first 64K of the data segment.
+External variables are allocated to
+the data segment
+with the smallest variables allocated first.
+If all of the data cannot fit into the first
+64K of the data segment,
+then usually only a few large arrays
+need more expensive addressing modes.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For the MIPS processor,
+the loader makes a pass over the internal
+structures,
+exchanging instructions to try
+to fill &lsquo;&lsquo;delay slots&rsquo;&rsquo; with useful work.
+If a useful instruction cannot be found
+to fill a delay slot,
+the loader will insert
+&lsquo;&lsquo;noop&rsquo;&rsquo;
+instructions.
+This pass is very expensive and does not
+do a good job.
+About 40% of all instructions are in
+delay slots.
+About 65% of these are useful instructions and
+35% are &lsquo;&lsquo;noops.&rsquo;&rsquo;
+The vendor-supplied assembler does this job
+more effectively,
+filling about 80%
+of the delay slots with useful instructions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On the 68020 processor,
+branch instructions come in a variety of
+sizes depending on the relative distance
+of the branch.
+Thus the size of branch instructions
+can be mutually dependent.
+The loader uses a multiple pass algorithm
+to resolve the branch lengths
+[Szy78].
+Initially, all branches are assumed minimal length.
+On each subsequent pass,
+the branches are reassessed
+and expanded if necessary.
+When no more expansions occur,
+the locations of the instructions in
+the text segment are known.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On the MIPS processor,
+all instructions are one size.
+A single pass over the instructions will
+determine the locations of all addresses
+in the text segment.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The last pass of the loader produces the
+executable binary.
+A symbol table and other tables are
+produced to help the debugger to
+interpret the binary symbolically.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The loader places absolute source line numbers in the symbol table.
+The name and absolute line number of all
+</span><span style="font-size: 10pt"><tt>#include</tt></span><span style="font-size: 10pt">
+files is also placed in the
+symbol table so that the debuggers can
+associate object code to source files.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>7.
+Performance
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following is a table of the source size of the MIPS
+compiler.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    lines   module</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     509    machine-independent headers</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    1070    machine-independent YACC source</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    6090    machine-independent C source</span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     545    machine-dependent headers</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    6532    machine-dependent C source</span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     298    loader headers</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    5215    loader C source</span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following table shows timing
+of a test program
+that plays checkers, running on a MIPS R4000.
+The test program is 26 files totaling 12600 lines of C.
+The execution time does not significantly
+depend on library implementation.
+Since no other compiler runs on Plan 9,
+the Plan 9 tests were done with the Plan 9 operating system;
+the other tests were done on the vendor&rsquo;s operating system.
+The hardware was identical in both cases.
+The optimizer in the vendor&rsquo;s compiler
+is reputed to be extremely good.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">      4.49s Plan 9 </span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-N</tt></span><span style="font-size: 10pt"> compile time (opposite of </span><span style="font-size: 10pt"><tt>-O</tt></span><span style="font-size: 10pt">)</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">      1.72s Plan 9 </span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-N</tt></span><span style="font-size: 10pt"> load time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    148.69s Plan 9 </span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-N</tt></span><span style="font-size: 10pt"> run time</span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     15.07s Plan 9 </span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt"> compile time (</span><span style="font-size: 10pt"><tt>-O</tt></span><span style="font-size: 10pt"> implicit)</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">      1.66s Plan 9 </span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt"> load time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     89.96s Plan 9 </span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt"> run time</span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     14.83s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> compile time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">      0.38s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> load time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">    104.75s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> run time</span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     43.59s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-O</tt></span><span style="font-size: 10pt"> compile time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">      0.38s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-O</tt></span><span style="font-size: 10pt"> load time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     76.19s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-O</tt></span><span style="font-size: 10pt"> run time</span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">      8.19s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-O3</tt></span><span style="font-size: 10pt"> compile time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     35.97s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-O3</tt></span><span style="font-size: 10pt"> load time</span></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">     71.16s vendor </span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><tt>-O3</tt></span><span style="font-size: 10pt"> run time</span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To compare the Intel compiler,
+a program that is about 40% bit manipulation and
+about 60% single precision floating point was
+run on the same 33 MHz 486, once under Windows
+compiled with the Watcom compiler, version 10.0,
+in 16-bit mode and once under
+Plan 9 in 32-bit mode.
+The Plan 9 execution time was 27 sec while the Windows
+execution time was 31 sec.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>8.
+Conclusions
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The new compilers compile
+quickly,
+load slowly,
+and produce
+medium quality
+object code.
+The compilers are relatively
+portable,
+requiring but a couple of weeks&rsquo; work to
+produce a compiler for a different computer.
+For Plan 9,
+where we needed several compilers
+with specialized features and
+our own object formats,
+this project was indispensable.
+It is also necessary for us to
+be able to freely distribute our compilers
+with the Plan 9 distribution.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Two problems have come up in retrospect.
+The first has to do with the
+division of labor between compiler and loader.
+Plan 9 runs on multi-processors and as such
+compilations are often done in parallel.
+Unfortunately,
+all compilations must be complete before loading
+can begin.
+The load is then single-threaded.
+With this model,
+any shift of work from compile to load
+results in a significant increase in real time.
+The same is true of libraries that are compiled
+infrequently and loaded often.
+In the future,
+we may try to put some of the loader work
+back into the compiler.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The second problem comes from
+the various optimizations performed over several
+passes.
+Often optimizations in different passes depend
+on each other.
+Iterating the passes could compromise efficiency,
+or even loop.
+We see no real solution to this problem.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>9.
+References
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Aho87] A. V. Aho, R. Sethi, and J. D. Ullman,
+</span><span style="font-size: 10pt"><i>Compilers - Principles, Techniques, and Tools,
+</i></span><span style="font-size: 10pt">Addison Wesley,
+Reading, MA,
+1987.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[ANSI90] </span><span style="font-size: 10pt"><i>American National Standard for Information Systems -
+Programming Language C</i></span><span style="font-size: 10pt">, American National Standards Institute, Inc.,
+New York, 1990.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Dav91] J. W. Davidson and D. B. Whalley,
+&lsquo;&lsquo;Methods for Saving and Restoring Register Values across Function Calls&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Software-Practice and Experience,
+</i></span><span style="font-size: 10pt">Vol 21(2), pp. 149-165, February 1991.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Joh79] S. C. Johnson,
+&lsquo;&lsquo;YACC - Yet Another Compiler Compiler&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>UNIX Programmer&rsquo;s Manual, Seventh Ed., Vol. 2A,
+</i></span><span style="font-size: 10pt">AT&amp;T Bell Laboratories,
+Murray Hill, NJ,
+1979.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Set70] R. Sethi and J. D. Ullman,
+&lsquo;&lsquo;The Generation of Optimal Code for Arithmetic Expressions&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Journal of the ACM,
+</i></span><span style="font-size: 10pt">Vol 17(4), pp. 715-728, 1970.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Szy78] T. G. Szymanski,
+&lsquo;&lsquo;Assembling Code for Machines with Span-dependent Instructions&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Communications of the ACM,
+</i></span><span style="font-size: 10pt">Vol 21(4), pp. 300-308, 1978.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.35in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><b>Notes</b></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Originally appeared, in a different form, in
+</span><span style="font-size: 10pt"><i>Proceedings of the Summer 1990 UKUUG Conference,
+</i></span><span style="font-size: 10pt">pp. 41-51,
+London, 1990.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+</body>
+</html>
+

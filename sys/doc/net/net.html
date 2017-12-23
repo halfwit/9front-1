@@ -1,0 +1,1634 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>The Organization of Networks in Plan 9</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>The Organization of Networks in Plan 9</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Dave Presotto</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Phil Winterbottom</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>presotto,philw@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In a distributed system networks are of paramount importance. This
+paper describes the implementation, design philosophy, and organization
+of network support in Plan 9. Topics include network requirements
+for distributed systems, our kernel implementation, network naming, user interfaces,
+and performance. We also observe that much of this organization is relevant to
+current systems.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>1.
+Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 [Pike90] is a general-purpose, multi-user, portable distributed system
+implemented on a variety of computers and networks.
+What distinguishes Plan 9 is its organization.
+The goals of this organization were to
+reduce administration
+and to promote resource sharing. One of the keys to its success as a distributed
+system is the organization and management of its networks.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A Plan 9 system comprises file servers, CPU servers and terminals.
+The file servers and CPU servers are typically centrally
+located multiprocessor machines with large memories and
+high speed interconnects.
+A variety of workstation-class machines
+serve as terminals
+connected to the central servers using several networks and protocols.
+The architecture of the system demands a hierarchy of network
+speeds matching the needs of the components.
+Connections between file servers and CPU servers are high-bandwidth point-to-point
+fiber links.
+Connections from the servers fan out to local terminals
+using medium speed networks
+such as Ethernet [Met80] and Datakit [Fra80].
+Low speed connections via the Internet and
+the AT&amp;T backbone serve users in Oregon and Illinois.
+Basic Rate ISDN data service and 9600 baud serial lines provide slow
+links to users at home.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Since CPU servers and terminals use the same kernel,
+users may choose to run programs locally on
+their terminals or remotely on CPU servers.
+The organization of Plan 9 hides the details of system connectivity
+allowing both users and administrators to configure their environment
+to be as distributed or centralized as they wish.
+Simple commands support the
+construction of a locally represented name space
+spanning many machines and networks.
+At work, users tend to use their terminals like workstations,
+running interactive programs locally and
+reserving the CPU servers for data or compute intensive jobs
+such as compiling and computing chess endgames.
+At home or when connected over
+a slow network, users tend to do most work on the CPU server to minimize
+traffic on the slow links.
+The goal of the network organization is to provide the same
+environment to the user wherever resources are used.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.
+Kernel Network Support
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Networks play a central role in any distributed system. This is particularly
+true in Plan 9 where most resources are provided by servers external to the kernel.
+The importance of the networking code within the kernel
+is reflected by its size;
+of 25,000 lines of kernel code, 12,500 are network and protocol related.
+Networks are continually being added and the fraction of code
+devoted to communications
+is growing.
+Moreover, the network code is complex.
+Protocol implementations consist almost entirely of
+synchronization and dynamic memory management, areas demanding 
+subtle error recovery
+strategies.
+The kernel currently supports Datakit, point-to-point fiber links,
+an Internet (IP) protocol suite and ISDN data service.
+The variety of networks and machines
+has raised issues not addressed by other systems running on commercial
+hardware supporting only Ethernet or FDDI.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.1.
+The File System protocol
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A central idea in Plan 9 is the representation of a resource as a hierarchical
+file system.
+Each process assembles a view of the system by building a
+</span><span style="font-size: 10pt"><i>name space</i></span><span style="font-size: 10pt">
+[Needham] connecting its resources.
+File systems need not represent disc files; in fact, most Plan 9 file systems have no
+permanent storage.
+A typical file system dynamically represents
+some resource like a set of network connections or the process table.
+Communication between the kernel, device drivers, and local or remote file servers uses a
+protocol called 9P. The protocol consists of 17 messages
+describing operations on files and directories.
+Kernel resident device and protocol drivers use a procedural version
+of the protocol while external file servers use an RPC form.
+Nearly all traffic between Plan 9 systems consists
+of 9P messages.
+9P relies on several properties of the underlying transport protocol.
+It assumes messages arrive reliably and in sequence and
+that delimiters between messages
+are preserved.
+When a protocol does not meet these
+requirements (for example, TCP does not preserve delimiters)
+we provide mechanisms to marshal messages before handing them
+to the system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A kernel data structure, the
+</span><span style="font-size: 10pt"><i>channel</i></span><span style="font-size: 10pt">,
+is a handle to a file server.
+Operations on a channel generate the following 9P messages.
+The
+</span><span style="font-size: 10pt"><tt>session</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>attach</tt></span><span style="font-size: 10pt">
+messages authenticate a connection, established by means external to 9P,
+and validate its user.
+The result is an authenticated
+channel
+referencing the root of the
+server.
+The
+</span><span style="font-size: 10pt"><tt>clone</tt></span><span style="font-size: 10pt">
+message makes a new channel identical to an existing channel, much like
+the
+</span><span style="font-size: 10pt"><tt>dup</tt></span><span style="font-size: 10pt">
+system call.
+A
+channel
+may be moved to a file on the server using a
+</span><span style="font-size: 10pt"><tt>walk</tt></span><span style="font-size: 10pt">
+message to descend each level in the hierarchy.
+The
+</span><span style="font-size: 10pt"><tt>stat</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>wstat</tt></span><span style="font-size: 10pt">
+messages read and write the attributes of the file referenced by a channel.
+The
+</span><span style="font-size: 10pt"><tt>open</tt></span><span style="font-size: 10pt">
+message prepares a channel for subsequent
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>write</tt></span><span style="font-size: 10pt">
+messages to access the contents of the file.
+</span><span style="font-size: 10pt"><tt>Create</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>remove</tt></span><span style="font-size: 10pt">
+perform the actions implied by their names on the file
+referenced by the channel.
+The
+</span><span style="font-size: 10pt"><tt>clunk</tt></span><span style="font-size: 10pt">
+message discards a channel without affecting the file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A kernel resident file server called the
+</span><span style="font-size: 10pt"><i>mount driver</i></span><span style="font-size: 10pt">
+converts the procedural version of 9P into RPCs.
+The
+</span><span style="font-size: 10pt"><i>mount</i></span><span style="font-size: 10pt">
+system call provides a file descriptor, which can be
+a pipe to a user process or a network connection to a remote machine, to
+be associated with the mount point.
+After a mount, operations
+on the file tree below the mount point are sent as messages to the file server.
+The
+mount
+driver manages buffers, packs and unpacks parameters from
+messages, and demultiplexes among processes using the file server.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.2.
+Kernel Organization
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The network code in the kernel is divided into three layers: hardware interface,
+protocol processing, and program interface.
+A device driver typically uses streams to connect the two interface layers.
+Additional stream modules may be pushed on
+a device to process protocols.
+Each device driver is a kernel-resident file system.
+Simple device drivers serve a single level
+directory containing just a few files;
+for example, we represent each UART
+by a data and a control file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpu% cd /dev</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpu% ls -l eia*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--rw-rw-rw- t 0 bootes bootes 0 Jul 16 17:28 eia1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--rw-rw-rw- t 0 bootes bootes 0 Jul 16 17:28 eia1ctl</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--rw-rw-rw- t 0 bootes bootes 0 Jul 16 17:28 eia2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--rw-rw-rw- t 0 bootes bootes 0 Jul 16 17:28 eia2ctl</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpu%</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The control file is used to control the device;
+writing the string
+</span><span style="font-size: 10pt"><tt>b1200</tt></span><span style="font-size: 10pt">
+to
+</span><span style="font-size: 10pt"><tt>/dev/eia1ctl</tt></span><span style="font-size: 10pt">
+sets the line to 1200 baud.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Multiplexed devices present
+a more complex interface structure.
+For example, the LANCE Ethernet driver
+serves a two level file tree (Figure 1)
+providing
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  device control and configuration
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  user-level protocols like ARP
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  diagnostic interfaces for snooping software.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The top directory contains a
+</span><span style="font-size: 10pt"><tt>clone</tt></span><span style="font-size: 10pt">
+file and a directory for each connection, numbered
+</span><span style="font-size: 10pt"><tt>1</tt></span><span style="font-size: 10pt">
+to
+</span><span style="font-size: 10pt"><tt>n</tt></span><span style="font-size: 10pt">.
+Each connection directory corresponds to an Ethernet packet type.
+Opening the
+</span><span style="font-size: 10pt"><tt>clone</tt></span><span style="font-size: 10pt">
+file finds an unused connection directory
+and opens its
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file.
+Reading the control file returns the ASCII connection number; the user
+process can use this value to construct the name of the proper 
+connection directory.
+In each connection directory files named
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>stats</tt></span><span style="font-size: 10pt">,
+and 
+</span><span style="font-size: 10pt"><tt>type</tt></span><span style="font-size: 10pt">
+provide access to the connection.
+Writing the string
+</span><span style="font-size: 10pt"><tt>connect 2048</tt></span><span style="font-size: 10pt">
+to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file sets the packet type to 2048
+and
+configures the connection to receive
+all IP packets sent to the machine.
+Subsequent reads of the file
+</span><span style="font-size: 10pt"><tt>type</tt></span><span style="font-size: 10pt">
+yield the string
+</span><span style="font-size: 10pt"><tt>2048</tt></span><span style="font-size: 10pt">.
+The
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file accesses the media;
+reading it
+returns the
+next packet of the selected type.
+Writing the file
+queues a packet for transmission after
+appending a packet header containing the source address and packet type.
+The
+</span><span style="font-size: 10pt"><tt>stats</tt></span><span style="font-size: 10pt">
+file returns ASCII text containing the interface address,
+packet input/output counts, error statistics, and general information
+about the state of the interface.
+</span></p><center><img src="tree0.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If several connections on an interface
+are configured for a particular packet type, each receives a
+copy of the incoming packets.
+The special packet type
+</span><span style="font-size: 10pt"><tt>-1</tt></span><span style="font-size: 10pt">
+selects all packets.
+Writing the strings
+</span><span style="font-size: 10pt"><tt>promiscuous</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>connect</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>-1</tt></span><span style="font-size: 10pt">
+to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file
+configures a conversation to receive all packets on the Ethernet.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Although the driver interface may seem elaborate,
+the representation of a device as a set of files using ASCII strings for
+communication has several advantages.
+Any mechanism supporting remote access to files immediately
+allows a remote machine to use our interfaces as gateways.
+Using ASCII strings to control the interface avoids byte order problems and
+ensures a uniform representation for
+devices on the same machine and even allows devices to be accessed remotely.
+Representing dissimilar devices by the same set of files allows common tools
+to serve
+several networks or interfaces.
+Programs like
+</span><span style="font-size: 10pt"><tt>stty</tt></span><span style="font-size: 10pt">
+are replaced by
+</span><span style="font-size: 10pt"><tt>echo</tt></span><span style="font-size: 10pt">
+and shell redirection.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.3.
+Protocol devices
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Network connections are represented as pseudo-devices called protocol devices.
+Protocol device drivers exist for the Datakit URP protocol and for each of the
+Internet IP protocols TCP, UDP, and IL.
+IL, described below, is a new communication protocol used by Plan 9 for
+transmitting file system RPC&rsquo;s.
+All protocol devices look identical so user programs contain no
+network-specific code.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Each protocol device driver serves a directory structure
+similar to that of the Ethernet driver.
+The top directory contains a
+</span><span style="font-size: 10pt"><tt>clone</tt></span><span style="font-size: 10pt">
+file and a directory for each connection numbered
+</span><span style="font-size: 10pt"><tt>0</tt></span><span style="font-size: 10pt">
+to
+</span><span style="font-size: 10pt"><tt>n</tt></span><span style="font-size: 10pt">.
+Each connection directory contains files to control one
+connection and to send and receive information.
+A TCP connection directory looks like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpu% cd /net/tcp/2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpu% ls -l</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--rw-rw---- I 0 ehg    bootes 0 Jul 13 21:14 ctl</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--rw-rw---- I 0 ehg    bootes 0 Jul 13 21:14 data</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--rw-rw---- I 0 ehg    bootes 0 Jul 13 21:14 listen</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--r--r--r-- I 0 bootes bootes 0 Jul 13 21:14 local</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--r--r--r-- I 0 bootes bootes 0 Jul 13 21:14 remote</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--r--r--r-- I 0 bootes bootes 0 Jul 13 21:14 status</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpu% cat local remote status</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>135.104.9.31 5012</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>135.104.53.11 564</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tcp/2 1 Established connect</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cpu%</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The files
+</span><span style="font-size: 10pt"><tt>local</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>remote</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>status</tt></span><span style="font-size: 10pt">
+supply information about the state of the connection.
+The
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+files
+provide access to the process end of the stream implementing the protocol.
+The
+</span><span style="font-size: 10pt"><tt>listen</tt></span><span style="font-size: 10pt">
+file is used to accept incoming calls from the network.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following steps establish a connection.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">1) The clone device of the
+appropriate protocol directory is opened to reserve an unused connection.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">2) The file descriptor returned by the open points to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file of the new connection.
+Reading that file descriptor returns an ASCII string containing
+the connection number.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">3) A protocol/network specific ASCII address string is written to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">4) The path of the
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file is constructed using the connection number.
+When the
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file is opened the connection is established.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A process can read and write this file descriptor
+to send and receive messages from the network.
+If the process opens the
+</span><span style="font-size: 10pt"><tt>listen</tt></span><span style="font-size: 10pt">
+file it blocks until an incoming call is received.
+An address string written to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file before the listen selects the
+ports or services the process is prepared to accept.
+When an incoming call is received, the open completes
+and returns a file descriptor
+pointing to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file of the new connection.
+Reading the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file yields a connection number used to construct the path of the
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file.
+A connection remains established while any of the files in the connection directory
+are referenced or until a close is received from the network.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.4.
+Streams
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A
+</span><span style="font-size: 10pt"><i>stream</i></span><span style="font-size: 10pt">
+[Rit84a][Presotto] is a bidirectional channel connecting a
+physical or pseudo-device to user processes.
+The user processes insert and remove data at one end of the stream.
+Kernel processes acting on behalf of a device insert data at
+the other end.
+Asynchronous communications channels such as pipes,
+TCP conversations, Datakit conversations, and RS232 lines are implemented using
+streams.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A stream comprises a linear list of
+</span><span style="font-size: 10pt"><i>processing modules</i></span><span style="font-size: 10pt">.
+Each module has both an upstream (toward the process) and
+downstream (toward the device)
+</span><span style="font-size: 10pt"><i>put routine</i></span><span style="font-size: 10pt">.
+Calling the put routine of the module on either end of the stream
+inserts data into the stream.
+Each module calls the succeeding one to send data up or down the stream.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An instance of a processing module is represented by a pair of
+</span><span style="font-size: 10pt"><i>queues</i></span><span style="font-size: 10pt">,
+one for each direction.
+The queues point to the put procedures and can be used
+to queue information traveling along the stream.
+Some put routines queue data locally and send it along the stream at some
+later time, either due to a subsequent call or an asynchronous
+event such as a retransmission timer or a device interrupt.
+Processing modules create helper kernel processes to
+provide a context for handling asynchronous events.
+For example, a helper kernel process awakens periodically
+to perform any necessary TCP retransmissions.
+The use of kernel processes instead of serialized run-to-completion service routines
+differs from the implementation of Unix streams.
+Unix service routines cannot
+use any blocking kernel resource and they lack a local long-lived state.
+Helper kernel processes solve these problems and simplify the stream code.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is no implicit synchronization in our streams.
+Each processing module must ensure that concurrent processes using the stream
+are synchronized.
+This maximizes concurrency but introduces the
+possibility of deadlock.
+However, deadlocks are easily avoided by careful programming; to
+date they have not caused us problems.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Information is represented by linked lists of kernel structures called
+</span><span style="font-size: 10pt"><i>blocks</i></span><span style="font-size: 10pt">.
+Each block contains a type, some state flags, and pointers to
+an optional buffer.
+Block buffers can hold either data or control information, i.e., directives
+to the processing modules.
+Blocks and block buffers are dynamically allocated from kernel memory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.4.1.
+User Interface
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A stream is represented at user level as two files, 
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">.
+The actual names can be changed by the device driver using the stream,
+as we saw earlier in the example of the UART driver.
+The first process to open either file creates the stream automatically.
+The last close destroys it.
+Writing to the
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file copies the data into kernel blocks
+and passes them to the downstream put routine of the first processing module.
+A write of less than 32K is guaranteed to be contained by a single block.
+Concurrent writes to the same stream are not synchronized, although the
+32K block size assures atomic writes for most protocols.
+The last block written is flagged with a delimiter
+to alert downstream modules that care about write boundaries.
+In most cases the first put routine calls the second, the second
+calls the third, and so on until the data is output.
+As a consequence, most data is output without context switching.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Reading from the
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file returns data queued at the top of the stream.
+The read terminates when the read count is reached
+or when the end of a delimited block is encountered.
+A per stream read lock ensures only one process
+can read from a stream at a time and guarantees
+that the bytes read were contiguous bytes from the
+stream.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Like UNIX streams [Rit84a],
+Plan 9 streams can be dynamically configured.
+The stream system intercepts and interprets
+the following control blocks:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 2.04in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>push</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><i>name</i></span><span style="font-size: 10pt">  adds an instance of the processing module 
+</span><span style="font-size: 10pt"><i>name</i></span><span style="font-size: 10pt">
+to the top of the stream.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 2.04in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>pop</tt></span><span style="font-size: 10pt">    removes the top module of the stream.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 2.04in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>hangup</tt></span><span style="font-size: 10pt"> sends a hangup message
+up the stream from the device end.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Other control blocks are module-specific and are interpreted by each
+processing module
+as they pass.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The convoluted syntax and semantics of the UNIX
+</span><span style="font-size: 10pt"><tt>ioctl</tt></span><span style="font-size: 10pt">
+system call convinced us to leave it out of Plan 9.
+Instead,
+</span><span style="font-size: 10pt"><tt>ioctl</tt></span><span style="font-size: 10pt">
+is replaced by the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file.
+Writing to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file
+is identical to writing to a
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file except the blocks are of type
+</span><span style="font-size: 10pt"><i>control</i></span><span style="font-size: 10pt">.
+A processing module parses each control block it sees.
+Commands in control blocks are ASCII strings, so
+byte ordering is not an issue when one system
+controls streams in a name space implemented on another processor.
+The time to parse control blocks is not important, since control
+operations are rare.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.4.2.
+Device Interface
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The module at the downstream end of the stream is part of a device interface.
+The particulars of the interface vary with the device.
+Most device interfaces consist of an interrupt routine, an output
+put routine, and a kernel process.
+The output put routine stages data for the
+device and starts the device if it is stopped.
+The interrupt routine wakes up the kernel process whenever
+the device has input to be processed or needs more output staged.
+The kernel process puts information up the stream or stages more data for output.
+The division of labor among the different pieces varies depending on
+how much must be done at interrupt level.
+However, the interrupt routine may not allocate blocks or call
+a put routine since both actions require a process context.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.4.3.
+Multiplexing
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The conversations using a protocol device must be
+multiplexed onto a single physical wire.
+We push a multiplexer processing module
+onto the physical device stream to group the conversations.
+The device end modules on the conversations add the necessary header
+onto downstream messages and then put them to the module downstream
+of the multiplexer.
+The multiplexing module looks at each message moving up its stream and
+puts it to the correct conversation stream after stripping
+the header controlling the demultiplexing.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This is similar to the Unix implementation of multiplexer streams.
+The major difference is that we have no general structure that
+corresponds to a multiplexer.
+Each attempt to produce a generalized multiplexer created a more complicated
+structure and underlined the basic difficulty of generalizing this mechanism.
+We now code each multiplexer from scratch and favor simplicity over
+generality.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.4.4.
+Reflections
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Despite five year&rsquo;s experience and the efforts of many programmers,
+we remain dissatisfied with the stream mechanism.
+Performance is not an issue;
+the time to process protocols and drive
+device interfaces continues to dwarf the
+time spent allocating, freeing, and moving blocks
+of data.
+However the mechanism remains inordinately
+complex.
+Much of the complexity results from our efforts
+to make streams dynamically configurable, to
+reuse processing modules on different devices
+and to provide kernel synchronization
+to ensure data structures
+don&rsquo;t disappear under foot.
+This is particularly irritating since we seldom use these properties.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Streams remain in our kernel because we are unable to
+devise a better alternative.
+Larry Peterson&rsquo;s X-kernel [Pet89a]
+is the closest contender but
+doesn&rsquo;t offer enough advantage to switch.
+If we were to rewrite the streams code, we would probably statically
+allocate resources for a large fixed number of conversations and burn
+memory in favor of less complexity.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.
+The IL Protocol
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">None of the standard IP protocols is suitable for transmission of
+9P messages over an Ethernet or the Internet.
+TCP has a high overhead and does not preserve delimiters.
+UDP, while cheap, does not provide reliable sequenced delivery.
+Early versions of the system used a custom protocol that was
+efficient but unsatisfactory for internetwork transmission.
+When we implemented IP, TCP, and UDP we looked around for a suitable
+replacement with the following properties:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  Reliable datagram service with sequenced delivery
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  Runs over IP
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  Low complexity, high performance
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;  Adaptive timeouts
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">None met our needs so a new protocol was designed.
+IL is a lightweight protocol designed to be encapsulated by IP.
+It is a connection-based protocol
+providing reliable transmission of sequenced messages between machines.
+No provision is made for flow control since the protocol is designed to transport RPC
+messages between client and server.
+A small outstanding message window prevents too
+many incoming messages from being buffered;
+messages outside the window are discarded
+and must be retransmitted.
+Connection setup uses a two way handshake to generate
+initial sequence numbers at each end of the connection;
+subsequent data messages increment the
+sequence numbers allowing
+the receiver to resequence out of order messages. 
+In contrast to other protocols, IL does not do blind retransmission.
+If a message is lost and a timeout occurs, a query message is sent.
+The query message is a small control message containing the current
+sequence numbers as seen by the sender.
+The receiver responds to a query by retransmitting missing messages.
+This allows the protocol to behave well in congested networks,
+where blind retransmission would cause further
+congestion.
+Like TCP, IL has adaptive timeouts.
+A round-trip timer is used
+to calculate acknowledge and retransmission times in terms of the network speed.
+This allows the protocol to perform well on both the Internet and on local Ethernets.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In keeping with the minimalist design of the rest of the kernel, IL is small.
+The entire protocol is 847 lines of code, compared to 2200 lines for TCP.
+IL is our protocol of choice.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.
+Network Addressing
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A uniform interface to protocols and devices is not sufficient to
+support the transparency we require.
+Since each network uses a different
+addressing scheme,
+the ASCII strings written to a control file have no common format.
+As a result, every tool must know the specifics of the networks it
+is capable of addressing.
+Moreover, since each machine supplies a subset
+of the available networks, each user must be aware of the networks supported
+by every terminal and server machine.
+This is obviously unacceptable.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Several possible solutions were considered and rejected; one deserves
+more discussion.
+We could have used a user-level file server
+to represent the network name space as a Plan 9 file tree. 
+This global naming scheme has been implemented in other distributed systems.
+The file hierarchy provides paths to
+directories representing network domains.
+Each directory contains
+files representing the names of the machines in that domain;
+an example might be the path
+</span><span style="font-size: 10pt"><tt>/net/name/usa/edu/mit/ai</tt></span><span style="font-size: 10pt">.
+Each machine file contains information like the IP address of the machine.
+We rejected this representation for several reasons.
+First, it is hard to devise a hierarchy encompassing all representations
+of the various network addressing schemes in a uniform manner.
+Datakit and Ethernet address strings have nothing in common.
+Second, the address of a machine is
+often only a small part of the information required to connect to a service on
+the machine.
+For example, the IP protocols require symbolic service names to be mapped into
+numeric port numbers, some of which are privileged and hence special.
+Information of this sort is hard to represent in terms of file operations.
+Finally, the size and number of the networks being represented burdens users with
+an unacceptably large amount of information about the organization of the network
+and its connectivity.
+In this case the Plan 9 representation of a
+resource as a file is not appropriate.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If tools are to be network independent, a third-party server must resolve
+network names.
+A server on each machine, with local knowledge, can select the best network
+for any particular destination machine or service.
+Since the network devices present a common interface,
+the only operation which differs between networks is name resolution.
+A symbolic name must be translated to
+the path of the clone file of a protocol
+device and an ASCII address string to write to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file.
+A connection server (CS) provides this service.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.1.
+Network Database
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On most systems several
+files such as
+</span><span style="font-size: 10pt"><tt>/etc/hosts</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/etc/networks</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/etc/services</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/etc/hosts.equiv</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/etc/bootptab</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>/etc/named.d</tt></span><span style="font-size: 10pt">
+hold network information.
+Much time and effort is spent
+administering these files and keeping
+them mutually consistent.
+Tools attempt to
+automatically derive one or more of the files from
+information in other files but maintenance continues to be
+difficult and error prone.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Since we were writing an entirely new system, we were free to
+try a simpler approach.
+One database on a shared server contains all the information
+needed for network administration.
+Two ASCII files comprise the main database:
+</span><span style="font-size: 10pt"><tt>/lib/ndb/local</tt></span><span style="font-size: 10pt">
+contains locally administered information and
+</span><span style="font-size: 10pt"><tt>/lib/ndb/global</tt></span><span style="font-size: 10pt">
+contains information imported from elsewhere.
+The files contain sets of attribute/value pairs of the form
+</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>attr</i></span><span style="font-size: 10pt"><tt>=</tt></span><span style="font-size: 10pt"><i>value</i></span><span style="font-size: 10pt">,
+where
+</span><span style="font-size: 10pt"><i>attr</i></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><i>value</i></span><span style="font-size: 10pt">
+are alphanumeric strings.
+Systems are described by multi-line entries;
+a header line at the left margin begins each entry followed by zero or more
+indented attribute/value pairs specifying
+names, addresses, properties, etc.
+For example, the entry for our CPU server
+specifies a domain name, an IP address, an Ethernet address,
+a Datakit address, a boot file, and supported protocols.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>sys=helix</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    dom=helix.research.bell-labs.com</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    bootf=/mips/9power</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ip=135.104.9.31 ether=0800690222f0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    dk=nj/astro/helix</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    proto=il flavor=9cpu</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If several systems share entries such as
+network mask and gateway, we specify that information
+with the network or subnetwork instead of the system.
+The following entries define a Class B IP network and 
+a few subnets derived from it.
+The entry for the network specifies the IP mask,
+file system, and authentication server for all systems
+on the network.
+Each subnetwork specifies its default IP gateway.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ipnet=mh-astro-net ip=135.104.0.0 ipmask=255.255.255.0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    fs=bootes.research.bell-labs.com</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    auth=1127auth</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ipnet=unix-room ip=135.104.117.0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ipgw=135.104.117.1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ipnet=third-floor ip=135.104.51.0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ipgw=135.104.51.1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ipnet=fourth-floor ip=135.104.52.0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    ipgw=135.104.52.1</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Database entries also define the mapping of service names
+to port numbers for TCP, UDP, and IL.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tcp=echo    port=7</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tcp=discard port=9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tcp=systat  port=11</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tcp=daytime port=13</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">All programs read the database directly so
+consistency problems are rare.
+However the database files can become large.
+Our global file, containing all information about
+both Datakit and Internet systems in AT&amp;T, has 43,000
+lines.
+To speed searches, we build hash table files for each
+attribute we expect to search often.
+The hash file entries point to entries
+in the master files.
+Every hash file contains the modification time of its master
+file so we can avoid using an out-of-date hash table.
+Searches for attributes that aren&rsquo;t hashed or whose hash table
+is out-of-date still work, they just take longer.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.2.
+Connection Server
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On each system a user level connection server process, CS, translates
+symbolic names to addresses.
+CS uses information about available networks, the network database, and
+other servers (such as DNS) to translate names.
+CS is a file server serving a single file,
+</span><span style="font-size: 10pt"><tt>/net/cs</tt></span><span style="font-size: 10pt">.
+A client writes a symbolic name to
+</span><span style="font-size: 10pt"><tt>/net/cs</tt></span><span style="font-size: 10pt">
+then reads one line for each matching destination reachable
+from this system.
+The lines are of the form
+</span><span style="font-size: 10pt"><i>filename message</i></span><span style="font-size: 10pt">,
+where
+</span><span style="font-size: 10pt"><i>filename</i></span><span style="font-size: 10pt">
+is the path of the clone file to open for a new connection and
+</span><span style="font-size: 10pt"><i>message</i></span><span style="font-size: 10pt">
+is the string to write to it to make the connection.
+The following example illustrates this.
+</span><span style="font-size: 10pt"><tt>Ndb/csquery</tt></span><span style="font-size: 10pt">
+is a program that prompts for strings to write to
+</span><span style="font-size: 10pt"><tt>/net/cs</tt></span><span style="font-size: 10pt">
+and prints the replies.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% ndb/csquery</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&gt; net!helix!9fs</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/il/clone 135.104.9.31!17008</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/dk/clone nj/astro/helix!9fs</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">CS provides meta-name translation to perform complicated
+searches.
+The special network name
+</span><span style="font-size: 10pt"><tt>net</tt></span><span style="font-size: 10pt">
+selects any network in common between source and
+destination supporting the specified service.
+A host name of the form </span><span style="font-size: 10pt"><tt>$</tt></span><span style="font-size: 10pt"><i>attr</i></span><span style="font-size: 10pt">
+is the name of an attribute in the network database.
+The database search returns the value
+of the matching attribute/value pair
+most closely associated with the source host.
+Most closely associated is defined on a per network basis.
+For example, the symbolic name
+</span><span style="font-size: 10pt"><tt>tcp!$auth!rexauth</tt></span><span style="font-size: 10pt">
+causes CS to search for the
+</span><span style="font-size: 10pt"><tt>auth</tt></span><span style="font-size: 10pt">
+attribute in the database entry for the source system, then its
+subnetwork (if there is one) and then its network.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% ndb/csquery</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&gt; net!$auth!rexauth</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/il/clone 135.104.9.34!17021</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/dk/clone nj/astro/p9auth!rexauth</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/il/clone 135.104.9.6!17021</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/dk/clone nj/astro/musca!rexauth</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Normally CS derives naming information from its database files.
+For domain names however, CS first consults another user level
+process, the domain name server (DNS).
+If no DNS is reachable, CS relies on its own tables.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Like CS, the domain name server is a user level process providing
+one file,
+</span><span style="font-size: 10pt"><tt>/net/dns</tt></span><span style="font-size: 10pt">.
+A client writes a request of the form
+</span><span style="font-size: 10pt"><i>domain-name type</i></span><span style="font-size: 10pt">,
+where
+</span><span style="font-size: 10pt"><i>type</i></span><span style="font-size: 10pt">
+is a domain name service resource record type.
+DNS performs a recursive query through the
+Internet domain name system producing one line
+per resource record found.  The client reads
+</span><span style="font-size: 10pt"><tt>/net/dns</tt></span><span style="font-size: 10pt">
+to retrieve the records.
+Like other domain name servers, DNS caches information
+learned from the network.
+DNS is implemented as a multi-process shared memory application
+with separate processes listening for network and local requests.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.
+Library routines
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The section on protocol devices described the details
+of making and receiving connections across a network.
+The dance is straightforward but tedious.
+Library routines are provided to relieve
+the programmer of the details.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.1.
+Connecting
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>dial</tt></span><span style="font-size: 10pt">
+library call establishes a connection to a remote destination.
+It
+returns an open file descriptor for the
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+file in the connection directory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int  dial(char *dest, char *local, char *dir, int *cfdp)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>dest</tt></span><span style="font-size: 10pt">   is the symbolic name/address of the destination.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>local</tt></span><span style="font-size: 10pt">  is the local address.
+Since most networks do not support this, it is
+usually zero.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>dir</tt></span><span style="font-size: 10pt">    is a pointer to a buffer to hold the path name of the protocol directory
+representing this connection.
+</span><span style="font-size: 10pt"><tt>Dial</tt></span><span style="font-size: 10pt">
+fills this buffer if the pointer is non-zero.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.69in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>cfdp</tt></span><span style="font-size: 10pt">   is a pointer to a file descriptor for the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file of the connection.
+If the pointer is non-zero,
+</span><span style="font-size: 10pt"><tt>dial</tt></span><span style="font-size: 10pt">
+opens the control file and tucks the file descriptor here.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Most programs call
+</span><span style="font-size: 10pt"><tt>dial</tt></span><span style="font-size: 10pt">
+with a destination name and all other arguments zero.
+</span><span style="font-size: 10pt"><tt>Dial</tt></span><span style="font-size: 10pt">
+uses CS to
+translate the symbolic name to all possible destination addresses
+and attempts to connect to each in turn until one works.
+Specifying the special name
+</span><span style="font-size: 10pt"><tt>net</tt></span><span style="font-size: 10pt">
+in the network portion of the destination
+allows CS to pick a network/protocol in common
+with the destination for which the requested service is valid.
+For example, assume the system
+</span><span style="font-size: 10pt"><tt>research.bell-labs.com</tt></span><span style="font-size: 10pt">
+has the Datakit address
+</span><span style="font-size: 10pt"><tt>nj/astro/research</tt></span><span style="font-size: 10pt">
+and IP addresses
+</span><span style="font-size: 10pt"><tt>135.104.117.5</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>129.11.4.1</tt></span><span style="font-size: 10pt">.
+The call
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fd = dial("net!research.bell-labs.com!login", 0, 0, 0, 0);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">tries in succession to connect to
+</span><span style="font-size: 10pt"><tt>nj/astro/research!login</tt></span><span style="font-size: 10pt">
+on the Datakit and both
+</span><span style="font-size: 10pt"><tt>135.104.117.5!513</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>129.11.4.1!513</tt></span><span style="font-size: 10pt">
+across the Internet.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Dial</tt></span><span style="font-size: 10pt">
+accepts addresses instead of symbolic names.
+For example, the destinations
+</span><span style="font-size: 10pt"><tt>tcp!135.104.117.5!513</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>tcp!research.bell-labs.com!login</tt></span><span style="font-size: 10pt">
+are equivalent
+references to the same machine.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.2.
+Listening
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A program uses
+four routines to listen for incoming connections.
+It first
+</span><span style="font-size: 10pt"><tt>announce()</tt></span><span style="font-size: 10pt">s
+its intention to receive connections,
+then
+</span><span style="font-size: 10pt"><tt>listen()</tt></span><span style="font-size: 10pt">s
+for calls and finally
+</span><span style="font-size: 10pt"><tt>accept()</tt></span><span style="font-size: 10pt">s
+or
+</span><span style="font-size: 10pt"><tt>reject()</tt></span><span style="font-size: 10pt">s
+them.
+</span><span style="font-size: 10pt"><tt>Announce</tt></span><span style="font-size: 10pt">
+returns an open file descriptor for the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file of a connection and fills
+</span><span style="font-size: 10pt"><tt>dir</tt></span><span style="font-size: 10pt">
+with the
+path of the protocol directory
+for the announcement.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int  announce(char *addr, char *dir)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Addr</tt></span><span style="font-size: 10pt">
+is the symbolic name/address announced;
+if it does not contain a service, the announcement is for
+all services not explicitly announced.
+Thus, one can easily write the equivalent of the
+</span><span style="font-size: 10pt"><tt>inetd</tt></span><span style="font-size: 10pt">
+program without
+having to announce each separate service.
+An announcement remains in force until the control file is
+closed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Listen</tt></span><span style="font-size: 10pt">
+returns an open file descriptor for the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file and fills
+</span><span style="font-size: 10pt"><tt>ldir</tt></span><span style="font-size: 10pt">
+with the path
+of the protocol directory
+for the received connection.
+It is passed
+</span><span style="font-size: 10pt"><tt>dir</tt></span><span style="font-size: 10pt">
+from the announcement.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int  listen(char *dir, char *ldir)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Accept</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>reject</tt></span><span style="font-size: 10pt">
+are called with the control file descriptor and
+</span><span style="font-size: 10pt"><tt>ldir</tt></span><span style="font-size: 10pt">
+returned by
+</span><span style="font-size: 10pt"><tt>listen.</tt></span><span style="font-size: 10pt">
+Some networks such as Datakit accept a reason for a rejection;
+networks such as IP ignore the third argument.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int  accept(int ctl, char *ldir)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int  reject(int ctl, char *ldir, char *reason)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following code implements a typical TCP listener.
+It announces itself, listens for connections, and forks a new
+process for each.
+The new process echoes data on the connection until the
+remote end closes it.
+The "*" in the symbolic name means the announcement is valid for
+any addresses bound to the machine the program is run on.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>int</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo_server(void)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int dfd, lcfd;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char adir[40], ldir[40];</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int n;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char buf[256];</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    afd = announce("tcp!*!echo", adir);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if(afd &lt; 0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        return -1;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    for(;;){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /* listen for a call */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        lcfd = listen(adir, ldir);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        if(lcfd &lt; 0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            return -1;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        /* fork a process to echo */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        switch(fork()){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        case 0:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            /* accept the call and open the data file */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            dfd = accept(lcfd, ldir);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            if(dfd &lt; 0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>                return -1;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            /* echo until EOF */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            while((n = read(dfd, buf, sizeof(buf))) &gt; 0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>                write(dfd, buf, n);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            exits(0);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        case -1:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            perror("forking");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        default:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            close(lcfd);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>            break;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        }</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.
+User Level
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Communication between Plan 9 machines is done almost exclusively in
+terms of 9P messages. Only the two services
+</span><span style="font-size: 10pt"><tt>cpu</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>exportfs</tt></span><span style="font-size: 10pt">
+are used.
+The
+</span><span style="font-size: 10pt"><tt>cpu</tt></span><span style="font-size: 10pt">
+service is analogous to
+</span><span style="font-size: 10pt"><tt>rlogin</tt></span><span style="font-size: 10pt">.
+However, rather than emulating a terminal session
+across the network,
+</span><span style="font-size: 10pt"><tt>cpu</tt></span><span style="font-size: 10pt">
+creates a process on the remote machine whose name space is an analogue of the window
+in which it was invoked.
+</span><span style="font-size: 10pt"><tt>Exportfs</tt></span><span style="font-size: 10pt">
+is a user level file server which allows a piece of name space to be
+exported from machine to machine across a network. It is used by the
+</span><span style="font-size: 10pt"><tt>cpu</tt></span><span style="font-size: 10pt">
+command to serve the files in the terminal&rsquo;s name space when they are
+accessed from the
+cpu server.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">By convention, the protocol and device driver file systems are mounted in a
+directory called
+</span><span style="font-size: 10pt"><tt>/net</tt></span><span style="font-size: 10pt">.
+Although the per-process name space allows users to configure an
+arbitrary view of the system, in practice their profiles build
+a conventional name space.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.1.
+Exportfs
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Exportfs</tt></span><span style="font-size: 10pt">
+is invoked by an incoming network call.
+The
+</span><span style="font-size: 10pt"><i>listener</i></span><span style="font-size: 10pt">
+(the Plan 9 equivalent of
+</span><span style="font-size: 10pt"><tt>inetd</tt></span><span style="font-size: 10pt">)
+runs the profile of the user
+requesting the service to construct a name space before starting
+</span><span style="font-size: 10pt"><tt>exportfs</tt></span><span style="font-size: 10pt">.
+After an initial protocol
+establishes the root of the file tree being
+exported,
+the remote process mounts the connection,
+allowing
+</span><span style="font-size: 10pt"><tt>exportfs</tt></span><span style="font-size: 10pt">
+to act as a relay file server. Operations in the imported file tree
+are executed on the remote server and the results returned.
+As a result
+the name space of the remote machine appears to be exported into a
+local file tree.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>import</tt></span><span style="font-size: 10pt">
+command calls
+</span><span style="font-size: 10pt"><tt>exportfs</tt></span><span style="font-size: 10pt">
+on a remote machine, mounts the result in the local name space,
+and
+exits.
+No local process is required to serve mounts;
+9P messages are generated by the kernel&rsquo;s mount driver and sent
+directly over the network.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Exportfs</tt></span><span style="font-size: 10pt">
+must be multithreaded since the system calls
+</span><span style="font-size: 10pt"><tt>open,</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>write</tt></span><span style="font-size: 10pt">
+may block.
+Plan 9 does not implement the 
+</span><span style="font-size: 10pt"><tt>select</tt></span><span style="font-size: 10pt">
+system call but does allow processes to share file descriptors,
+memory and other resources.
+</span><span style="font-size: 10pt"><tt>Exportfs</tt></span><span style="font-size: 10pt">
+and the configurable name space
+provide a means of sharing resources between machines.
+It is a building block for constructing complex name spaces
+served from many machines.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The simplicity of the interfaces encourages naive users to exploit the potential
+of a richly connected environment.
+Using these tools it is easy to gateway between networks.
+For example a terminal with only a Datakit connection can import from the server
+</span><span style="font-size: 10pt"><tt>helix</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>import -a helix /net</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>telnet ai.mit.edu</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>import</tt></span><span style="font-size: 10pt">
+command makes a Datakit connection to the machine
+</span><span style="font-size: 10pt"><tt>helix</tt></span><span style="font-size: 10pt">
+where
+it starts an instance
+</span><span style="font-size: 10pt"><tt>exportfs</tt></span><span style="font-size: 10pt">
+to serve
+</span><span style="font-size: 10pt"><tt>/net</tt></span><span style="font-size: 10pt">.
+The
+</span><span style="font-size: 10pt"><tt>import</tt></span><span style="font-size: 10pt">
+command mounts the remote
+</span><span style="font-size: 10pt"><tt>/net</tt></span><span style="font-size: 10pt">
+directory after (the
+</span><span style="font-size: 10pt"><tt>-a</tt></span><span style="font-size: 10pt">
+option to
+</span><span style="font-size: 10pt"><tt>import</tt></span><span style="font-size: 10pt">)
+the existing contents
+of the local
+</span><span style="font-size: 10pt"><tt>/net</tt></span><span style="font-size: 10pt">
+directory.
+The directory contains the union of the local and remote contents of
+</span><span style="font-size: 10pt"><tt>/net</tt></span><span style="font-size: 10pt">.
+Local entries supersede remote ones of the same name so
+networks on the local machine are chosen in preference
+to those supplied remotely.
+However, unique entries in the remote directory are now visible in the local
+</span><span style="font-size: 10pt"><tt>/net</tt></span><span style="font-size: 10pt">
+directory.
+All the networks connected to
+</span><span style="font-size: 10pt"><tt>helix</tt></span><span style="font-size: 10pt">,
+not just Datakit,
+are now available in the terminal. The effect on the name space is shown by the following
+example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>philw-gnot% ls /net</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/cs</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/dk</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>philw-gnot% import -a musca /net</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>philw-gnot% ls /net</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/cs</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/cs</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/dk</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/dk</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/dns</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/ether</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/il</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/tcp</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/net/udp</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.2.
+Ftpfs
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We decided to make our interface to FTP
+a file system rather than the traditional command.
+Our command,
+</span><span style="font-size: 10pt"><i>ftpfs,</i></span><span style="font-size: 10pt">
+dials the FTP port of a remote system, prompts for login and password, sets image mode,
+and mounts the remote file system onto
+</span><span style="font-size: 10pt"><tt>/n/ftp</tt></span><span style="font-size: 10pt">.
+Files and directories are cached to reduce traffic.
+The cache is updated whenever a file is created.
+Ftpfs works with TOPS-20, VMS, and various Unix flavors
+as the remote system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>7.
+Cyclone Fiber Links
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The file servers and CPU servers are connected by
+high-bandwidth
+point-to-point links.
+A link consists of two VME cards connected by a pair of optical
+fibers.
+The VME cards use 33MHz Intel 960 processors and AMD&rsquo;s TAXI
+fiber transmitter/receivers to drive the lines at 125 Mbit/sec.
+Software in the VME card reduces latency by copying messages from system memory
+to fiber without intermediate buffering.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>8.
+Performance
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We measured both latency and throughput
+of reading and writing bytes between two processes
+for a number of different paths.
+Measurements were made on two- and four-CPU SGI Power Series processors.
+The CPUs are 25 MHz MIPS 3000s.
+The latency is measured as the round trip time
+for a byte sent from one process to another and
+back again.
+Throughput is measured using 16k writes from
+one process to another.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<center><img src="net1.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>9.
+Conclusion
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The representation of all resources as file systems
+coupled with an ASCII interface has proved more powerful
+than we had originally imagined.
+Resources can be used by any computer in our networks
+independent of byte ordering or CPU type.
+The connection server provides an elegant means
+of decoupling tools from the networks they use.
+Users successfully use Plan 9 without knowing the
+topology of the system or the networks they use.
+More information about 9P can be found in the Section 5 of the Plan 9 Programmer&rsquo;s
+Manual, Volume I.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>10.
+References
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike90] R. Pike, D. Presotto, K. Thompson, H. Trickey,
+&lsquo;&lsquo;Plan 9 from Bell Labs&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>UKUUG Proc. of the Summer 1990 Conf. ,
+London, England,
+1990.
+</i></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Needham] R. Needham, &lsquo;&lsquo;Names&rsquo;&rsquo;, in
+</span><span style="font-size: 10pt"><i>Distributed systems,
+</i></span><span style="font-size: 10pt">S. Mullender, ed.,
+Addison Wesley, 1989.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Presotto] D. Presotto, &lsquo;&lsquo;Multiprocessor Streams for Plan 9&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>UKUUG Proc. of the Summer 1990 Conf. ,
+</i></span><span style="font-size: 10pt">London, England, 1990.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Met80] R. Metcalfe, D. Boggs, C. Crane, E. Taf and J. Hupp, &lsquo;&lsquo;The
+Ethernet Local Network: Three reports&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>CSL-80-2,
+</i></span><span style="font-size: 10pt">XEROX Palo Alto Research Center, February 1980.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Fra80] A. G. Fraser, &lsquo;&lsquo;Datakit - A Modular Network for Synchronous
+and Asynchronous Traffic&rsquo;&rsquo;, 
+</span><span style="font-size: 10pt"><i>Proc. Int&rsquo;l Conf. on Communication,
+</i></span><span style="font-size: 10pt">Boston, June 1980.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pet89a] L. Peterson, &lsquo;&lsquo;RPC in the X-Kernel: Evaluating new Design Techniques&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proc. Twelfth Symp. on Op. Sys. Princ.,
+</i></span><span style="font-size: 10pt">Litchfield Park, AZ, December 1990.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Rit84a] D. M. Ritchie, &lsquo;&lsquo;A Stream Input-Output System&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>AT&amp;T Bell Laboratories Technical Journal, 68(8),
+</i></span><span style="font-size: 10pt">October 1984.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.35in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><b>Notes</b></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Originally appeared in
+</span><span style="font-size: 10pt"><i>Proc. of the Winter 1993 USENIX Conf.,
+</i></span><span style="font-size: 10pt">pp. 271-280,
+San Diego, CA
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+</body>
+</html>
+

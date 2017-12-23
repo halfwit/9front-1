@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Plan 9 — Third Edition Release Notes</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Plan 9 From Bell Labs</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Third Release Notes</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>June 7, 2000</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.42in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="margin-top: 0; margin-bottom: -0.40in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt">Copyright © 2000 Lucent Technologies Inc.</span></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt">All Rights Reserved</span></p>
+<p style="margin-top: 0; margin-bottom: 0.20in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The third release of the Plan 9 operating system from Bell Labs
+is something of a snapshot of the current system.
+This differs from the previous, 1995 release,
+which was a more coordinated, well-defined release of an already-out-of-date
+system.
+Also, the previous releases were distributed on fixed media, while this release
+is being done over the web.
+The other major difference is that the third release is licensed under
+an open source agreement, which we hope will encourage people
+to experiment with it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Beyond that, there are innumerable little changes throughout the code.
+Although superficially it is the same environment, there is hardly an aspect
+of the system that has not been redesigned, rewritten, or replaced.
+The following is an incomplete list of changes.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The list of architectures has changed; more compilers are included
+and the list of kernels has changed.
+There is solid support for Intel x86 multiprocessors.
+Also, although the sources are available for
+other architectures, the binaries and libraries are built only for the
+Intel x86 architectures.
+Kernel source is available for x86, Mips, DEC Alpha, and Power PC architectures.
+Compilers also exist for AMD 29000, Motorola MC68000 and MC68020,
+Intel i960, and SPARC.
+(Unlike the the last release, no SPARC kernel exists for the current system.)
+The compilers and related tools
+have been made easier to port to Unix and Windows.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The kernel now has a file cache to improve I/O performance.
+Other kernel changes include the replacement of the streams interface
+with a simpler, faster, but less flexible I/O queue structure.
+The x86 kernels support PCI and PCMCIA devices.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Network management has been simplified and generalized.
+DNS supports a resolver mode and the DNS server is now solid.
+DHCP is supported both at the client and server ends.
+The system can handle multiple IP stacks, which are also
+no longer Ethernet-specific.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The organization of disks in the kernel has been unified, providing
+a consistent interface to all disks and controllers: SCSI or ATAPI,
+magnetic or CD-ROM.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+File offsets, such as in the
+</span><span style="font-size: 10pt"><tt>seek</tt></span><span style="font-size: 10pt">
+system call, are now 64-bit values.
+The 1995 release defined the type
+</span><span style="font-size: 10pt"><tt>Length</tt></span><span style="font-size: 10pt">
+for the x86 as
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef union</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char    clength[8];</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    vlong   vlength;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    struct</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    {</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        long    hlength;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        long    length;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    };</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>} Length;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">which is the wrong byte order.
+Now, for all architectures,
+</span><span style="font-size: 10pt"><tt>Length</tt></span><span style="font-size: 10pt">
+is well handled by a
+</span><span style="font-size: 10pt"><tt>vlong</tt></span><span style="font-size: 10pt">
+(</span><span style="font-size: 10pt"><tt>long</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>long</tt></span><span style="font-size: 10pt">)
+type, although for compatibility it&rsquo;s still held in a union:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef union</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    vlong   length;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>} Length;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The kernel now maintains a file name associated with each open file or
+directory, which can be cheaply recovered by the
+</span><span style="font-size: 10pt"><tt>fd2path</tt></span><span style="font-size: 10pt">
+system call.
+Plan 9 now does a much better job with
+</span><span style="font-size: 10pt"><tt>..</tt></span><span style="font-size: 10pt">
+(dot-dot).
+On a related note, a description of a process&rsquo;s name space may be
+read with the
+</span><span style="font-size: 10pt"><tt>ns</tt></span><span style="font-size: 10pt">
+file in
+</span><span style="font-size: 10pt"><tt>/proc</tt></span><span style="font-size: 10pt">,
+or by the
+</span><span style="font-size: 10pt"><tt>ns</tt></span><span style="font-size: 10pt">
+command.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The security model is the same, although
+the key format has changed.
+If you have an old key file, use
+</span><span style="font-size: 10pt"><tt>auth/convkeys2</tt></span><span style="font-size: 10pt">
+(see
+</span><span style="font-size: 10pt"><i>auth</i></span><span style="font-size: 10pt">(8))
+to update it.
+There are new libraries for mulitprecision arithmetic and security.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The graphics model is very different.
+It is based on the Porter-Duff compositing algebra rather than
+</span><span style="font-size: 10pt"><tt>bitblt</tt></span><span style="font-size: 10pt">,
+and the system supports everything from bitmaps to true-color displays.
+Some of the graphics drivers exploit hardware acceleration.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Coupled to the graphics changes, the image and font file formats have
+changed.
+They can represent a wider range of pixel formats and compress the data.
+Also the white/black sense of value is reversed (zero is now black; pixels
+represent light, not ink).
+Most of the tools can handle the old format, but they all write the new format only.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The user interface now incorporates plumbing, a language-driven
+way for applications to communicate.  See
+</span><span style="font-size: 10pt"><i>plumb</i></span><span style="font-size: 10pt">(6)
+for information.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Building on plumbing and a program that presents the mail box as a file
+system, Plan 9 now has convenient support for MIME mail messages.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+has been replaced by
+</span><span style="font-size: 10pt"><tt>rio</tt></span><span style="font-size: 10pt">,
+which has a similar appearance but a different architecture.
+Although still a file server, it is much more efficient: the kernel driver
+multiplexes graphics output so
+</span><span style="font-size: 10pt"><tt>rio</tt></span><span style="font-size: 10pt">
+is not in the display path.
+</span><span style="font-size: 10pt"><tt>Rio</tt></span><span style="font-size: 10pt">
+handles input and window control only.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+PC booting is more sophisticated.  PCs can now boot Plan 9 directly from
+the disk without running DOS.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Alef is gone.
+It was deemed too difficult to maintain two sets of compilers and libraries
+for all architectures.
+Alef programs were translated into C, with the help of a new thread library
+that preserves much of Alef&rsquo;s functionality, but none of its syntax.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Mothra is gone.  There is no web browser included in this release,
+but something may well appear before long.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+The
+</span><span style="font-size: 10pt"><tt>fb</tt></span><span style="font-size: 10pt">
+(frame buffer) suite is gone. Most of its tools are
+supplanted by new ones, such as
+</span><span style="font-size: 10pt"><tt>page</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>jpg</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>togif</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+Also gone from this release are the games and support for
+international input
+(</span><span style="font-size: 10pt"><tt>ktrans</tt></span><span style="font-size: 10pt">
+etc.).
+Both may return.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">&#8729;
+New things include an implementation of
+</span><span style="font-size: 10pt"><tt>ssh</tt></span><span style="font-size: 10pt">,
+an IMAP4 server,
+and some spam-filtering software (see
+</span><span style="font-size: 10pt"><i>scanmail</i></span><span style="font-size: 10pt">(8)).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There&rsquo;s lots more.
+If you have problems, mail
+</span><span style="font-size: 10pt"><tt>9trouble@plan9.bell-labs.com</tt></span><span style="font-size: 10pt">.
+Please don&rsquo;t mail us individually.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Good Luck!
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

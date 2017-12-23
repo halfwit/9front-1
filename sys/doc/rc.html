@@ -1,0 +1,2246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Rc — The Plan 9 Shell</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Rc — The Plan 9 Shell</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Tom&nbsp;Duff</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>td@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.35in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+is a command interpreter for Plan 9 that
+provides similar facilities to UNIX&rsquo;s
+Bourne shell,
+with some small additions and less idiosyncratic syntax.
+This paper uses numerous examples to describe
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+features, and contrasts
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+with the Bourne shell, a model that many readers will be familiar with.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>1.
+Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+is similar in spirit but different in detail from UNIX&rsquo;s
+Bourne shell.  This paper describes
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+principal features with many small examples and a few larger ones.
+It assumes familiarity with the Bourne shell.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.
+Simple commands
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For the simplest uses
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+has syntax familiar to Bourne-shell users.
+All of the following behave as expected:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>date</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cat&nbsp;/lib/news/build</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>who&nbsp;&gt;user.names</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>who&nbsp;&gt;&gt;user.names</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>wc&nbsp;&lt;file</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;[a-f]*.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>who&nbsp;|&nbsp;wc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>who;&nbsp;date</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;*.c&nbsp;&amp;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>mk&nbsp;&amp;&amp;&nbsp;v.out&nbsp;/*/bin/fb/*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>rm&nbsp;-r&nbsp;junk&nbsp;||&nbsp;echo&nbsp;rm&nbsp;failed!</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.
+Quotation
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An argument that contains a space or one of
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+other syntax characters must be enclosed in apostrophes
+(</span><span style="font-size: 10pt"><tt>&rsquo;</tt></span><span style="font-size: 10pt">):
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>rm&nbsp;&rsquo;odd&nbsp;file&nbsp;name&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An apostrophe in a quoted argument must be doubled:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;&rsquo;How&rsquo;&rsquo;s&nbsp;your&nbsp;father?&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.
+Patterns
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An unquoted argument that contains any of the characters
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>?</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>[</tt></span><span style="font-size: 10pt">
+is a pattern to be matched against file names.
+A
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+character matches any sequence of characters,
+</span><span style="font-size: 10pt"><tt>?</tt></span><span style="font-size: 10pt">
+matches any single character, and
+</span><span style="font-size: 10pt"><tt>[</tt></span><span style="font-size: 10pt"><i>class</i></span><span style="font-size: 10pt"><tt>]</tt></span><span style="font-size: 10pt">
+matches any character in the
+</span><span style="font-size: 10pt"><tt>class</tt></span><span style="font-size: 10pt">,
+unless the first character of
+</span><span style="font-size: 10pt"><i>class</i></span><span style="font-size: 10pt">
+is
+</span><span style="font-size: 10pt"><tt>~</tt></span><span style="font-size: 10pt">,
+in which case the class is complemented.
+The
+</span><span style="font-size: 10pt"><i>class</i></span><span style="font-size: 10pt">
+may also contain pairs of characters separated by
+</span><span style="font-size: 10pt"><tt>-</tt></span><span style="font-size: 10pt">,
+standing for all characters lexically between the two.
+The character
+</span><span style="font-size: 10pt"><tt>/</tt></span><span style="font-size: 10pt">
+must appear explicitly in a pattern, as must the path name components
+</span><span style="font-size: 10pt"><tt>.</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>..</tt></span><span style="font-size: 10pt">.
+A pattern is replaced by a list of arguments, one for each path name matched,
+except that a pattern matching no names is not replaced by the empty list;
+rather it stands for itself.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.
+Variables
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">UNIX&rsquo;s Bourne shell offers string-valued variables.
+</span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+provides variables whose values are lists of arguments —
+that is, arrays of strings.  This is the principal difference
+between
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+and traditional UNIX command interpreters.
+Variables may be given values by typing, for example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>path=(.&nbsp;/bin)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>user=td</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>font=/lib/font/bit/pelm/ascii.9.font</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The parentheses indicate that the value assigned to
+</span><span style="font-size: 10pt"><tt>path</tt></span><span style="font-size: 10pt">
+is a list of two strings. The variables
+</span><span style="font-size: 10pt"><tt>user</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>font</tt></span><span style="font-size: 10pt">
+are assigned lists containing a single string.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The value of a variable can be substituted into a command by
+preceding its name with a
+</span><span style="font-size: 10pt"><tt>$</tt></span><span style="font-size: 10pt">,
+like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$path</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If
+</span><span style="font-size: 10pt"><tt>path</tt></span><span style="font-size: 10pt">
+had been set as above, this would be equivalent to
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;.&nbsp;/bin</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Variables may be subscripted by numbers or lists of numbers,
+like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$path(2)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$path(2&nbsp;1&nbsp;2)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">These are equivalent to
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;/bin</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;/bin&nbsp;.&nbsp;/bin</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There can be no space separating the variable&rsquo;s name from the
+left parenthesis; otherwise, the subscript would be considered
+a separate parenthesized list.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The number of strings in a variable can be determined by the
+</span><span style="font-size: 10pt"><tt>$#</tt></span><span style="font-size: 10pt">
+operator.  For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$#path</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">would print 2 for this example.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following two assignments are subtly different:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>empty=()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>null=&rsquo;&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first sets
+</span><span style="font-size: 10pt"><tt>empty</tt></span><span style="font-size: 10pt">
+to a list containing no strings.
+The second sets
+</span><span style="font-size: 10pt"><tt>null</tt></span><span style="font-size: 10pt">
+to a list containing a single string,
+but the string contains no characters.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Although these may seem like more or less
+the same thing (in Bourne&rsquo;s shell, they are
+indistinguishable), they behave differently
+in almost all circumstances.
+Among other things
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$#empty</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">prints 0, whereas
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$#null</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">prints 1.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">All variables that have never been set have the value
+</span><span style="font-size: 10pt"><tt>()</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Occasionally, it is convenient to treat a variable&rsquo;s value
+as a single string.  The elements of a string are concatenated
+into a single string, with spaces between the elements, by
+the
+</span><span style="font-size: 10pt"><tt>$"</tt></span><span style="font-size: 10pt">
+operator.
+Thus, if we set
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>list=(How&nbsp;now&nbsp;brown&nbsp;cow)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>string=$"list</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">then both
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$list</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">and
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$string</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">cause the same output, viz:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>How&nbsp;now&nbsp;brown&nbsp;cow</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">but
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$#list&nbsp;$#string</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will output
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>4&nbsp;1</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">because
+</span><span style="font-size: 10pt"><tt>$list</tt></span><span style="font-size: 10pt">
+has four members, but
+</span><span style="font-size: 10pt"><tt>$string</tt></span><span style="font-size: 10pt">
+has a single member, with three spaces separating its words.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.
+Arguments
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+is reading its input from a file, the file has access
+to the arguments supplied on
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+command line.  The variable
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">
+initially has the list of arguments assigned to it.
+The names
+</span><span style="font-size: 10pt"><tt>$1</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>$2</tt></span><span style="font-size: 10pt">,
+etc. are synonyms for
+</span><span style="font-size: 10pt"><tt>$*(1)</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>$*(2)</tt></span><span style="font-size: 10pt">,
+etc.
+In addition,
+</span><span style="font-size: 10pt"><tt>$0</tt></span><span style="font-size: 10pt">
+is the name of the file from which
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+input is being read.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>7.
+Concatenation
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+has a string concatenation operator, the caret 
+</span><span style="font-size: 10pt"><tt>^</tt></span><span style="font-size: 10pt">,
+to build arguments out of pieces.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;hully^gully</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">is exactly equivalent to
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;hullygully</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Suppose variable
+</span><span style="font-size: 10pt"><tt>i</tt></span><span style="font-size: 10pt">
+contains the name of a command.
+Then
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;$i^.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vl&nbsp;-o&nbsp;$1&nbsp;$i^.v</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">might compile the command&rsquo;s source code, leaving the
+result in the appropriate file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Concatenation distributes over lists. The following
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;(a&nbsp;b&nbsp;c)^(1&nbsp;2&nbsp;3)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>src=(main&nbsp;subr&nbsp;io)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cc&nbsp;$src^.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">are equivalent to
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;a1&nbsp;b2&nbsp;c3</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cc&nbsp;main.c&nbsp;subr.c&nbsp;io.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In detail, the rule is: if both operands of
+</span><span style="font-size: 10pt"><tt>^</tt></span><span style="font-size: 10pt">
+are lists of the same non-zero number of strings, they are concatenated
+pairwise.  Otherwise, if one of the operands is a single string,
+it is concatenated with each member of the other operand in turn.
+Any other combination of operands is an error.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>8.
+Free carets
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">User demand has dictated that
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+insert carets in certain places, to make the syntax
+look more like the Bourne shell.  For example, this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cc&nbsp;-$flags&nbsp;$stems.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">is equivalent to
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cc&nbsp;-^$flags&nbsp;$stems^.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In general,
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+will insert
+</span><span style="font-size: 10pt"><tt>^</tt></span><span style="font-size: 10pt">
+between two arguments that are not separated by white space.
+Specifically, whenever one of
+</span><span style="font-size: 10pt"><tt>$&rsquo;&lsquo;</tt></span><span style="font-size: 10pt">
+follows a quoted or unquoted word, or an unquoted word follows
+a quoted word with no intervening blanks or tabs, an implicit
+</span><span style="font-size: 10pt"><tt>^</tt></span><span style="font-size: 10pt">
+is inserted between the two.  If an unquoted word immediately following a
+</span><span style="font-size: 10pt"><tt>$</tt></span><span style="font-size: 10pt">
+contains a character other than an alphanumeric, underscore or
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">,
+a
+</span><span style="font-size: 10pt"><tt>^</tt></span><span style="font-size: 10pt">
+is inserted before the first such character.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>9.
+Command substitution
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It is often useful to build an argument list from the output of a command.
+</span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+allows a command, enclosed in braces and preceded by a left quote,
+</span><span style="font-size: 10pt"><tt>&lsquo;{...}</tt></span><span style="font-size: 10pt">,
+anywhere that an argument is required.  The command is executed and its
+standard output captured.
+The characters stored in the variable
+</span><span style="font-size: 10pt"><tt>ifs</tt></span><span style="font-size: 10pt">
+are used to split the output into arguments.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cat&nbsp;&lsquo;{ls&nbsp;-tr|sed&nbsp;10q}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will concatenate the ten oldest files in the current directory in temporal order, given the
+default
+</span><span style="font-size: 10pt"><tt>ifs</tt></span><span style="font-size: 10pt">
+setting of space, tab, and newline.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>10.
+Pipeline branching
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The normal pipeline notation is general enough for almost all cases.
+Very occasionally it is useful to have pipelines that are not linear.
+Pipeline topologies more general than trees can require arbitrarily large pipe buffers,
+or worse, can cause deadlock.
+</span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+has syntax for some kinds of non-linear but treelike pipelines.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;cmp&nbsp;&lt;{old}&nbsp;&lt;{new}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will regression-test a new version of a command.
+</span><span style="font-size: 10pt"><tt>&lt;</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>&gt;</tt></span><span style="font-size: 10pt">
+followed by a command in braces causes the command to be run with
+its standard output or input attached to a pipe.  The parent command
+(</span><span style="font-size: 10pt"><tt>cmp</tt></span><span style="font-size: 10pt">
+in the example)
+is started with the other end of the pipe attached to some file descriptor
+or other, and with an argument that will connect to the pipe when opened
+(e.g.,
+</span><span style="font-size: 10pt"><tt>/dev/fd/6</tt></span><span style="font-size: 10pt">).
+Some commands are unprepared to deal with input files that turn out not to be seekable.
+For example
+</span><span style="font-size: 10pt"><tt>diff</tt></span><span style="font-size: 10pt">
+needs to read its input twice.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>11.
+Exit status
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a command exits it returns status to the program that executed it.
+On Plan 9 status is a character string describing an error condition.
+On normal termination it is empty.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+captures command exit status in the variable
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">.
+For a simple command the value of
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">
+is just as described above.  For a pipeline
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">
+is set to the concatenation of the statuses of the pipeline components with
+</span><span style="font-size: 10pt"><tt>|</tt></span><span style="font-size: 10pt">
+characters for separators.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+has a several kinds of control flow,
+many of them conditioned by the status returned from previously
+executed commands.  Any
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">
+containing only
+</span><span style="font-size: 10pt"><tt>0</tt></span><span style="font-size: 10pt">&rsquo;s
+and
+</span><span style="font-size: 10pt"><tt>|</tt></span><span style="font-size: 10pt">&rsquo;s
+has boolean value
+</span><span style="font-size: 10pt"><i>true</i></span><span style="font-size: 10pt">.
+Any other status is
+</span><span style="font-size: 10pt"><i>false</i></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>12.
+Command grouping
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A sequence of commands enclosed in
+</span><span style="font-size: 10pt"><tt>{}</tt></span><span style="font-size: 10pt">
+may be used anywhere a command is required.
+For example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{sleep&nbsp;3600;echo&nbsp;&rsquo;Time&rsquo;&rsquo;s&nbsp;up!&rsquo;}&amp;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will wait an hour in the background, then print a message.
+Without the braces,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>sleep&nbsp;3600;echo&nbsp;&rsquo;Time&rsquo;&rsquo;s&nbsp;up!&rsquo;&amp;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">would lock up the terminal for an hour,
+then print the message in the background.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>13.
+Control flow — </b></span><span style="font-size: 10pt"><tt>for</tt></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A command may be executed once for each member of a list
+by typing, for example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i&nbsp;in&nbsp;printf&nbsp;scanf&nbsp;putchar)&nbsp;look&nbsp;$i&nbsp;/usr/td/lib/dw.dat</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This looks for each of the words
+</span><span style="font-size: 10pt"><tt>printf</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>scanf</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>putchar</tt></span><span style="font-size: 10pt">
+in the given file.
+The general form is
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(</tt></span><span style="font-size: 9pt"><i>name</i></span><span style="font-size: 9pt"><tt>&nbsp;in&nbsp;</tt></span><span style="font-size: 9pt"><i>list</i></span><span style="font-size: 9pt"><tt>)&nbsp;</tt></span><span style="font-size: 9pt"><i>command</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">or
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(</tt></span><span style="font-size: 9pt"><i>name</i></span><span style="font-size: 9pt"><tt>)&nbsp;</tt></span><span style="font-size: 9pt"><i>command</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the first case
+</span><span style="font-size: 10pt"><i>command</i></span><span style="font-size: 10pt">
+is executed once for each member of
+</span><span style="font-size: 10pt"><i>list</i></span><span style="font-size: 10pt">
+with that member assigned to variable
+</span><span style="font-size: 10pt"><i>name</i></span><span style="font-size: 10pt">.
+If the clause
+&lsquo;&lsquo;</span><span style="font-size: 10pt"><tt>in</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>list</i></span><span style="font-size: 10pt">&rsquo;&rsquo;
+is missing,
+&lsquo;&lsquo;</span><span style="font-size: 10pt"><tt>in</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">&rsquo;&rsquo;
+is assumed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>14.
+Conditional execution — </b></span><span style="font-size: 10pt"><tt>if</tt></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+also provides a general if-statement.  For example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i&nbsp;in&nbsp;*.c)&nbsp;if(cpp&nbsp;$i&nbsp;&gt;/tmp/$i)&nbsp;vc&nbsp;/tmp/$i</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">runs the C compiler on each C source program that
+cpp processes without error.
+An &lsquo;if not&rsquo; statement provides a two-tailed conditional.
+For example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;if(test&nbsp;-f&nbsp;/tmp/$i)&nbsp;echo&nbsp;$i&nbsp;already&nbsp;in&nbsp;/tmp</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;not&nbsp;cp&nbsp;$i&nbsp;/tmp</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This loops over each file in
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">,
+copying to
+</span><span style="font-size: 10pt"><tt>/tmp</tt></span><span style="font-size: 10pt">
+those that do not already appear there, and
+printing a message for those that do.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>15.
+Control flow — </b></span><span style="font-size: 10pt"><tt>while</tt></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">&rsquo;s
+while statement looks like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>while(newer&nbsp;subr.v&nbsp;subr.c)&nbsp;sleep&nbsp;5</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This waits until
+</span><span style="font-size: 10pt"><tt>subr.v</tt></span><span style="font-size: 10pt">
+is newer than
+</span><span style="font-size: 10pt"><tt>subr.c</tt></span><span style="font-size: 10pt">,
+presumably because the C compiler finished with it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If the controlling command is empty, the loop will not terminate.
+Thus,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>while()&nbsp;echo&nbsp;y</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">emulates the
+</span><span style="font-size: 10pt"><i>yes</i></span><span style="font-size: 10pt">
+command.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>16.
+Control flow — </b></span><span style="font-size: 10pt"><tt>switch</tt></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+provides a switch statement to do pattern-matching on
+arbitrary strings.  Its general form is
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>switch(</tt></span><span style="font-size: 9pt"><i>word</i></span><span style="font-size: 9pt"><tt>){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;</tt></span><span style="font-size: 9pt"><i>pattern&nbsp;...</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt"><i>commands</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;</tt></span><span style="font-size: 9pt"><i>pattern&nbsp;...</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt"><i>commands</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+attempts to match the word against the patterns in each case statement in turn.
+Patterns are the same as for filename matching, except that
+</span><span style="font-size: 10pt"><tt>/</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>.</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>..</tt></span><span style="font-size: 10pt">
+need not be matched explicitly.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If any pattern matches, the
+commands following that case up to
+the next case (or the end of the switch)
+are executed, and execution of the switch
+is complete.  For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>switch($#*){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;cat&nbsp;&gt;&gt;$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;cat&nbsp;&gt;&gt;$2&nbsp;&lt;$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;echo&nbsp;&rsquo;Usage:&nbsp;append&nbsp;[from]&nbsp;to&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">is an append command.  Called with one file argument,
+it appends its standard input to the named file.  With two, the
+first is appended to the second.  Any other number
+elicits an error message.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The built-in
+</span><span style="font-size: 10pt"><tt>~</tt></span><span style="font-size: 10pt">
+command also matches patterns, and is often more concise than a switch.
+Its arguments are a string and a list of patterns.  It sets
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">
+to true if and only if any of the patterns matches the string.
+The following example processes option arguments for the
+</span><span style="font-size: 10pt"><i>man</i></span><span style="font-size: 10pt">(1)
+command:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>opt=()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>while(~&nbsp;$1&nbsp;-*&nbsp;[1-9]&nbsp;10){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;switch($1){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;[1-9]&nbsp;10</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sec=$1&nbsp;secn=$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;-f</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c=f&nbsp;s=f</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;-[qwnt]</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmd=$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;-T*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;T=$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;-*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;opt=($opt&nbsp;$1)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;shift</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>17.
+Functions
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Functions may be defined by typing
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;</tt></span><span style="font-size: 9pt"><i>name</i></span><span style="font-size: 9pt"><tt>&nbsp;{&nbsp;</tt></span><span style="font-size: 9pt"><i>commands</i></span><span style="font-size: 9pt"><tt>&nbsp;}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Subsequently, whenever a command named
+</span><span style="font-size: 10pt"><i>name</i></span><span style="font-size: 10pt">
+is encountered, the remainder of the command&rsquo;s
+argument list will assigned to
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+will execute the
+</span><span style="font-size: 10pt"><i>commands</i></span><span style="font-size: 10pt">.
+The value of
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">
+will be restored on completion.
+For example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;g&nbsp;{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;grep&nbsp;$1&nbsp;*.[hcyl]</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">defines
+</span><span style="font-size: 10pt"><tt>g</tt></span><span style="font-size: 10pt"><i> pattern</i></span><span style="font-size: 10pt">
+to look for occurrences of
+</span><span style="font-size: 10pt"><i>pattern</i></span><span style="font-size: 10pt">
+in all program source files in the current directory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Function definitions are deleted by writing
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;</tt></span><span style="font-size: 9pt"><i>name</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">with no function body.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>18.
+Command execution
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+does one of several things to execute a simple command.
+If the command name is the name of a function defined using
+</span><span style="font-size: 10pt"><tt>fn</tt></span><span style="font-size: 10pt">,
+the function is executed.
+Otherwise, if it is the name of a built-in command, the
+built-in is executed directly by
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">.
+Otherwise, directories mentioned in the variable
+</span><span style="font-size: 10pt"><tt>$path</tt></span><span style="font-size: 10pt">
+are searched until an executable file is found.
+Extensive use of the
+</span><span style="font-size: 10pt"><tt>$path</tt></span><span style="font-size: 10pt">
+variable is discouraged in Plan 9.  Instead, use the default
+</span><span style="font-size: 10pt"><tt>(.</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>/bin)</tt></span><span style="font-size: 10pt">
+and bind what you need into
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>19.
+Built-in commands
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Several commands are executed internally by
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+because they are difficult to implement otherwise.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>. [-i] </tt></span><span style="font-size: 10pt"><i>file ...</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">    Execute commands from
+</span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">
+is set for the duration to the reminder of the argument list following
+</span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><tt>$path</tt></span><span style="font-size: 10pt">
+is used to search for
+</span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt">.
+Option
+</span><span style="font-size: 10pt"><tt>-i</tt></span><span style="font-size: 10pt">
+indicates interactive input — a prompt
+(found in
+</span><span style="font-size: 10pt"><tt>$prompt</tt></span><span style="font-size: 10pt">)
+is printed before each command is read.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>builtin </tt></span><span style="font-size: 10pt"><i>command ...</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">    Execute
+</span><span style="font-size: 10pt"><i>command</i></span><span style="font-size: 10pt">
+as usual except that any function named
+</span><span style="font-size: 10pt"><i>command</i></span><span style="font-size: 10pt">
+is ignored.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;cd{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;builtin&nbsp;cd&nbsp;$*&nbsp;&amp;&amp;&nbsp;pwd</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">defines a replacement for the
+</span><span style="font-size: 10pt"><tt>cd</tt></span><span style="font-size: 10pt">
+built-in (see below) that announces the full name of the new directory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>cd [</tt></span><span style="font-size: 10pt"><i>dir</i></span><span style="font-size: 10pt"><tt>]</tt></span><span style="font-size: 10pt">   Change the current directory to
+</span><span style="font-size: 10pt"><i>dir</i></span><span style="font-size: 10pt">.
+The default argument is
+</span><span style="font-size: 10pt"><tt>$home</tt></span><span style="font-size: 10pt">.
+</span><span style="font-size: 10pt"><tt>$cdpath</tt></span><span style="font-size: 10pt">
+is a list of places in which to search for
+</span><span style="font-size: 10pt"><i>dir</i></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>eval [</tt></span><span style="font-size: 10pt"><i>arg ...</i></span><span style="font-size: 10pt"><tt>]</tt></span><span style="font-size: 10pt"> The arguments are concatenated (separated by spaces) into a string, read as input to
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">,
+and executed.  For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>x=&rsquo;$y&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>y=Doody</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>eval&nbsp;echo&nbsp;Howdy,&nbsp;$x</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">would echo
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Howdy,&nbsp;Doody</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">since the arguments of
+</span><span style="font-size: 10pt"><tt>eval</tt></span><span style="font-size: 10pt">
+would be
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;Howdy,&nbsp;$y</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">after substituting for
+</span><span style="font-size: 10pt"><tt>$x</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>exec [</tt></span><span style="font-size: 10pt"><i>command ...</i></span><span style="font-size: 10pt"><tt>]</tt></span><span style="font-size: 10pt"> </span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+replaces itself with the given
+</span><span style="font-size: 10pt"><i>command</i></span><span style="font-size: 10pt">.
+This is like a
+</span><span style="font-size: 10pt"><i>goto</i></span><span style="font-size: 10pt">
+—
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+does not wait for the command to exit, and does not return to read any more commands.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>exit [</tt></span><span style="font-size: 10pt"><i>status</i></span><span style="font-size: 10pt"><tt>]</tt></span><span style="font-size: 10pt">  </span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+exits immediately with the given status.  If none is given, the current value of
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">
+is used.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>flag </tt></span><span style="font-size: 10pt"><i>f</i></span><span style="font-size: 10pt"><tt> [+-]</tt></span><span style="font-size: 10pt">    This command manipulates and tests the command line flags (described below).
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>flag&nbsp;</tt></span><span style="font-size: 9pt"><i>f</i></span><span style="font-size: 9pt"><tt>&nbsp;+</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">sets flag
+</span><span style="font-size: 10pt"><i>f</i></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>flag&nbsp;</tt></span><span style="font-size: 9pt"><i>f</i></span><span style="font-size: 9pt"><tt>&nbsp;-</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">clears flag
+</span><span style="font-size: 10pt"><i>f</i></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>flag&nbsp;</tt></span><span style="font-size: 9pt"><i>f</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">tests flag
+</span><span style="font-size: 10pt"><i>f</i></span><span style="font-size: 10pt">,
+setting
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">
+appropriately.
+Thus
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if(flag&nbsp;x)&nbsp;flag&nbsp;v&nbsp;+</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">sets the
+</span><span style="font-size: 10pt"><tt>-v</tt></span><span style="font-size: 10pt">
+flag if the
+</span><span style="font-size: 10pt"><tt>-x</tt></span><span style="font-size: 10pt">
+flag is already set.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>rfork [nNeEsfF]</tt></span><span style="font-size: 10pt">    This uses the Plan 9
+</span><span style="font-size: 10pt"><i>rfork</i></span><span style="font-size: 10pt">
+system entry to put
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+into a new process group with the following attributes:
+</span></p><center><img src="rc0.png"></center>
+</center>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Section
+</span><span style="font-size: 10pt"><i>fork</i></span><span style="font-size: 10pt">(2)
+of the Programmer&rsquo;s Manual describes these attributes in more detail.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>shift [</tt></span><span style="font-size: 10pt"><i>n</i></span><span style="font-size: 10pt"><tt>]</tt></span><span style="font-size: 10pt">  Delete the first
+</span><span style="font-size: 10pt"><i>n</i></span><span style="font-size: 10pt">
+(default 1) elements of
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>wait [</tt></span><span style="font-size: 10pt"><i>pid</i></span><span style="font-size: 10pt"><tt>]</tt></span><span style="font-size: 10pt"> Wait for the process with the given
+</span><span style="font-size: 10pt"><i>pid</i></span><span style="font-size: 10pt">
+to exit.  If no
+</span><span style="font-size: 10pt"><i>pid</i></span><span style="font-size: 10pt">
+is given, all outstanding processes are waited for.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>whatis </tt></span><span style="font-size: 10pt"><i>name ...</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">    Print the value of each
+</span><span style="font-size: 10pt"><i>name</i></span><span style="font-size: 10pt">
+in a form suitable for input to
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">.
+The output is an assignment to a variable, the definition of a function,
+a call to
+</span><span style="font-size: 10pt"><tt>builtin</tt></span><span style="font-size: 10pt">
+for a built-in command, or the path name of a binary program.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>whatis&nbsp;path&nbsp;g&nbsp;cd&nbsp;who</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">might print
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>path=(.&nbsp;/bin)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;g&nbsp;{gre&nbsp;-e&nbsp;$1&nbsp;*.[hycl]}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>builtin&nbsp;cd</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/bin/who</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>~ </tt></span><span style="font-size: 10pt"><i>subject pattern ...</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">  The
+</span><span style="font-size: 10pt"><i>subject</i></span><span style="font-size: 10pt">
+is matched against each
+</span><span style="font-size: 10pt"><i>pattern</i></span><span style="font-size: 10pt">
+in turn.  On a match,
+</span><span style="font-size: 10pt"><tt>$status</tt></span><span style="font-size: 10pt">
+is set to true.
+Otherwise, it is set to 
+</span><span style="font-size: 10pt"><tt>&rsquo;no match&rsquo;</tt></span><span style="font-size: 10pt">.
+Patterns are the same as for filename matching.
+The
+</span><span style="font-size: 10pt"><i>patterns</i></span><span style="font-size: 10pt">
+are not subjected to filename replacement before the
+</span><span style="font-size: 10pt"><tt>~</tt></span><span style="font-size: 10pt">
+command is executed, so they need not be enclosed in
+quotation marks, unless of course, a literal match for
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>[</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>?</tt></span><span style="font-size: 10pt">
+is required.
+For example
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>~&nbsp;$1&nbsp;?</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">matches any single character, whereas
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>~&nbsp;$1&nbsp;&rsquo;?&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">only matches a literal question mark.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>20.
+Advanced I/O Redirection
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+allows redirection of file descriptors other than 0 and 1
+(standard input and output) by specifying the file descriptor
+in square brackets
+</span><span style="font-size: 10pt"><tt>[ ]</tt></span><span style="font-size: 10pt">
+after the
+</span><span style="font-size: 10pt"><tt>&lt;</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>&gt;</tt></span><span style="font-size: 10pt">.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;junk.c&nbsp;&gt;[2]junk.diag</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">saves the compiler&rsquo;s diagnostics from standard error in
+</span><span style="font-size: 10pt"><tt>junk.diag</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">File descriptors may be replaced by a copy, in the sense of
+</span><span style="font-size: 10pt"><i>dup</i></span><span style="font-size: 10pt">(2),
+of an already-open file by typing, for example
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;junk.c&nbsp;&gt;[2=1]</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This replaces file descriptor 2 with a copy of file descriptor 1.
+It is more useful in conjunction with other redirections, like this
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;junk.c&nbsp;&gt;junk.out&nbsp;&gt;[2=1]</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Redirections are evaluated from left to right, so this redirects
+file descriptor 1 to
+</span><span style="font-size: 10pt"><tt>junk.out</tt></span><span style="font-size: 10pt">,
+then points file descriptor 2 at the same file.
+By contrast,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;junk.c&nbsp;&gt;[2=1]&nbsp;&gt;junk.out</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">redirects file descriptor 2 to a copy of file descriptor 1
+(presumably the terminal), and then directs file descriptor 1
+to a file.  In the first case, standard and diagnostic output
+will be intermixed in
+</span><span style="font-size: 10pt"><tt>junk.out</tt></span><span style="font-size: 10pt">.
+In the second, diagnostic output will appear on the terminal,
+and standard output will be sent to the file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">File descriptors may be closed by using the duplication notation
+with an empty right-hand side.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;junk.c&nbsp;&gt;[2=]</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will discard diagnostics from the compilation.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Arbitrary file descriptors may be sent through
+a pipe by typing, for example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>vc&nbsp;junk.c&nbsp;|[2]&nbsp;grep&nbsp;-v&nbsp;&rsquo;^$&rsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This deletes blank lines
+from the C compiler&rsquo;s error output.  Note that the output
+of
+</span><span style="font-size: 10pt"><tt>grep</tt></span><span style="font-size: 10pt">
+still appears on file descriptor 1.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Occasionally you may wish to connect the input side of
+a pipe to some file descriptor other than zero.
+The notation
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cmd1&nbsp;|[5=19]&nbsp;cmd2</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">creates a pipeline with
+</span><span style="font-size: 10pt"><tt>cmd1</tt></span><span style="font-size: 10pt">&rsquo;s
+file descriptor 5 connected through a pipe to
+</span><span style="font-size: 10pt"><tt>cmd2</tt></span><span style="font-size: 10pt">&rsquo;s
+file descriptor 19.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>21.
+Here documents
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+procedures may include data, called &lsquo;&lsquo;here documents&rsquo;&rsquo;,
+to be provided as input to commands, as in this version of the
+</span><span style="font-size: 10pt"><i>tel</i></span><span style="font-size: 10pt">
+command
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i)&nbsp;grep&nbsp;$i&nbsp;&lt;&lt;!</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tor&nbsp;2T-402&nbsp;2912</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>kevin&nbsp;2C-514&nbsp;2842</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>bill&nbsp;2C-562&nbsp;7214</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>!</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A here document is introduced by the redirection symbol
+</span><span style="font-size: 10pt"><tt>&lt;&lt;</tt></span><span style="font-size: 10pt">,
+followed by an arbitrary EOF marker
+(</span><span style="font-size: 10pt"><tt>!</tt></span><span style="font-size: 10pt">
+in the example).  Lines following the command,
+up to a line containing only the EOF marker are saved
+in a temporary file that is connected to the command&rsquo;s
+standard input when it is run.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+does variable substitution in here documents.  The following command:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ed&nbsp;$3&nbsp;&lt;&lt;EOF</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>g/$1/s//$2/g</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>w</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>EOF</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">changes all occurrences of
+</span><span style="font-size: 10pt"><tt>$1</tt></span><span style="font-size: 10pt">
+to
+</span><span style="font-size: 10pt"><tt>$2</tt></span><span style="font-size: 10pt">
+in file
+</span><span style="font-size: 10pt"><tt>$3</tt></span><span style="font-size: 10pt">.
+To include a literal
+</span><span style="font-size: 10pt"><tt>$</tt></span><span style="font-size: 10pt">
+in a here document, type
+</span><span style="font-size: 10pt"><tt>$$</tt></span><span style="font-size: 10pt">.
+If the name of a variable is followed immediately by
+</span><span style="font-size: 10pt"><tt>^</tt></span><span style="font-size: 10pt">,
+the caret is deleted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Variable substitution can be entirely suppressed by enclosing
+the EOF marker following
+</span><span style="font-size: 10pt"><tt>&lt;&lt;</tt></span><span style="font-size: 10pt">
+in quotation marks, as in
+</span><span style="font-size: 10pt"><tt>&lt;&lt;&rsquo;EOF&rsquo;</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here documents may be provided on file descriptors other than 0 by typing, for example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cmd&nbsp;&lt;&lt;[4]End</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>End</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If a here document appears within a compound block, the contents of the document
+must be after the whole block:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i&nbsp;in&nbsp;$*){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;mail&nbsp;$i&nbsp;&lt;&lt;EOF</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>words&nbsp;to&nbsp;live&nbsp;by</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>EOF</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>22.
+Catching Notes
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+scripts normally terminate when an interrupt is received from the terminal.
+A function with the name of a UNIX signal, in lower case, is defined in the usual way,
+but called when
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+receives the corresponding note.
+The
+</span><span style="font-size: 10pt"><i>notify</i></span><span style="font-size: 10pt">(2)
+section of the Programmer&rsquo;s Manual discusses notes in some detail.
+Notes of interest are:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>sighup</tt></span><span style="font-size: 10pt"> The note was &lsquo;hangup&rsquo;.
+Plan 9 sends this when the terminal has disconnected from
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>sigint</tt></span><span style="font-size: 10pt"> The note was &lsquo;interrupt&rsquo;, usually sent when
+the interrupt character (ASCII DEL) is typed on the terminal.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>sigterm</tt></span><span style="font-size: 10pt">    The note was &lsquo;kill&rsquo;, normally sent by
+</span><span style="font-size: 10pt"><i>kill</i></span><span style="font-size: 10pt">(1).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>sigexit</tt></span><span style="font-size: 10pt">    An artificial note sent when
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+is about to exit.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">As an example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;sigint{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;rm&nbsp;/tmp/junk</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;exit</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">sets a trap for the keyboard interrupt that
+removes a temporary file before exiting.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Notes will be ignored if the note routine is set to
+</span><span style="font-size: 10pt"><tt>{}</tt></span><span style="font-size: 10pt">.
+Signals revert to their default behavior when their handlers&rsquo;
+definitions are deleted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>23.
+Environment
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The environment is a list of name-value pairs made available to
+executing binaries.
+On Plan 9, the environment is stored in a file system named
+</span><span style="font-size: 10pt"><tt>#e</tt></span><span style="font-size: 10pt">,
+normally mounted on
+</span><span style="font-size: 10pt"><tt>/env</tt></span><span style="font-size: 10pt">.
+The value of each variable is stored in a separate file, with components
+terminated by zero bytes.
+(The file system is
+maintained entirely in core, so no disk or network access is involved.)
+The contents of
+</span><span style="font-size: 10pt"><tt>/env</tt></span><span style="font-size: 10pt">
+are shared on a per-process group basis </span><span style="font-size: 10pt">&minus;</span><span style="font-size: 10pt"> when a new process group is
+created it effectively attaches
+</span><span style="font-size: 10pt"><tt>/env</tt></span><span style="font-size: 10pt">
+to a new file system initialized with a copy of the old one.
+A consequence of this organization is that commands can change environment
+entries and see the changes reflected in
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Functions also appear in the environment, named by prefixing
+</span><span style="font-size: 10pt"><tt>fn#</tt></span><span style="font-size: 10pt">
+to their names, like
+</span><span style="font-size: 10pt"><tt>/env/fn#roff</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>24.
+Local Variables
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It is often useful to set a variable for the duration
+of a single command.  An assignment followed by a command
+has this effect.  For example
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>a=global</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>a=local&nbsp;echo&nbsp;$a</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;$a</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will print
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>local</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>global</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This works even for compound commands, like
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>f=/fairly/long/file/name&nbsp;{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;wc&nbsp;$f;&nbsp;spell&nbsp;$f;&nbsp;diff&nbsp;$f.old&nbsp;$f&nbsp;}&nbsp;|</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pr&nbsp;-h&nbsp;&rsquo;Facts&nbsp;about&nbsp;&rsquo;$f&nbsp;|&nbsp;lp&nbsp;-dfn</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>25.
+Examples — </b></span><span style="font-size: 10pt"><i>cd, pwd</i></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here is a pair of functions that provide
+enhanced versions of the standard
+</span><span style="font-size: 10pt"><tt>cd</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>pwd</tt></span><span style="font-size: 10pt">
+commands.  (Thanks to Rob Pike for these.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ps1=&rsquo;%&nbsp;&rsquo;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;default&nbsp;prompt</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tab=&rsquo;&nbsp;&nbsp;&nbsp;&rsquo;&nbsp;&nbsp;&nbsp;#&nbsp;a&nbsp;tab&nbsp;character</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;cd{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;builtin&nbsp;cd&nbsp;$1&nbsp;&amp;&amp;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;switch($#*){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;case&nbsp;0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;dir=$home</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;prompt=($ps1&nbsp;$tab)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;case&nbsp;*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;switch($1)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;/*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dir=$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prompt=(&lsquo;{basename&nbsp;&lsquo;{pwd}}^$ps1&nbsp;$tab)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;*/*&nbsp;..*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dir=()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prompt=(&lsquo;{basename&nbsp;&lsquo;{pwd}}^$ps1&nbsp;$tab)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;case&nbsp;*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dir=()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prompt=($1^$ps1&nbsp;$tab)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;pwd{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;if(~&nbsp;$#dir&nbsp;0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;dir=&lsquo;{/bin/pwd}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;echo&nbsp;$dir</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Function
+</span><span style="font-size: 10pt"><tt>pwd</tt></span><span style="font-size: 10pt">
+is a version of the standard
+</span><span style="font-size: 10pt"><tt>pwd</tt></span><span style="font-size: 10pt">
+that caches its value in variable
+</span><span style="font-size: 10pt"><tt>$dir</tt></span><span style="font-size: 10pt">,
+because the genuine
+</span><span style="font-size: 10pt"><tt>pwd</tt></span><span style="font-size: 10pt">
+can be quite slow to execute.
+(Recent versions of Plan 9 have very fast implementations of
+</span><span style="font-size: 10pt"><tt>pwd</tt></span><span style="font-size: 10pt">,
+reducing the advantage of the
+</span><span style="font-size: 10pt"><tt>pwd</tt></span><span style="font-size: 10pt">
+function.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Function
+</span><span style="font-size: 10pt"><tt>cd</tt></span><span style="font-size: 10pt">
+calls the
+</span><span style="font-size: 10pt"><tt>cd</tt></span><span style="font-size: 10pt">
+built-in, and checks that it was successful.
+If so, it sets
+</span><span style="font-size: 10pt"><tt>$dir</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>$prompt</tt></span><span style="font-size: 10pt">.
+The prompt will include the last component of the
+current directory (except in the home directory,
+where it will be null), and
+</span><span style="font-size: 10pt"><tt>$dir</tt></span><span style="font-size: 10pt">
+will be reset either to the correct value or to
+</span><span style="font-size: 10pt"><tt>()</tt></span><span style="font-size: 10pt">,
+so that the
+</span><span style="font-size: 10pt"><tt>pwd</tt></span><span style="font-size: 10pt">
+function will work correctly.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>26.
+Examples — </b></span><span style="font-size: 10pt"><i>man</i></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><i>man</i></span><span style="font-size: 10pt">
+command prints pages of the Programmer&rsquo;s Manual.
+It is called, for example, as
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>man&nbsp;2&nbsp;sinh</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>man&nbsp;rc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>man&nbsp;-t&nbsp;cat</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the first case, the page for
+</span><span style="font-size: 10pt"><i>sinh</i></span><span style="font-size: 10pt">
+in section 2 is printed.
+In the second case, the manual page for
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+is printed.  Since no manual section is specified,
+all sections are searched for the page, and it is found
+in section 1.
+In the third case, the page for
+</span><span style="font-size: 10pt"><i>cat</i></span><span style="font-size: 10pt">
+is typeset (the
+</span><span style="font-size: 10pt"><tt>-t</tt></span><span style="font-size: 10pt">
+option).
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cd&nbsp;/sys/man&nbsp;||&nbsp;{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;echo&nbsp;$0:&nbsp;No&nbsp;manual!&nbsp;&gt;[1=2]</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;exit&nbsp;1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>NT=n&nbsp;&nbsp;#&nbsp;default&nbsp;nroff</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>s=&rsquo;*&rsquo;&nbsp;#&nbsp;section,&nbsp;default&nbsp;try&nbsp;all</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i)&nbsp;switch($i){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;-t</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;NT=t</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;-n</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;NT=n</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;-*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;echo&nbsp;Usage:&nbsp;$0&nbsp;&rsquo;[-nt]&nbsp;[section]&nbsp;page&nbsp;...&rsquo;&nbsp;&gt;[1=2]</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;exit&nbsp;1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;[1-9]&nbsp;10</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;s=$i</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>case&nbsp;*</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;eval&nbsp;&rsquo;pages=&rsquo;$s/$i</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;for(page&nbsp;in&nbsp;$pages){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;if(test&nbsp;-f&nbsp;$page)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$NT^roff&nbsp;-man&nbsp;$page</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;not</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo&nbsp;$0:&nbsp;$i&nbsp;not&nbsp;found&nbsp;&gt;[1=2]</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;}</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Note the use of
+</span><span style="font-size: 10pt"><tt>eval</tt></span><span style="font-size: 10pt">
+to make a list of candidate manual pages.
+Without
+</span><span style="font-size: 10pt"><tt>eval</tt></span><span style="font-size: 10pt">,
+the
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+stored in
+</span><span style="font-size: 10pt"><tt>$s</tt></span><span style="font-size: 10pt">
+would not trigger filename matching
+— it&rsquo;s enclosed in quotation marks,
+and even if it weren&rsquo;t, it would be expanded
+when assigned to
+</span><span style="font-size: 10pt"><tt>$s</tt></span><span style="font-size: 10pt">.
+Eval causes its arguments
+to be re-processed by
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+parser and interpreter, effectively delaying
+evaluation of the
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+until the assignment to
+</span><span style="font-size: 10pt"><tt>$pages</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>27.
+Examples — </b></span><span style="font-size: 10pt"><i>holmdel</i></span><span style="font-size: 10pt"><b>
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+script plays the deceptively simple game
+</span><span style="font-size: 10pt"><i>holmdel</i></span><span style="font-size: 10pt">,
+in which the players alternately name Bell Labs locations,
+the winner being the first to mention Holmdel.
+</span><span style="font-size: 10pt"></span></p><p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>t=/tmp/holmdel$pid</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;read{</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;$1=&lsquo;{awk&nbsp;&rsquo;{print;exit}&rsquo;}</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ifs=&rsquo;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&rsquo;&nbsp;&nbsp;#&nbsp;just&nbsp;a&nbsp;newline</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>fn&nbsp;sigexit&nbsp;sigint&nbsp;sigquit&nbsp;sighup{</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;rm&nbsp;-f&nbsp;$t</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;exit</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cat&nbsp;&lt;&lt;&rsquo;!&rsquo;&nbsp;&gt;$t</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Allentown&nbsp;</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Atlanta</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Cedar&nbsp;Crest</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Chester</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Columbus</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Elmhurst</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Fullerton</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Holmdel</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Indian&nbsp;Hill</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Merrimack&nbsp;Valley</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Morristown</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Neptune</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Piscataway</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Reading</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Short&nbsp;Hills</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>South&nbsp;Plainfield</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Summit</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Whippany</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>West&nbsp;Long&nbsp;Branch</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>!</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>while(){</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;lab=&lsquo;{fortune&nbsp;$t}</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;echo&nbsp;$lab</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;if(~&nbsp;$lab&nbsp;Holmdel){</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo&nbsp;You&nbsp;lose.</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exit</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;}</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;while(read&nbsp;lab;&nbsp;!&nbsp;grep&nbsp;-i&nbsp;-s&nbsp;$lab&nbsp;$t)&nbsp;echo&nbsp;No&nbsp;such&nbsp;location.</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;if(~&nbsp;$lab&nbsp;[hH]olmdel){</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo&nbsp;You&nbsp;win.</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exit</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;}</tt></span></p>
+<p style="line-height: 1.2em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This script is worth describing in detail
+(rather, it would be if it weren&rsquo;t so silly.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Variable
+</span><span style="font-size: 10pt"><tt>$t</tt></span><span style="font-size: 10pt">
+is an abbreviation for the name of a temporary file.
+Including
+</span><span style="font-size: 10pt"><tt>$pid</tt></span><span style="font-size: 10pt">,
+initialized by
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+to its process-id,
+in the names of temporary files insures that their
+names won&rsquo;t collide, in case more than one instance
+of the script is running at a time.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Function
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">&rsquo;s
+argument is the name of a variable into which a
+line gathered from standard input is read.
+</span><span style="font-size: 10pt"><tt>$ifs</tt></span><span style="font-size: 10pt">
+is set to just a newline.  Thus
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">&rsquo;s
+input is not split apart at spaces, but the terminating
+newline is deleted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A handler is set to catch
+</span><span style="font-size: 10pt"><tt>sigint</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>sigquit</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>sighup,</tt></span><span style="font-size: 10pt">
+and the artificial
+</span><span style="font-size: 10pt"><tt>sigexit</tt></span><span style="font-size: 10pt">
+signal.  It just removes the temporary file and exits.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The temporary file is initialized from a here
+document containing a list of Bell Labs locations, and
+the main loop starts.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">First, the program guesses a location (in
+</span><span style="font-size: 10pt"><tt>$lab</tt></span><span style="font-size: 10pt">)
+using the
+</span><span style="font-size: 10pt"><tt>fortune</tt></span><span style="font-size: 10pt">
+program to pick a random line from the location list.
+It prints the location, and if it guessed Holmdel, prints
+a message and exits.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Then it uses the
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">
+function to get lines from standard input and validity-check
+them until it gets a legal name.
+Note that the condition part of a
+</span><span style="font-size: 10pt"><tt>while</tt></span><span style="font-size: 10pt">
+can be a compound command.  Only the exit status of the
+last command in the sequence is checked.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Again, if the result
+is Holmdel, it prints a message and exits.
+Otherwise it goes back to the top of the loop.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>28.
+Design Principles
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+draws heavily from Steve Bourne&rsquo;s
+</span><span style="font-size: 10pt"><tt>/bin/sh</tt></span><span style="font-size: 10pt">.
+Any successor of the Bourne shell is bound to
+suffer in comparison.  I have tried to fix its
+best-acknowledged shortcomings and to simplify things
+wherever possible, usually by omitting inessential features.
+Only when irresistibly tempted have I introduced novel ideas.
+Obviously I have tinkered extensively with Bourne&rsquo;s syntax.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The most important principle in
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+design is that it&rsquo;s not a macro processor.  Input is never
+scanned more than once by the lexical and syntactic analysis
+code (except, of course, by the
+</span><span style="font-size: 10pt"><tt>eval</tt></span><span style="font-size: 10pt">
+command, whose
+</span><span style="font-size: 10pt"><i>raison d&rsquo;&ecirc;tre</i></span><span style="font-size: 10pt">
+is to break the rule).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Bourne shell scripts can often be made
+to run wild by passing them arguments containing spaces.
+These will be split into multiple arguments using
+</span><span style="font-size: 10pt"><tt>IFS</tt></span><span style="font-size: 10pt">,
+often at inopportune times.
+In
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">,
+values of variables, including command line arguments, are not re-read
+when substituted into a command.
+Arguments have presumably been scanned in the parent process, and ought
+not to be re-read.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Why does Bourne re-scan commands after variable substitution?
+He needs to be able to store lists of arguments in variables whose values are
+character strings.
+If we eliminate re-scanning, we must change the type of variables, so that
+they can explicitly carry lists of strings.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This introduces some
+conceptual complications.  We need a notation for lists of words.
+There are two different kinds of concatenation, for strings —
+</span><span style="font-size: 10pt"><tt>$a^$b</tt></span><span style="font-size: 10pt">,
+and lists —
+</span><span style="font-size: 10pt"><tt>($a $b)</tt></span><span style="font-size: 10pt">.
+The difference between
+</span><span style="font-size: 10pt"><tt>()</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>&rsquo;&rsquo;</tt></span><span style="font-size: 10pt">
+is confusing to novices,
+although the distinction is arguably sensible —
+a null argument is not the same as no argument.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Bourne also rescans input when doing command substitution.
+This is because the text enclosed in back-quotes is not
+a string, but a command.  Properly, it ought to
+be parsed when the enclosing command is, but this makes
+it difficult to
+handle nested command substitutions, like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>size=&lsquo;wc&nbsp;-l&nbsp;\&lsquo;ls&nbsp;-t|sed&nbsp;1q\&lsquo;&lsquo;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The inner back-quotes must be escaped
+to avoid terminating the outer command.
+This can get much worse than the above example;
+the number of
+</span><span style="font-size: 10pt"><tt>\</tt></span><span style="font-size: 10pt">&rsquo;s
+required is exponential in the nesting depth.
+</span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+fixes this by making the backquote a unary operator
+whose argument is a command, like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>size=&lsquo;{wc&nbsp;-l&nbsp;&lsquo;{ls&nbsp;-t|sed&nbsp;1q}}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">No escapes are ever required, and the whole thing
+is parsed in one pass.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For similar reasons
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+defines signal handlers as though they were functions,
+instead of associating a string with each signal, as Bourne does,
+with the attendant possibility of getting a syntax error message
+in response to typing the interrupt character.  Since
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+parses input when typed, it reports errors when you make them.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For all this trouble, we gain substantial semantic simplifications.
+There is no need for the distinction between
+</span><span style="font-size: 10pt"><tt>$*</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>$@</tt></span><span style="font-size: 10pt">.
+There is no need for four types of quotation, nor the
+extremely complicated rules that govern them.  In
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+you use quotation marks when you want a syntax character
+to appear in an argument, or an argument that is the empty string,
+and at no other time.
+</span><span style="font-size: 10pt"><tt>IFS</tt></span><span style="font-size: 10pt">
+is no longer used, except in the one case where it was indispensable:
+converting command output into argument lists during command substitution.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This also avoids an important UNIX security hole.
+In UNIX, the
+</span><span style="font-size: 10pt"><i>system</i></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><i>popen</i></span><span style="font-size: 10pt">
+functions call
+</span><span style="font-size: 10pt"><tt>/bin/sh</tt></span><span style="font-size: 10pt">
+to execute a command.  It is impossible to use either
+of these routines with any assurance that the specified command will
+be executed, even if the caller of
+</span><span style="font-size: 10pt"><i>system</i></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><i>popen</i></span><span style="font-size: 10pt">
+specifies a full path name for the command.  This can be devastating
+if it occurs in a set-userid program.
+The problem is that
+</span><span style="font-size: 10pt"><tt>IFS</tt></span><span style="font-size: 10pt">
+is used to split the command into words, so an attacker can just
+set
+</span><span style="font-size: 10pt"><tt>IFS=/</tt></span><span style="font-size: 10pt">
+in his environment and leave a Trojan horse
+named
+</span><span style="font-size: 10pt"><tt>usr</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>bin</tt></span><span style="font-size: 10pt">
+in the current working directory before running the privileged program.
+</span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">
+fixes this by never rescanning input for any reason.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Most of the other differences between
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+and the Bourne shell are not so serious.  I eliminated Bourne&rsquo;s
+peculiar forms of variable substitution, like
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>echo&nbsp;${a=b}&nbsp;${c-d}&nbsp;${e?error}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">because they are little used, redundant and easily
+expressed in less abstruse terms.
+I deleted the builtins
+</span><span style="font-size: 10pt"><tt>export</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>readonly</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>break</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>continue</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>read</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>return</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>set</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>times</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>unset</tt></span><span style="font-size: 10pt">
+because they seem redundant or
+only marginally useful.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Where Bourne&rsquo;s syntax draws from Algol 68,
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+is based on C or Awk.  This is harder to defend.
+I believe that, for example
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if(test&nbsp;-f&nbsp;junk)&nbsp;rm&nbsp;junk</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">is better syntax than
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if&nbsp;test&nbsp;-f&nbsp;junk;&nbsp;then&nbsp;rm&nbsp;junk;&nbsp;fi</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">because it is less cluttered with keywords,
+it avoids the semicolons that Bourne requires
+in odd places,
+and the syntax characters better set off the
+active parts of the command.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The one bit of large-scale syntax that Bourne
+unquestionably does better than
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+is the
+</span><span style="font-size: 10pt"><tt>if</tt></span><span style="font-size: 10pt">
+statement with
+</span><span style="font-size: 10pt"><tt>else</tt></span><span style="font-size: 10pt">
+clause.
+</span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">&rsquo;s
+</span><span style="font-size: 10pt"><tt>if</tt></span><span style="font-size: 10pt">
+has no terminating
+</span><span style="font-size: 10pt"><tt>fi</tt></span><span style="font-size: 10pt">-like
+bracket.  As a result, the parser cannot
+tell whether or not to expect an
+</span><span style="font-size: 10pt"><tt>else</tt></span><span style="font-size: 10pt">
+clause without looking ahead in its input.
+The problem is that after reading, for example
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>if(test&nbsp;-f&nbsp;junk)&nbsp;echo&nbsp;junk&nbsp;found</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">in interactive mode,
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+cannot decide whether to execute it immediately and print
+</span><span style="font-size: 10pt"><tt>$prompt(1)</tt></span><span style="font-size: 10pt">,
+or to print
+</span><span style="font-size: 10pt"><tt>$prompt(2)</tt></span><span style="font-size: 10pt">
+and wait for the
+</span><span style="font-size: 10pt"><tt>else</tt></span><span style="font-size: 10pt">
+to be typed.
+In the Bourne shell, this is not a problem, because the
+</span><span style="font-size: 10pt"><tt>if</tt></span><span style="font-size: 10pt">
+command must end with
+</span><span style="font-size: 10pt"><tt>fi</tt></span><span style="font-size: 10pt">,
+regardless of whether it contains an
+</span><span style="font-size: 10pt"><tt>else</tt></span><span style="font-size: 10pt">
+or not.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">&rsquo;s
+admittedly feeble solution is to declare that the
+</span><span style="font-size: 10pt"><tt>else</tt></span><span style="font-size: 10pt">
+clause is a separate statement, with the semantic
+proviso that it must immediately follow an
+</span><span style="font-size: 10pt"><tt>if</tt></span><span style="font-size: 10pt">,
+and to call it
+</span><span style="font-size: 10pt"><tt>if not</tt></span><span style="font-size: 10pt">
+rather than
+</span><span style="font-size: 10pt"><tt>else</tt></span><span style="font-size: 10pt">,
+as a reminder that something odd is going on.
+The only noticeable consequence of this is that
+the braces are required in the construction
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>for(i){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;if(test&nbsp;-f&nbsp;$i)&nbsp;echo&nbsp;$i&nbsp;found</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;not&nbsp;echo&nbsp;$i&nbsp;not&nbsp;found</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">and that
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">
+resolves the &lsquo;&lsquo;dangling else&rsquo;&rsquo; ambiguity in opposition
+to most people&rsquo;s expectations.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It is remarkable that in the four most recent editions of the UNIX system
+programmer&rsquo;s manual the Bourne shell grammar described in the manual page
+does not admit the command
+</span><span style="font-size: 10pt"><tt>who|wc</tt></span><span style="font-size: 10pt">.
+This is surely an oversight, but it suggests something darker:
+nobody really knows what the Bourne shell&rsquo;s grammar is.  Even examination
+of the source code is little help.  The parser is implemented by recursive
+descent, but the routines corresponding to the syntactic categories all
+have a flag argument that subtly changes their operation depending on the
+context.
+</span><span style="font-size: 10pt"><i>Rc</i></span><span style="font-size: 10pt">&rsquo;s
+parser is implemented using
+</span><span style="font-size: 10pt"><i>yacc</i></span><span style="font-size: 10pt">,
+so I can say precisely what the grammar is.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>29.
+Acknowledgements
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Rob Pike, Howard Trickey and other Plan 9 users have been insistent, incessant
+sources of good ideas and criticism.  Some examples in this document are plagiarized
+from [Bourne],
+as are most of
+</span><span style="font-size: 10pt"><i>rc</i></span><span style="font-size: 10pt">&rsquo;s
+good features.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>30.
+Reference
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">S. R. Bourne,
+UNIX Time-Sharing System: The UNIX Shell,
+Bell System Technical Journal, Volume 57 number 6, July-August 1978
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

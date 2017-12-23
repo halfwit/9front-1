@@ -1,0 +1,1458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Hello World or Καλημέρα κόσμε or こんにちは 世界</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Hello World</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>or</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt">Καλημέρα κόσμε</span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>or</b></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt">こんにちは 世界</span><span style="font-size: 12pt"><b></b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Rob&nbsp;Pike</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Ken&nbsp;Thompson</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>rob,ken@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 from Bell Labs has recently been converted from ASCII
+to an ASCII-compatible variant of the Unicode Standard, a 16-bit character set.
+In this paper we explain the reasons for the change,
+describe the character set and representation we chose,
+and present the programming models and software changes
+that support the new text format.
+Although we stopped short of full internationalization&mdash;for
+example, system error messages are in Unixese, not Japanese&mdash;we
+believe Plan 9 is the first system to treat the representation
+of all major languages on a uniform, equal footing throughout all its
+software.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The world is multilingual but most computer systems
+are based on English and ASCII.
+The first release of Plan 9 [Pike90], a new distributed operating
+system from Bell Laboratories, seemed a good occasion
+to correct this chauvinism.
+It is easier to make such deep changes when building new systems than
+by refitting old ones.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The ANSI C standard [ANSIC] contains some guidance on the matter of
+&lsquo;wide&rsquo; and &lsquo;multi-byte&rsquo; characters but falls far short of
+solving the myriad associated problems.
+We could find no literature on how to convert a
+</span><span style="font-size: 10pt"><i>system</i></span><span style="font-size: 10pt">
+to larger character sets, although some individual
+</span><span style="font-size: 10pt"><i>programs</i></span><span style="font-size: 10pt">
+had been converted.
+This paper reports what we discovered as we
+explored the problem of representing multilingual
+text at all levels of an operating system,
+from the file system and kernel through
+the applications and up to the window system
+and display.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 has not been &lsquo;internationalized&rsquo;:
+its manuals are in English,
+its error messages are in English,
+and it can display text that goes from left to right only.
+But before we can address these other problems,
+we need to handle, uniformly and comfortably,
+the textual representation of all the major written languages.
+That subproblem is richer than we had anticipated.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Standards
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Our first step was to select a standard.
+At the time (January 1992),
+there were only two viable options:
+ISO 10646 [ISO10646] and Unicode [Unicode].
+The documents describing both proposals were still in the draft stage.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The draft of ISO 10646 was not
+very attractive to us.
+It defined a sparse set of 32-bit characters,
+which would be
+hard to implement
+and have punitive storage requirements.
+Also, the draft attempted to
+mollify national interests by allocating
+16-bit subspaces to national committees
+to partition individually.
+The suggested mode of use was to
+&lsquo;&lsquo;flip&rsquo;&rsquo; between separate national
+standards to implement the international standard.
+This did not strike us as a sound basis for a character set.
+As well, transmitting 32-bit values in a byte stream,
+such as in pipes, would be expensive and hard to implement.
+Since the standard does not define a byte order for such
+transmission, the byte stream would also have to carry
+state to enable the values to be recovered.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Unicode Standard is a proposal by a consortium of mostly American
+computer companies formed
+to protest the technical
+failings of ISO 10646.
+It defines a uniform 16-bit code based on the
+principle of unification:
+two characters are the same if they look the
+same even though they are from different
+languages.
+This principle, called Han unification,
+allows the large Japanese, Chinese, and Korean
+character sets to be packed comfortably into a 16-bit representation.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We chose the Unicode Standard for its technical merits and because its
+code space was better defined.
+Moreover,
+the Unicode Consortium was derailing the
+ISO 10646 standard.
+(Now, in 1995,
+ISO 10646 is a standard
+with one 16-bit group defined,
+which is almost exactly the Unicode Standard.
+As most people expected, the two standards bodies
+reached a d&eacute;tente and
+ISO 10646 and Unicode represent the same character set.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Unicode Standard defines an adequate character set
+but an unreasonable representation.
+It states that all characters
+are 16 bits wide and are communicated and stored in
+16-bit units.
+It also reserves a pair of characters
+(hexadecimal FFFE and FEFF) to detect byte order
+in transmitted text, requiring state in the byte stream.
+(The Unicode Consortium was thinking of files, not pipes.)
+To adopt this encoding,
+we would have had to convert all text going
+into and out of Plan 9 between ASCII and Unicode, which cannot be done.
+Within a single program, in command of all its input and output,
+it is possible to define characters as 16-bit quantities;
+in the context of a networked system with
+hundreds of applications on diverse machines
+by different manufacturers,
+it is impossible.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We needed a way to adapt the Unicode Standard to the tools-and-pipes
+model of text processing embodied by the Unix system.
+To do that, we
+needed an ASCII-compatible textual
+representation of Unicode characters for transmission
+and storage.
+In the draft ISO standard there was an informative
+(non-required)
+Annex
+called UTF
+that provided a byte stream encoding
+of the 32-bit ISO code.
+The encoding uses multibyte sequences composed
+from the 190 printable characters of Latin-1
+to represent character values larger
+than 159.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The UTF encoding has several good properties.
+By far the most important is that
+a byte in the ASCII range 0-127 represents
+itself in UTF.
+Thus UTF is backward compatible with ASCII.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">UTF has other advantages.
+It is a byte encoding and is
+therefore byte-order independent.
+ASCII control characters appear in the byte stream
+only as themselves, never as an element of a sequence
+encoding another character,
+so newline bytes separate lines of UTF text.
+Finally, ANSI C&rsquo;s
+</span><span style="font-size: 10pt"><tt>strcmp</tt></span><span style="font-size: 10pt">
+function applied to UTF strings preserves the ordering of Unicode characters.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To encode and decode UTF is expensive (involving multiplication,
+division, and modulo operations) but workable.
+UTF&rsquo;s major disadvantage is that the encoding
+is not self-synchronizing.
+It is in general impossible to find the character
+boundaries in a UTF string without reading from
+the beginning of the string, although in practice
+control characters such as newlines,
+tabs, and blanks provide synchronization points.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In August 1992,
+X-Open circulated a proposal for another UTF-like
+byte encoding of Unicode characters.
+Their major concern was that an embedded character
+in a file name
+(in particular a slash)
+could be part of an escape sequence in UTF and
+therefore confuse a traditional file system.
+Their proposal would allow all 7-bit ASCII characters
+to represent themselves
+</span><span style="font-size: 10pt"><i>and only themselves</i></span><span style="font-size: 10pt">
+in text.
+Multibyte sequences would contain only characters
+with the high bit set.
+We proposed a modification to the new UTF that
+would address our synchronization problem.
+Our proposal, which was  originally known informally as UTF-2 and FSS-UTF,
+is now referred to as UTF-8 and has been approved by ISO to become
+Annex P to ISO 10646.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The model for text in Plan 9 is chosen from these
+three standards*:
+</span></p><p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">the Unicode character set encoded as a byte stream by
+UTF-8, from
+(soon to be) Annex P of ISO 10646.
+Although this mixture may seem like a precarious position for us to adopt,
+it is not as bad as it sounds.
+ISO 10646 and the Unicode Standard have converged,
+other systems such as Linux have adopted the same character set and encoding,
+and the general feeling seems to be that Unicode and UTF-8 will be accepted as the way
+to exchange text between systems.
+The prognosis for wide acceptance is good.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are a couple of aspects of the Unicode Standard we have not faced.
+One is the issue of right-to-left text such as Hebrew or Arabic.
+Since that is an issue of display, not representation, we believe
+we can defer that problem for the moment without affecting our
+ability to solve it later.
+Another issue is diacriticals and &lsquo;combining characters&rsquo;,
+which cause overstriking of multiple Unicode characters.
+Although necessary for some scripts, such as Thai, Arabic, and Hebrew,
+such characters confuse the issues for Latin languages because they
+generate multiple representations for accented characters.
+ISO 10646 describes three levels of implementation;
+in Plan 9 we decided not to address the issue.
+Again, this can be labeled as a display issue and its finer points are still being debated,
+so we felt comfortable deferring.  Ma&ntilde;ana.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Although we converted Plan 9 in the altruistic interests of
+serving foreign languages, we have found the large character
+set attractive for other reasons.  The Unicode Standard includes many
+characters&mdash;mathematical symbols, scientific notation,
+more general punctuation, and more&mdash;that we now use
+daily in our work.  We no longer test our imaginations
+to find ways to include non-ASCII symbols in our text;
+why type
+</span><span style="font-size: 10pt"><tt>:-)</tt></span><span style="font-size: 10pt">
+when you can use the character &#9786;?
+Most compelling is the ability to absorb documents
+and data that contain non-ASCII characters; our browser for the
+Oxford English Dictionary
+lets us see the dictionary as it really is, with pronunciation
+in the IPA font, foreign phrases properly rendered, and so on,
+</span><span style="font-size: 10pt"><i>in plain text.</i></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the rest of this paper, except when
+stated otherwise, the term &lsquo;UTF&rsquo; refers to the UTF-8 encoding
+of Unicode characters as adopted by Plan 9.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>C Compiler
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first program to be converted to UTF
+was the C Compiler.
+There are two levels of conversion.
+On the syntactic level,
+input to the C compiler
+is UTF; on the semantic level,
+the C language needs to define
+how compiled programs manipulate
+the UTF set.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The syntactic part is simple.
+The ANSI C language standard defines the
+source character set to be ASCII.
+Since UTF is backward compatible with ASCII,
+the compiler needs little change.
+The only places where a larger character set
+is allowed are in character constants, strings, and comments.
+Since 7-bit ASCII characters can represent only
+themselves in UTF,
+the compiler does not have to be careful while looking
+for the termination of a string or comment.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Plan 9 compiler extends ANSI C to treat any Unicode
+character with a value outside of the ASCII range as
+an alphabetic.
+To a Greek programmer or an English mathematician,
+α is a sensible and now valid variable name.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On the semantic level, ANSI C allows,
+but does not tie down,
+the notion of a
+</span><span style="font-size: 10pt"><i>wide character</i></span><span style="font-size: 10pt">
+and admits string and character constants
+of this type.
+We chose the wide character type to be
+</span><span style="font-size: 10pt"><tt>unsigned</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>short</tt></span><span style="font-size: 10pt">.
+In the libraries, the word
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+is defined by a
+</span><span style="font-size: 10pt"><tt>typedef</tt></span><span style="font-size: 10pt">
+to be equivalent to
+</span><span style="font-size: 10pt"><tt>unsigned</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>short</tt></span><span style="font-size: 10pt">
+and is
+used to signify a Unicode character.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are surprises; for example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>L&rsquo;x&rsquo;&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt">is&nbsp;120</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&rsquo;x&rsquo;&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt">is&nbsp;120</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>L&rsquo;&yuml;&rsquo;&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt">is&nbsp;255</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&rsquo;&yuml;&rsquo;&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt">is&nbsp;-1,&nbsp;stdio&nbsp;</span><span style="font-size: 9pt"><tt>EOF</tt></span><span style="font-size: 9pt">&nbsp;(if&nbsp;</span><span style="font-size: 9pt"><tt>char</tt></span><span style="font-size: 9pt">&nbsp;is&nbsp;signed)</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>L&rsquo;</tt></span><span style="font-size: 9pt">α</span><span style="font-size: 9pt"><tt>&rsquo;&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt">is&nbsp;945</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&rsquo;</tt></span><span style="font-size: 9pt">α</span><span style="font-size: 9pt"><tt>&rsquo;&nbsp;&nbsp;&nbsp;&nbsp;</tt></span><span style="font-size: 9pt">is&nbsp;illegal</span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the string constants,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>"</tt></span><span style="font-size: 9pt">こんにちは&nbsp;世界</span><span style="font-size: 9pt"><tt>"</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>L"</tt></span><span style="font-size: 9pt">こんにちは&nbsp;世界</span><span style="font-size: 9pt"><tt>",</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">the former is an array of
+</span><span style="font-size: 10pt"><tt>chars</tt></span><span style="font-size: 10pt">
+with 22 elements
+and a null byte,
+while the latter is an array of
+</span><span style="font-size: 10pt"><tt>unsigned</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>shorts</tt></span><span style="font-size: 10pt">
+(</span><span style="font-size: 10pt"><tt>Runes</tt></span><span style="font-size: 10pt">)
+with 8 elements and a null
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Plan 9 library provides an output conversion function,
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+(analogous to
+</span><span style="font-size: 10pt"><tt>printf</tt></span><span style="font-size: 10pt">),
+with formats
+</span><span style="font-size: 10pt"><tt>%c</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>%C</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>%s</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>%S</tt></span><span style="font-size: 10pt">.
+Since
+</span><span style="font-size: 10pt"><tt>print</tt></span><span style="font-size: 10pt">
+produces text, its output is always UTF.
+The character conversion
+</span><span style="font-size: 10pt"><tt>%c</tt></span><span style="font-size: 10pt">
+(lower case) masks its argument
+to 8 bits before converting to UTF.
+Thus
+</span><span style="font-size: 10pt"><tt>L&rsquo;&yuml;&rsquo;</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>&rsquo;&yuml;&rsquo;</tt></span><span style="font-size: 10pt">
+printed under
+</span><span style="font-size: 10pt"><tt>%c</tt></span><span style="font-size: 10pt">
+will be identical,
+but
+</span><span style="font-size: 10pt"><tt>L&rsquo;</tt></span><span style="font-size: 10pt">α</span><span style="font-size: 10pt"><tt>&rsquo;</tt></span><span style="font-size: 10pt">
+will print as the Unicode
+character with decimal value 177.
+The character conversion
+</span><span style="font-size: 10pt"><tt>%C</tt></span><span style="font-size: 10pt">
+(upper case) masks its argument
+to 16 bits before converting to UTF.
+Thus
+</span><span style="font-size: 10pt"><tt>L&rsquo;&yuml;&rsquo;</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>L&rsquo;</tt></span><span style="font-size: 10pt">α</span><span style="font-size: 10pt"><tt>&rsquo;</tt></span><span style="font-size: 10pt">
+will print correctly under
+</span><span style="font-size: 10pt"><tt>%C</tt></span><span style="font-size: 10pt">,
+but
+</span><span style="font-size: 10pt"><tt>&rsquo;&yuml;&rsquo;</tt></span><span style="font-size: 10pt">
+will not.
+The conversion
+</span><span style="font-size: 10pt"><tt>%s</tt></span><span style="font-size: 10pt">
+(lower case)
+expects a pointer to
+</span><span style="font-size: 10pt"><tt>char</tt></span><span style="font-size: 10pt">
+and copies UTF sequences up to a null byte.
+The conversion
+</span><span style="font-size: 10pt"><tt>%S</tt></span><span style="font-size: 10pt">
+(upper case) expects a pointer to
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+and
+performs sequential
+</span><span style="font-size: 10pt"><tt>%C</tt></span><span style="font-size: 10pt">
+conversions until a null
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+is encountered.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another problem in format conversion
+is the definition of
+</span><span style="font-size: 10pt"><tt>%10s</tt></span><span style="font-size: 10pt">:
+does the number refer to bytes or characters?
+We decided that such formats were most
+often used to align output columns and
+so made the number count characters.
+Some programs, however, use the count
+to place blank-padded strings
+in fixed-sized arrays.
+These programs must be found and corrected.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here is a complete example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>#include&nbsp;&lt;u.h&gt;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>char&nbsp;c[]&nbsp;=&nbsp;"</tt></span><span style="font-size: 9pt">こんにちは&nbsp;世界</span><span style="font-size: 9pt"><tt>";</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Rune&nbsp;s[]&nbsp;=&nbsp;L"</tt></span><span style="font-size: 9pt">こんにちは&nbsp;世界</span><span style="font-size: 9pt"><tt>";</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main(void)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;print("%d,&nbsp;%d\n",&nbsp;sizeof(c),&nbsp;sizeof(s));</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;print("%s\n",&nbsp;c);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;print("%S\n",&nbsp;s);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This program prints
+</span><span style="font-size: 10pt"><tt>23,</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>18</tt></span><span style="font-size: 10pt">
+and then two identical lines of
+UTF text.
+In practice,
+</span><span style="font-size: 10pt"><tt>%S</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>L"..."</tt></span><span style="font-size: 10pt">
+are rare in programs; one reason is
+that most formatted I/O is done in unconverted UTF.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Ramifications
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">All programs in Plan 9 now read and write text as UTF, not ASCII.
+This change breaks two deep-rooted symmetries implicit in most C programs:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">1. A character is no longer a
+</span><span style="font-size: 10pt"><tt>char</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">2. The internal representation (Rune) of a character now differs from its
+external representation (UTF).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In the sections that follow,
+we show how these issues were faced in the layers of
+system software from the operating system up to the applications.
+The effects are wide-reaching and often surprising.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Operating system
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Since UTF is the only format for text in Plan 9,
+the interface to the operating system had to be converted to UTF.
+Text strings cross the interface in several places:
+command arguments,
+file names,
+user names (people can log in using their native name),
+error messages,
+and miscellaneous minor places such as commands to the I/O system.
+Little change was required: null-terminated UTF strings
+are equivalent to null-terminated ASCII strings for most purposes
+of the operating system.
+The library routines described in the next section made that
+change straightforward.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The window system, once called
+</span><span style="font-size: 10pt"><tt>8.5</tt></span><span style="font-size: 10pt">,
+is now rightfully called
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Libraries
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A header file included by all programs (see [Pike92]) declares
+the
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+type to hold 16-bit character values:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef&nbsp;unsigned&nbsp;short&nbsp;Rune;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Also defined are several constants relevant to UTF:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>enum</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;UTFmax&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;3,&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;maximum&nbsp;bytes&nbsp;per&nbsp;rune&nbsp;*/</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;Runesync&nbsp;&nbsp;=&nbsp;0x80,&nbsp;/*&nbsp;can&rsquo;t&nbsp;appear&nbsp;in&nbsp;UTF&nbsp;sequence&nbsp;(&lt;)&nbsp;*/</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;Runeself&nbsp;&nbsp;=&nbsp;0x80,&nbsp;/*&nbsp;rune==UTF&nbsp;sequence&nbsp;(&lt;)&nbsp;*/</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&nbsp;&nbsp;&nbsp;&nbsp;Runeerror&nbsp;=&nbsp;0x80,&nbsp;/*&nbsp;decoding&nbsp;error&nbsp;in&nbsp;UTF&nbsp;*/</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(With the original UTF,
+</span><span style="font-size: 10pt"><tt>Runesync</tt></span><span style="font-size: 10pt">
+was hexadecimal 21 and
+</span><span style="font-size: 10pt"><tt>Runeself</tt></span><span style="font-size: 10pt">
+was A0.)
+</span><span style="font-size: 10pt"><tt>UTFmax</tt></span><span style="font-size: 10pt">
+bytes are sufficient
+to hold the UTF encoding of any Unicode character.
+Characters of value less than
+</span><span style="font-size: 10pt"><tt>Runesync</tt></span><span style="font-size: 10pt">
+only appear in a UTF string as
+themselves, never as part of a sequence encoding another character.
+Characters of value less than
+</span><span style="font-size: 10pt"><tt>Runeself</tt></span><span style="font-size: 10pt">
+encode into single bytes
+of the same value.
+Finally, when the library detects errors in UTF input&mdash;byte sequences
+that are not valid UTF sequences&mdash;it converts the first byte of the
+error sequence to the character
+</span><span style="font-size: 10pt"><tt>Runeerror</tt></span><span style="font-size: 10pt">.
+There is little a rune-oriented program can do when given bad data
+except exit, which is unreasonable, or carry on.
+Originally the conversion routines, described below,
+returned errors when given invalid UTF,
+but we found ourselves repeatedly checking for errors and ignoring them.
+We therefore decided to convert a bad sequence to a valid rune
+and continue processing.
+(The ANSI C routines, on the other hand, return errors.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This technique does have the unfortunate property that converting
+invalid UTF byte strings in and out of runes does not preserve the input,
+but this circumstance only occurs when non-textual input is
+given to a textual program.
+The Unicode Standard defines an error character, value FFFD, to stand for
+characters from other sets that it does not represent.
+The
+</span><span style="font-size: 10pt"><tt>Runeerror</tt></span><span style="font-size: 10pt">
+character is a different concept, related to the encoding rather than the character set, so we
+chose a different character for it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Plan 9 C library contains a number of routines for
+manipulating runes.
+The first set converts between runes and UTF strings:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;int&nbsp;runetochar(char*,&nbsp;Rune*);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;int&nbsp;chartorune(Rune*,&nbsp;char*);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;int&nbsp;runelen(long);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;int&nbsp;fullrune(char*,&nbsp;int);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Runetochar</tt></span><span style="font-size: 10pt">
+translates a single
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+to a UTF sequence and returns the number of bytes produced.
+</span><span style="font-size: 10pt"><tt>Chartorune</tt></span><span style="font-size: 10pt">
+goes the other way, reporting how many bytes were consumed.
+</span><span style="font-size: 10pt"><tt>Runelen</tt></span><span style="font-size: 10pt">
+returns the number of bytes in the UTF encoding of a rune.
+</span><span style="font-size: 10pt"><tt>Fullrune</tt></span><span style="font-size: 10pt">
+examines a UTF string up to a specified number of bytes
+and reports whether the string begins with a complete UTF encoding.
+All these routines use the
+</span><span style="font-size: 10pt"><tt>Runeerror</tt></span><span style="font-size: 10pt">
+character to work around encoding problems.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is also a set of routines for examining null-terminated UTF strings,
+based on the model of the ANSI standard
+</span><span style="font-size: 10pt"><tt>str</tt></span><span style="font-size: 10pt">
+routines, but with
+</span><span style="font-size: 10pt"><tt>utf</tt></span><span style="font-size: 10pt">
+substituted for
+</span><span style="font-size: 10pt"><tt>str</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>rune</tt></span><span style="font-size: 10pt">
+for
+</span><span style="font-size: 10pt"><tt>chr</tt></span><span style="font-size: 10pt">:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;int&nbsp;utflen(char*);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;char*&nbsp;&nbsp;&nbsp;utfrune(char*,&nbsp;long);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;char*&nbsp;&nbsp;&nbsp;utfrrune(char*,&nbsp;long);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>extern&nbsp;&nbsp;char*&nbsp;&nbsp;&nbsp;utfutf(char*,&nbsp;char*);</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Utflen</tt></span><span style="font-size: 10pt">
+returns the number of runes in a UTF string;
+</span><span style="font-size: 10pt"><tt>utfrune</tt></span><span style="font-size: 10pt">
+returns a pointer to the first occurrence of a rune in a UTF string;
+and
+</span><span style="font-size: 10pt"><tt>utfrrune</tt></span><span style="font-size: 10pt">
+a pointer to the last.
+</span><span style="font-size: 10pt"><tt>Utfutf</tt></span><span style="font-size: 10pt">
+searches for the first occurrence of a UTF string in another UTF string.
+Given the synchronizing property of UTF-8,
+</span><span style="font-size: 10pt"><tt>utfutf</tt></span><span style="font-size: 10pt">
+is the same as
+</span><span style="font-size: 10pt"><tt>strstr</tt></span><span style="font-size: 10pt">
+if the arguments point to valid UTF strings.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It is a mistake to use
+</span><span style="font-size: 10pt"><tt>strchr</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>strrchr</tt></span><span style="font-size: 10pt">
+unless searching for a 7-bit ASCII character, that is, a character
+less than
+</span><span style="font-size: 10pt"><tt>Runeself</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We have no routines for manipulating null-terminated arrays of
+</span><span style="font-size: 10pt"><tt>Runes</tt></span><span style="font-size: 10pt">.
+Although they should probably exist for completeness, we have
+found no need for them, for the same reason that
+</span><span style="font-size: 10pt"><tt>%S</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>L"..."</tt></span><span style="font-size: 10pt">
+are rarely used.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Most Plan 9 programs use a new buffered I/O library, BIO, in place of
+Standard I/O.
+BIO contains routines to read and write UTF streams, converting to and from
+runes.
+</span><span style="font-size: 10pt"><tt>Bgetrune</tt></span><span style="font-size: 10pt">
+returns, as a
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">
+within a
+</span><span style="font-size: 10pt"><tt>long</tt></span><span style="font-size: 10pt">,
+the next character in the UTF input stream;
+</span><span style="font-size: 10pt"><tt>Bputrune</tt></span><span style="font-size: 10pt">
+takes a rune and writes its UTF representation.
+</span><span style="font-size: 10pt"><tt>Bungetrune</tt></span><span style="font-size: 10pt">
+puts a rune back into the input stream for rereading.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 programs use a simple set of macros to process command line arguments.
+Converting these macros to UTF automatically updated the
+argument processing of most programs.
+In general,
+argument flag names can no longer be held in bytes and
+arrays of 256 bytes cannot be used to hold a set of flags.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We have done nothing analogous to ANSI C&rsquo;s locales, partly because
+we do not feel qualified to define locales and partly because we remain
+unconvinced of that model for dealing with the problems.
+That is really more an issue of internationalization than conversion
+to a larger character set; on the other hand,
+because we have chosen a single character set that encompasses
+most languages, some of the need for
+locales is eliminated.
+(We have a utility,
+</span><span style="font-size: 10pt"><tt>tcs</tt></span><span style="font-size: 10pt">,
+that translates between UTF and other character sets.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are several reasons why our library does not follow the ANSI design
+for wide and multi-byte characters.
+The ANSI model was designed by a committee, untried, almost
+as an afterthought, whereas
+we wanted to design as we built.
+(We made several major changes to the interface
+as we became familiar with the problems involved.)
+We disagree with ANSI C&rsquo;s handling of invalid multi-byte sequences.
+Also, the ANSI C library is incomplete:
+although it contains some crucial routines for handling
+wide and multi-byte characters, there are some serious omissions.
+For example, our software can exploit
+the fact that UTF preserves ASCII characters in the byte stream.
+We could remove that assumption by replacing all
+calls to
+</span><span style="font-size: 10pt"><tt>strchr</tt></span><span style="font-size: 10pt">
+with
+</span><span style="font-size: 10pt"><tt>utfrune</tt></span><span style="font-size: 10pt">
+and so on.
+(Because of the weaker properties of the original UTF,
+we have actually done so.)
+ANSI C cannot:
+the standard says nothing about the representation, so portable code should
+</span><span style="font-size: 10pt"><i>never</i></span><span style="font-size: 10pt">
+call
+</span><span style="font-size: 10pt"><tt>strchr</tt></span><span style="font-size: 10pt">,
+yet there is no ANSI equivalent to
+</span><span style="font-size: 10pt"><tt>utfrune</tt></span><span style="font-size: 10pt">.
+ANSI C simultaneously invalidates
+</span><span style="font-size: 10pt"><tt>strchr</tt></span><span style="font-size: 10pt">
+and offers no replacement.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Finally, ANSI did nothing to integrate wide characters
+into the I/O system: it gives no method for printing
+wide characters.
+We therefore needed to invent some things and decided to invent
+everything.
+In the end, some of our entry points do correspond closely to
+ANSI routines&mdash;for example
+</span><span style="font-size: 10pt"><tt>chartorune</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>runetochar</tt></span><span style="font-size: 10pt">
+are similar to
+</span><span style="font-size: 10pt"><tt>mbtowc</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>wctomb</tt></span><span style="font-size: 10pt">&mdash;but
+Plan 9&rsquo;s library defines more functionality, enough
+to write real applications comfortably.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Converting the tools
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The source for our tools and applications had already been converted to
+work with Latin-1, so it was &lsquo;8-bit safe&rsquo;, but the conversion to the Unicode
+Standard and UTF is more involved.
+Some programs needed no change at all:
+</span><span style="font-size: 10pt"><tt>cat</tt></span><span style="font-size: 10pt">,
+for instance,
+interprets its argument strings, delivered in UTF,
+as file names that it passes uninterpreted to the
+</span><span style="font-size: 10pt"><tt>open</tt></span><span style="font-size: 10pt">
+system call,
+and then just copies bytes from its input to its output;
+it never makes decisions based on the values of the bytes.
+(Plan 9
+</span><span style="font-size: 10pt"><tt>cat</tt></span><span style="font-size: 10pt">
+has no options such as
+</span><span style="font-size: 10pt"><tt>-v</tt></span><span style="font-size: 10pt">
+to complicate matters.)
+Most programs, however, needed modest change.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It is difficult to
+find automatically the places that need attention,
+but
+</span><span style="font-size: 10pt"><tt>grep</tt></span><span style="font-size: 10pt">
+helps.
+Software that uses the libraries conscientiously can be searched
+for calls to library routines that examine bytes as characters:
+</span><span style="font-size: 10pt"><tt>strchr</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>strrchr</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>strstr</tt></span><span style="font-size: 10pt">,
+etc.
+Replacing these by calls to
+</span><span style="font-size: 10pt"><tt>utfrune</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>utfrrune</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>utfutf</tt></span><span style="font-size: 10pt">
+is enough to fix many programs.
+Few tools actually need to operate on runes internally;
+more typically they need only to look for the final slash in a file
+name and similar trivial tasks.
+Of the 170 C source programs in the top levels of
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd</tt></span><span style="font-size: 10pt">,
+only 23 now contain the word
+</span><span style="font-size: 10pt"><tt>Rune</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The programs that
+</span><span style="font-size: 10pt"><i>do</i></span><span style="font-size: 10pt">
+store runes internally
+are mostly those whose
+</span><span style="font-size: 10pt"><i>raison</i></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>d&rsquo;&ecirc;tre</i></span><span style="font-size: 10pt">
+is character manipulation:
+</span><span style="font-size: 10pt"><tt>sam</tt></span><span style="font-size: 10pt">
+(the text editor),
+</span><span style="font-size: 10pt"><tt>sed</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>sort</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>tr</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>troff</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+(the window system and terminal emulator),
+and so on.
+To decide whether to compute using runes
+or UTF-encoded byte strings requires balancing the cost of converting
+the data when read and written
+against the cost of converting relevant text on demand.
+For programs such as editors that run a long time with a relatively
+constant dataset, runes are the better choice.
+There are space considerations too, but they are more complicated:
+plain ASCII text grows when converted to runes; UTF-encoded Japanese
+shrinks.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Again, it is hard to automate the conversion of a program from
+</span><span style="font-size: 10pt"><tt>chars</tt></span><span style="font-size: 10pt">
+to
+</span><span style="font-size: 10pt"><tt>Runes</tt></span><span style="font-size: 10pt">.
+It is not enough just to change the type of variables; the assumption
+that bytes and characters are equivalent can be insidious.
+For instance, to clear a character array by
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>memset(buf,&nbsp;0,&nbsp;BUFSIZE)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">becomes wrong if
+</span><span style="font-size: 10pt"><tt>buf</tt></span><span style="font-size: 10pt">
+is changed from an array of
+</span><span style="font-size: 10pt"><tt>chars</tt></span><span style="font-size: 10pt">
+to an array of
+</span><span style="font-size: 10pt"><tt>Runes</tt></span><span style="font-size: 10pt">.
+Any program that indexes tables based on character values needs
+rethinking.
+Consider
+</span><span style="font-size: 10pt"><tt>tr</tt></span><span style="font-size: 10pt">,
+which originally used multiple 256-byte arrays for the mapping.
+The na&iuml;ve conversion would yield multiple 65536-rune arrays.
+Instead Plan 9
+</span><span style="font-size: 10pt"><tt>tr</tt></span><span style="font-size: 10pt">
+saves space by building in effect
+a run-encoded version of the map.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Sort</tt></span><span style="font-size: 10pt">
+has related problems.
+The cooperation of UTF and
+</span><span style="font-size: 10pt"><tt>strcmp</tt></span><span style="font-size: 10pt">
+means that a simple sort&mdash;one with no options&mdash;can be done
+on the original UTF strings using
+</span><span style="font-size: 10pt"><tt>strcmp</tt></span><span style="font-size: 10pt">.
+With sorting options enabled, however,
+</span><span style="font-size: 10pt"><tt>sort</tt></span><span style="font-size: 10pt">
+may need to convert its input to runes: for example,
+option
+</span><span style="font-size: 10pt"><tt>-t</tt></span><span style="font-size: 10pt">α</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+requires searching for alphas in the input text to
+crack the input into fields.
+The field specifier
+</span><span style="font-size: 10pt"><tt>+3.2</tt></span><span style="font-size: 10pt">
+refers to 2 runes beyond the third field.
+Some of the other options are hopelessly provincial:
+consider the case-folding and dictionary order options
+(Japanese doesn&rsquo;t even have an official dictionary order) or
+</span><span style="font-size: 10pt"><tt>-M</tt></span><span style="font-size: 10pt">
+which compares by case-insensitive English month name.
+Handling these options involves the
+larger issues of internationalization and is beyond the scope
+of this paper and our expertise.
+Plan 9
+</span><span style="font-size: 10pt"><tt>sort</tt></span><span style="font-size: 10pt">
+works sensibly with options that make sense relative to the input.
+The simple and most important options are, however, usually meaningful.
+In particular,
+</span><span style="font-size: 10pt"><tt>sort</tt></span><span style="font-size: 10pt">
+sorts UTF into the same order that
+</span><span style="font-size: 10pt"><tt>look</tt></span><span style="font-size: 10pt">
+expects.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Regular expression-matching algorithms need rethinking to
+be applied to UTF text.
+Deterministic automata are usually applied to bytes;
+converting them to operate on variable-sized byte sequences is awkward.
+On the other hand, converting the input stream to runes adds measurable
+expense
+and the state tables expand
+from size 256 to 65536; it can be expensive just to generate them.
+For simple string searching,
+the Boyer-Moore algorithm works with UTF provided the input is
+guaranteed to be only valid UTF strings; however, it does not work
+with the old UTF encoding.
+At a more mundane level, even character classes are harder:
+the usual bit-vector representation within a non-deterministic automaton
+is unwieldy with 65536 characters in the alphabet.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We compromised.
+An existing library for compiling and executing regular expressions
+was adapted to work on runes, with two entry points for searching
+in arrays of runes and arrays of chars (the pattern is always UTF text).
+Character classes are represented internally as runs of runes;
+the reserved value
+</span><span style="font-size: 10pt"><tt>FFFF</tt></span><span style="font-size: 10pt">
+marks the end of the class.
+Then
+</span><span style="font-size: 10pt"><i>all</i></span><span style="font-size: 10pt">
+utilities that use regular expressions&mdash;editors,
+</span><span style="font-size: 10pt"><tt>grep</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>awk</tt></span><span style="font-size: 10pt">,
+etc.&mdash;except the shell, whose notation
+was grandfathered, were converted to use the library.
+For some programs, there was a concomitant loss of performance,
+but there was also a strong advantage.
+To our knowledge, Plan 9 is the only Unix-like system
+that has a single definition and implementation of
+regular expressions; patterns are written and interpreted
+identically by all the programs in the system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A handful of programs have the notion of character built into them
+so strongly as to confuse the issue of what they should do with UTF input.
+Such programs were treated as individual special cases.
+For example,
+</span><span style="font-size: 10pt"><tt>wc</tt></span><span style="font-size: 10pt">
+is, by default, unchanged in behavior and output; a new option,
+</span><span style="font-size: 10pt"><tt>-r</tt></span><span style="font-size: 10pt">,
+counts the number of correctly encoded runes&mdash;valid UTF sequences&mdash;in
+its input;
+</span><span style="font-size: 10pt"><tt>-b</tt></span><span style="font-size: 10pt">
+the number of invalid sequences.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It took us several months to convert all the software in the system
+to the Unicode Standard and the old UTF.
+When we decided to convert from that to the new UTF,
+only three things needed to be done.
+First, we rewrote the library routines to encode and decode the
+new UTF.  This took an evening.
+Next, we converted all the files containing UTF
+to the new encoding.
+We wrote a trivial program to look for non-ASCII bytes in
+text files and used a Plan 9 program called
+</span><span style="font-size: 10pt"><tt>tcs</tt></span><span style="font-size: 10pt">
+(translate character set) to change encodings.
+Finally, we recompiled all the system software;
+the library interface was unchanged, so recompilation was sufficient
+to effect the transformation.
+The second two steps were done concurrently and took an afternoon.
+We concluded that the actual encoding is relatively unimportant to the
+software; the adoption of large characters and a byte-stream encoding
+</span><span style="font-size: 10pt"><i>per</i></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>se</i></span><span style="font-size: 10pt">
+are much deeper issues.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Graphics and fonts
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plan 9 provides only minimal support for plain text terminals.
+It is instead designed to be used with all character input and
+output mediated by a window system such as
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">.
+The window system and related software are responsible for the
+display of UTF text as Unicode character images.
+For plain text, the window system must provide a user-settable
+</span><span style="font-size: 10pt"><i>font</i></span><span style="font-size: 10pt">
+that provides a (possibly empty) picture for each Unicode character.
+Fancier applications that use bold and Italic characters
+need multiple fonts storing multiple pictures for each
+Unicode value.
+All the issues are apparent, though,
+in just the problem of
+displaying a single image for each character, that is, the
+Unicode equivalent of a plain text terminal.
+With 128 or even 256 characters, a font can be just
+an array of bitmaps.  With 65536 characters,
+a more sophisticated design is necessary.  To store the ideographs
+for just Japanese as 16&times;16&times;1 bit images,
+the smallest they can reasonably be, takes over a quarter of a
+megabyte.  Make the images a little larger, store more bits per
+pixel, and hold a copy in every running application, and the
+memory cost becomes unreasonable.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The structure of the bitmap graphics services is described at length elsewhere
+[Pike91].
+In summary, the memory holding the bitmaps is stored in the same machine that has
+the display, mouse, and keyboard: the terminal in Plan 9 terminology,
+the workstation in others&rsquo;.
+Access to that memory and associated services is provided
+by device files served by system
+software on the terminal.  One of those files,
+</span><span style="font-size: 10pt"><tt>/dev/bitblt</tt></span><span style="font-size: 10pt">,
+interprets messages written upon it as requests for actions
+corresponding to entry points in the graphics library:
+allocate a bitmap, execute a raster operation, draw a text string, etc.
+The window system
+acts as a multiplexer that mediates access to the services
+and resources of the terminal by simulating in each client window
+a set of files mirroring those provided by the system.
+That is, each window has a distinct
+</span><span style="font-size: 10pt"><tt>/dev/mouse</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>/dev/bitblt</tt></span><span style="font-size: 10pt">,
+and so on through which applications drive graphical
+input and output.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">One of the resources managed by
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+and the terminal is the set of active
+</span><span style="font-size: 10pt"><i>subfonts.</i></span><span style="font-size: 10pt">
+Each subfont holds the
+bitmaps and associated data structures for a sequential set of Unicode
+characters.
+Subfonts are stored in files and loaded into the terminal by
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+or an application.
+For example, one subfont
+might hold the images of the first 256 characters of the Unicode space,
+corresponding to the Latin-1 character set;
+another might hold the standard phonetic character set, Unicode characters
+with value 0250 to 02E9.
+These files are collected in directories corresponding to typefaces:
+</span><span style="font-size: 10pt"><tt>/lib/font/bit/pelm</tt></span><span style="font-size: 10pt">
+contains the Pellucida Monospace character set, with subfonts holding
+the Latin-1, Greek, Cyrillic and other components of the typeface.
+A suffix on subfont files encodes (in a subfont-specific
+way) the size of the images:
+</span><span style="font-size: 10pt"><tt>/lib/font/bit/pelm/latin1.9</tt></span><span style="font-size: 10pt">
+contains the Latin-1 Pellucida Monospace characters with lower
+case letters 9 pixels high;
+</span><span style="font-size: 10pt"><tt>/lib/font/bit/jis/jis5400.16</tt></span><span style="font-size: 10pt">
+contains 16-pixel high
+ideographs starting at Unicode value 5400.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The subfonts do not identify which portion of the Unicode space
+they cover.  Instead, a
+font file, in plain text,
+describes how to assemble subfonts into a complete
+character set.
+The font file is presented as an argument to the window system
+to determine how plain text is displayed in text windows and
+applications.
+Here is the beginning of the font file
+</span><span style="font-size: 10pt"><tt>/lib/font/bit/pelm/jis.9.font</tt></span><span style="font-size: 10pt">,
+which describes the layout of a font covering that portion of
+the Unicode Standard for which we have characters of typical
+display size, using Japanese characters
+to cover the Han space:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>18&nbsp;&nbsp;14</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0000&nbsp;&nbsp;0x00FF&nbsp;&nbsp;latin1.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0100&nbsp;&nbsp;0x017E&nbsp;&nbsp;latineur.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0250&nbsp;&nbsp;0x02E9&nbsp;&nbsp;ipa.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0386&nbsp;&nbsp;0x03F5&nbsp;&nbsp;greek.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0400&nbsp;&nbsp;0x0475&nbsp;&nbsp;cyrillic.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2000&nbsp;&nbsp;0x2044&nbsp;&nbsp;../misc/genpunc.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2070&nbsp;&nbsp;0x208E&nbsp;&nbsp;supsub.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x20A0&nbsp;&nbsp;0x20AA&nbsp;&nbsp;currency.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2100&nbsp;&nbsp;0x2138&nbsp;&nbsp;../misc/letterlike.9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2190&nbsp;&nbsp;0x21EA&nbsp;&nbsp;../misc/arrows</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2200&nbsp;&nbsp;0x227F&nbsp;&nbsp;../misc/math1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2280&nbsp;&nbsp;0x22F1&nbsp;&nbsp;../misc/math2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2300&nbsp;&nbsp;0x232C&nbsp;&nbsp;../misc/tech</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2500&nbsp;&nbsp;0x257F&nbsp;&nbsp;../misc/chart</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x2600&nbsp;&nbsp;0x266F&nbsp;&nbsp;../misc/ding</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x3000&nbsp;&nbsp;0x303f&nbsp;&nbsp;../jis/jis3000.16</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x30a1&nbsp;&nbsp;0x30fe&nbsp;&nbsp;../jis/katakana.16</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x3041&nbsp;&nbsp;0x309e&nbsp;&nbsp;../jis/hiragana.16</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x4e00&nbsp;&nbsp;0x4fff&nbsp;&nbsp;../jis/jis4e00.16</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x5000&nbsp;&nbsp;0x51ff&nbsp;&nbsp;../jis/jis5000.16</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The first two numbers set the interline spacing of the font (18
+pixels) and the distance from the baseline to the top of the
+line (14 pixels).
+When characters are displayed, they are placed so as best
+to fit within those constraints; characters
+too large to fit will be truncated.
+The rest of the file associates subfont files
+with portions of Unicode space.
+The first four such files are in the Pellucida Monospace typeface
+and directory; others reside in other directories.  The file names
+are relative to the font file&rsquo;s own location.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are several advantages to this two-level structure.
+First, it simultaneously breaks the huge Unicode space into manageable
+components and provides a unifying architecture for
+assembling fonts from disjoint pieces.
+Second, the structure promotes sharing.
+For example, we have only one set of Japanese
+characters but dozens of typefaces for the Latin-1 characters,
+and this structure permits us to store only one copy of the
+Japanese set but use it with any Roman typeface.
+Also, customization is easy.
+English-speaking users who don&rsquo;t need Japanese characters
+but may want to read an on-line Oxford English Dictionary can
+assemble a custom font with the
+Latin-1 (or even just ASCII) characters and the International
+Phonetic Alphabet (IPA).
+Moreover, to do so requires just editing a plain text file,
+not using a special font editing tool.
+Finally, the structure guides the design of
+caching protocols to improve performance and memory usage.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To load a complete Unicode character set into each application
+would consume too
+much memory and, particularly on slow terminal lines, would take
+unreasonably long.
+Instead, Plan 9 assembles a multi-level cache structure for
+each font.
+An application opens a font file, reads and parses it,
+and allocates a data structure.
+A message written to
+</span><span style="font-size: 10pt"><tt>/dev/bitblt</tt></span><span style="font-size: 10pt">
+allocates an associated structure held in the terminal, in particular,
+a bitmap to act as a cache
+for recently used character images.
+Other messages copy these images to bitmaps such as the screen
+by loading characters from subfonts into the cache on demand and
+from there to the destination bitmap.
+The protocol to draw characters is in terms of cache indices,
+not Unicode character number or UTF sequences.
+These details are hidden from the application, which instead
+sees only a subroutine to draw a string in a bitmap from a
+given font, functions to discover character size information,
+and routines to allocate and to free fonts.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">As needed, whole
+subfonts are opened by the graphics library, read, and then downloaded
+to the terminal.
+They are held open by the library in an LRU-replacement list.
+Even when the program closes a subfont, it is retained
+in the terminal for later use.
+When the application opens the subfont, it asks the terminal
+if it already has a copy to avoid reading it from the file
+server if possible.
+This level of cache has the property that the bitmaps for, say,
+all the Japanese characters are stored only once, in the terminal;
+the applications read only size and width information from the terminal
+and share the images.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The sizes of the character and subfont caches held by the
+application are adaptive.
+A simple algorithm monitors the cache miss rate to enlarge and
+shrink the caches as required.
+The size of the character cache is limited to 2048 images maximum,
+which in practice seems enough even for Japanese text.
+For plain ASCII-like text it naturally stays around 128 images.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This mechanism sounds complicated but is implemented by only about
+500 lines in the library and considerably less in each of the
+terminal&rsquo;s graphics driver and
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">.
+It has the advantage that only characters that are
+being used are loaded into memory.
+It is also efficient: if the characters being drawn
+are in the cache the extra overhead is negligible.
+It works particularly well for alphabetic character sets,
+but also adapts on demand for ideographic sets.
+When a user first looks at Japanese text, it takes a few
+seconds to read all the font data, but thereafter the
+text is drawn almost as fast as regular text (the images
+are larger, so draw a little slower).
+Also, because the bitmaps are remembered by the terminal,
+if a second application then looks at Japanese text
+it starts faster than the first.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We considered
+building a &lsquo;font server&rsquo;
+to cache character images and associated data
+for the applications, the window system, and the terminal.
+We rejected this design because, although isolating
+many of the problems of font management into a separate program,
+it didn&rsquo;t simplify the applications.
+Moreover, in a distributed system such as Plan 9 it is easy
+to have too many special purpose servers.
+Making the management of the fonts the concern of only
+the essential components simplifies the system and makes
+bootstrapping less intricate.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Input
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A completely different problem is how to type Unicode characters
+as input to the system.
+We selected an unused key on our ASCII keyboards
+to serve as a prefix for multi-keystroke
+sequences that generate Unicode characters.
+For example, the character
+</span><span style="font-size: 10pt"><tt>&uuml;</tt></span><span style="font-size: 10pt">
+is generated by the prefix key
+(typically
+</span><span style="font-size: 10pt"><tt>ALT</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>Compose</tt></span><span style="font-size: 10pt">)
+followed by a double quote and a lower-case
+</span><span style="font-size: 10pt"><tt>u</tt></span><span style="font-size: 10pt">.
+When that character is read by the application, from the file
+</span><span style="font-size: 10pt"><tt>/dev/cons</tt></span><span style="font-size: 10pt">,
+it is of course presented as its UTF encoding.
+Such sequences generate characters from an arbitrary set that
+includes all of Latin-1 plus a selection of mathematical
+and technical characters.
+An arbitrary Unicode character may be generated by typing the prefix,
+an upper case X, and four hexadecimal digits that identify
+the Unicode value.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">These simple mechanisms are adequate for most of our day-to-day needs:
+it&rsquo;s easy to remember to type &lsquo;ALT 1 2&rsquo; for &frac12; or &lsquo;ALT accent letter&rsquo;
+for accented Latin letters.
+For the occasional unusual character, the cut and paste features of
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+serve well.  A program called (perhaps misleadingly)
+</span><span style="font-size: 10pt"><tt>unicode</tt></span><span style="font-size: 10pt">
+takes as argument a hexadecimal value, and prints the UTF representation of that character,
+which may then be picked up with the mouse and used as input.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">These methods
+are clearly unsatisfactory when working in a non-English language.
+In the native country of such a language
+the appropriate keyboard is likely to be at hand.
+But it&rsquo;s also reasonable&mdash;especially now that the system handles Unicode characters&mdash;to
+work in a language foreign to the keyboard.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For alphabetic languages such as Greek or Russian, it is
+straightforward to construct a program that does phonetic substitution,
+so that, for example, typing a Latin &lsquo;a&rsquo; yields the Greek &lsquo;α&rsquo;.
+Within Plan 9, such a program can be inserted transparently
+between the real keyboard and a program such as the window system,
+providing a manageable input device for such languages.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For ideographic languages such as Chinese or Japanese the problem is harder.
+Native users of such languages have adopted methods for dealing with
+Latin keyboards that involve a hybrid technique based on phonetics
+to generate a list of possible symbols followed by menu selection to
+choose the desired one.
+Such methods can be
+effective, but their design must be rooted in information about
+the language unknown to non-native speakers.
+(</span><span style="font-size: 10pt"><tt>Cxterm</tt></span><span style="font-size: 10pt">,
+a Chinese terminal emulator built by and for
+Chinese programmers,
+employs such a technique
+[Pong and Zhang].)
+Although the technical problem of implementing such a device
+is easy in Plan 9&mdash;it is just an elaboration of the technique for
+alphabetic languages&mdash;our lack of familiarity with such languages
+has restrained our enthusiasm for building one.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The input problem is technically the least interesting but perhaps
+emotionally the most important of the problems of converting a system
+to an international character set.
+Beyond that remain the deeper problems of internationalization
+such as multi-lingual error messages and command names,
+problems we are not qualified to solve.
+With the ability to treat text of most languages on an equal
+footing, though, we can begin down that path.
+Perhaps people in non-English speaking countries will
+consider adopting Plan 9, solving the input problem locally&mdash;perhaps
+just by plugging in their local terminals&mdash;and begin to use
+a system with at least the capacity to be international.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Acknowledgements
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Dennis Ritchie provided consultation and encouragement.
+Bob Flandrena converted most of the standard tools to UTF.
+Brian Kernighan suffered cheerfully with several
+inadequate implementations and converted
+</span><span style="font-size: 10pt"><tt>troff</tt></span><span style="font-size: 10pt">
+to UTF.
+Rich Drechsler converted his Postscript driver to UTF.
+John Hobby built the Postscript &#9786;.
+We thank them all.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>References
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[ANSIC] </span><span style="font-size: 10pt"><i>American National Standard for Information Systems -
+Programming Language C</i></span><span style="font-size: 10pt">, American National Standards Institute, Inc.,
+New York, 1990.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[ISO10646]
+ISO/IEC DIS 10646-1:1993
+</span><span style="font-size: 10pt"><i>Information technology -
+Universal Multiple-Octet Coded Character Set (UCS) &mdash;
+Part 1: Architecture and Basic Multilingual Plane</i></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike90] R. Pike, D. Presotto, K. Thompson, H. Trickey,
+&lsquo;&lsquo;Plan 9 from Bell Labs&rsquo;&rsquo;,
+UKUUG Proc. of the Summer 1990 Conf.,
+London, England,
+1990.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike91] R. Pike, &lsquo;&lsquo;8&frac12;, The Plan 9 Window System&rsquo;&rsquo;, USENIX Summer
+Conf. Proc., Nashville, 1991, reprinted in this volume.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike92] R. Pike, &lsquo;&lsquo;How to Use the Plan 9 C Compiler&rsquo;&rsquo;, this volume.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pong and Zhang] Man-Chi Pong and Yongguang Zhang, &lsquo;&lsquo;cxterm:
+A Chinese Terminal Emulator for the X Window System&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Software&mdash;Practice and Experience,
+</i></span><span style="font-size: 10pt">Vol 22(1), 809-926, October 1992.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Unicode]
+</span><span style="font-size: 10pt"><i>The Unicode Standard,
+Worldwide Character Encoding,
+Version 1.0, Volume 1</i></span><span style="font-size: 10pt">,
+The Unicode Consortium,
+Addison Wesley,
+New York,
+1991.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.35in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><b>Notes</b></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Originally appeared, in a slightly different form, in
+</span><span style="font-size: 10pt"><i>Proc. of the Winter 1993 USENIX Conf.,
+</i></span><span style="font-size: 10pt">pp. 43-50,
+San Diego
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+</body>
+</html>
+

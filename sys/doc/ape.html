@@ -1,0 +1,611 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>APE — The ANSI/POSIX Environment</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>APE — The ANSI/POSIX Environment</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Howard&nbsp;Trickey</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>howard@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a large or frequently-updated program must be ported
+to or from Plan 9, the ANSI/POSIX environment known as APE can be useful.
+APE combines the set of headers and object code libraries specified by
+the ANSI C standard (ANSI X3.159-1989) with the POSIX operating system
+interface standard (IEEE 1003.1-1990, ISO 9945-1), the part of POSIX
+defining the basic operating system functions.
+Using APE will cause slower compilation and marginally slower execution speeds,
+so if the importing or exporting happens only infrequently, due consideration
+should be given to using the usual Plan 9 compilation environment instead.
+Another factor to consider is that the Plan 9 header organization is
+much simpler to remember and use.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are some aspects of required POSIX behavior that are impossible or
+very hard to simulate in Plan 9.  They are described below.
+Experience has shown, however, that the simulation is adequate for the
+vast majority of programs.  A much more common problem is that
+many programs use functions or headers not defined by POSIX.
+APE has some extensions to POSIX to help in this regard.
+Extensions must be explicitly enabled with an appropriate
+</span><span style="font-size: 10pt"><tt>#define</tt></span><span style="font-size: 10pt">,
+in order that the APE environment be a good aid for testing
+ANSI/POSIX compliance of programs.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Pcc
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>pcc</tt></span><span style="font-size: 10pt">
+command acts as a front end to the Plan 9 C compilers and loaders.
+It runs an ANSI C preprocessor over source files, using the APE
+headers to satisfy
+</span><span style="font-size: 10pt"><tt>#include &lt;</tt></span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt"><tt>&gt;</tt></span><span style="font-size: 10pt">
+directives; then it runs a Plan 9 C compiler; finally, it may load
+with APE libraries to produce an executable program.
+The document
+</span><span style="font-size: 10pt"><i>How to Use the Plan 9 C Compiler</i></span><span style="font-size: 10pt">
+explains how environment variables are used by convention to
+handle compilation for differing architectures.
+The environment variable
+</span><span style="font-size: 10pt"><tt>$objtype</tt></span><span style="font-size: 10pt">
+controls which Plan 9 compiler and loader are used by
+</span><span style="font-size: 10pt"><tt>pcc</tt></span><span style="font-size: 10pt">,
+as well as the location of header and library files.
+For example, if
+</span><span style="font-size: 10pt"><tt>$objtype</tt></span><span style="font-size: 10pt">
+is
+</span><span style="font-size: 10pt"><tt>mips</tt></span><span style="font-size: 10pt">,
+then
+</span><span style="font-size: 10pt"><tt>pcc</tt></span><span style="font-size: 10pt">
+has
+</span><span style="font-size: 10pt"><tt>cpp</tt></span><span style="font-size: 10pt">
+look for headers in
+</span><span style="font-size: 10pt"><tt>/mips/include/ape</tt></span><span style="font-size: 10pt">
+followed by
+</span><span style="font-size: 10pt"><tt>/sys/include/ape</tt></span><span style="font-size: 10pt">;
+then
+</span><span style="font-size: 10pt"><tt>pcc</tt></span><span style="font-size: 10pt">
+uses
+</span><span style="font-size: 10pt"><tt>vc</tt></span><span style="font-size: 10pt">
+to create
+</span><span style="font-size: 10pt"><tt>.v</tt></span><span style="font-size: 10pt">
+object files;
+finally,
+</span><span style="font-size: 10pt"><tt>vl</tt></span><span style="font-size: 10pt">
+is used to create an executable using libraries in
+</span><span style="font-size: 10pt"><tt>/mips/lib/ape</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Psh and Cc
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>pcc</tt></span><span style="font-size: 10pt">
+command is intended for uses where the source code is
+ANSI/POSIX, but the programs are built in the usual Plan 9
+manner — with
+</span><span style="font-size: 10pt"><tt>mk</tt></span><span style="font-size: 10pt">
+and producing object files with names ending in
+</span><span style="font-size: 10pt"><tt>.v</tt></span><span style="font-size: 10pt">,
+etc.
+Sometimes it is best to use the standard POSIX
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt">
+(which produces object files with names ending in
+</span><span style="font-size: 10pt"><tt>.o</tt></span><span style="font-size: 10pt">,
+and automatically calls the loader unless
+</span><span style="font-size: 10pt"><tt>-c</tt></span><span style="font-size: 10pt">
+is specified).
+Under these circumstances, execute the command:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>ape/psh</tt></span><span style="font-size: 10pt"></span></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This starts a POSIX shell, with an environment that
+includes the POSIX commands
+</span><span style="font-size: 10pt"><tt>ar89</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>c89</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>basename</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>dirname</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>expr</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>false</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>grep</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>kill</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>make</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>rmdir</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>sed</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>sh</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>stty</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>true</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>uname</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>yacc</tt></span><span style="font-size: 10pt">.
+There are also a few placeholders for commands that cannot be
+implemented in Plan 9:
+</span><span style="font-size: 10pt"><tt>chown</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>ln</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>umask</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt">
+command accepts the options mandated for
+the POSIX command
+</span><span style="font-size: 10pt"><tt>c89</tt></span><span style="font-size: 10pt">,
+as specified in the C-Language Development Utilities Option
+annex of the POSIX Shell and Utilities standard.
+It also accepts the following nonstandard options:
+</span><span style="font-size: 10pt"><tt>-v</tt></span><span style="font-size: 10pt">
+for echoing the commands for each pass to stdout;
+</span><span style="font-size: 10pt"><tt>-A</tt></span><span style="font-size: 10pt">
+to turn on ANSI prototype warnings;
+</span><span style="font-size: 10pt"><tt>-S</tt></span><span style="font-size: 10pt">
+to leave assembly language in
+</span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt">.s;
+</span><span style="font-size: 10pt"><tt>-Wp,</tt></span><span style="font-size: 10pt"><i>args</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+to pass
+</span><span style="font-size: 10pt"><i>args</i></span><span style="font-size: 10pt">
+to the
+</span><span style="font-size: 10pt"><tt>cpp</tt></span><span style="font-size: 10pt">;
+</span><span style="font-size: 10pt"><tt>-W0,</tt></span><span style="font-size: 10pt"><i>args</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+to pass
+</span><span style="font-size: 10pt"><i>args</i></span><span style="font-size: 10pt">
+to 2c, etc.;
+and
+</span><span style="font-size: 10pt"><tt>-Wl,</tt></span><span style="font-size: 10pt"><i>args</i></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt">
+to pass
+</span><span style="font-size: 10pt"><i>args</i></span><span style="font-size: 10pt">
+to 2l, etc.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>sh</tt></span><span style="font-size: 10pt">
+command is pdksh, a mostly POSIX-compliant public domain Korn Shell.
+The Plan 9 implementation does not include
+the emacs and vi editing modes.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>stty</tt></span><span style="font-size: 10pt">
+command only has effect if the
+</span><span style="font-size: 10pt"><tt>ape/ptyfs</tt></span><span style="font-size: 10pt">
+command has been started to interpose a pseudo-tty interface
+between
+</span><span style="font-size: 10pt"><tt>/dev/cons</tt></span><span style="font-size: 10pt">
+and the running command.
+None of the distributed commands do this automatically.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Symbols
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The C and POSIX standards require that certain symbols be
+defined in headers.
+They also require that certain other classes of symbols not
+be defined in the headers, and specify certain other
+symbols that may be defined in headers at the discretion
+of the implementation.
+POSIX defines
+</span><span style="font-size: 10pt"><i>feature test macros</i></span><span style="font-size: 10pt">,
+which are preprocessor symbols beginning with an underscore
+and then a capital letter;  if the program
+</span><span style="font-size: 10pt"><tt>#defines</tt></span><span style="font-size: 10pt">
+a feature test macro before the inclusion of any headers,
+then it is requesting that certain symbols be visible in the headers.
+The most important feature test macro is
+</span><span style="font-size: 10pt"><tt>_POSIX_SOURCE</tt></span><span style="font-size: 10pt">:
+when it is defined, exactly the symbols required by POSIX are
+visible in the appropriate headers.
+Consider
+</span><span style="font-size: 10pt"><tt>&lt;signal.h&gt;</tt></span><span style="font-size: 10pt">
+for example:
+ANSI defines some names that must be defined in
+</span><span style="font-size: 10pt"><tt>&lt;signal.h&gt;</tt></span><span style="font-size: 10pt">,
+but POSIX defines others, such as
+</span><span style="font-size: 10pt"><tt>sigset_t</tt></span><span style="font-size: 10pt">,
+which are not allowed according to ANSI.
+The solution is to make the additional symbols visible only when
+</span><span style="font-size: 10pt"><tt>_POSIX_SOURCE</tt></span><span style="font-size: 10pt">
+is defined.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To export a program, it helps to know whether it fits
+in one of the following categories:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">1. Strictly conforming ANSI C program. It only uses features of the language,
+libraries, and headers explicitly required by the C standard.  It does not
+depend on unspecified, undefined, or implementation-dependent behavior,
+and does not exceed any minimum implementation limit.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">2. Strictly conforming POSIX program. Similar, but for the POSIX standard as well.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">3. Some superset of POSIX, with extensions.  Each extension
+is selected by a feature test macro, so it is clear which extensions
+are being used.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">With APE, if headers are always included to declare any library functions
+used, then the set of feature test macros defined by a program will
+show which of the above categories the program is in.
+To accomplish this, no symbol is defined in a header if it is not required
+by the C or POSIX standard, and those required by the POSIX standard
+are protected by
+</span><span style="font-size: 10pt"><tt>#ifdef _POSIX_SOURCE</tt></span><span style="font-size: 10pt">.
+For example,
+</span><span style="font-size: 10pt"><tt>&lt;errno.h&gt;</tt></span><span style="font-size: 10pt">
+defines
+</span><span style="font-size: 10pt"><tt>EDOM</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>ERANGE</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>errno</tt></span><span style="font-size: 10pt">,
+as required by the C standard.
+The C standard allows more names beginning with
+</span><span style="font-size: 10pt"><tt>E</tt></span><span style="font-size: 10pt">,
+but our header defines only those unless
+</span><span style="font-size: 10pt"><tt>_POSIX_SOURCE</tt></span><span style="font-size: 10pt">
+is defined, in which case the symbols required by POSIX are also defined.
+This means that a program that uses
+</span><span style="font-size: 10pt"><tt>ENAMETOOLONG</tt></span><span style="font-size: 10pt">
+cannot masquerade as a strictly conforming ANSI C program.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt>Pcc</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>cc</tt></span><span style="font-size: 10pt">
+do not predefine any preprocessor symbols except those required by
+the ANSI C standard:
+</span><span style="font-size: 10pt"><tt>__STDC__</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>__LINE__</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>__FILE__</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>__DATE__</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>__TIME__</tt></span><span style="font-size: 10pt">.
+Any others must be defined in the program itself or by using
+</span><span style="font-size: 10pt"><tt>-D</tt></span><span style="font-size: 10pt">
+on the command line.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Extensions
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The discipline enforced by putting only required
+names in the headers is useful for exporting programs,
+but it gets in the way when importing programs.
+The compromise is to allow additional symbols in headers,
+additional headers, and additional library functions,
+but only under control of extension feature test macros.
+The following extensions are provided; unless otherwise
+specified, the additional library functions are in the
+default APE library.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_LIBG_EXTENSION</tt></span><span style="font-size: 10pt">.
+This allows the use of the Plan 9 graphics library.
+The functions are as described in the Plan 9 manual (see
+</span><span style="font-size: 10pt"><i>graphics</i></span><span style="font-size: 10pt">(2))
+except that
+</span><span style="font-size: 10pt"><tt>div</tt></span><span style="font-size: 10pt">
+had to be renamed
+</span><span style="font-size: 10pt"><tt>ptdiv</tt></span><span style="font-size: 10pt">.
+Include the
+</span><span style="font-size: 10pt"><tt>&lt;libg.h&gt;</tt></span><span style="font-size: 10pt">
+header to declare the needed types and functions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_LIMITS_EXTENSION</tt></span><span style="font-size: 10pt">.
+POSIX does not require that names such as
+</span><span style="font-size: 10pt"><tt>PATH_MAX</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>OPEN_MAX</tt></span><span style="font-size: 10pt">
+be defined in
+</span><span style="font-size: 10pt"><tt>&lt;limits.h&gt;</tt></span><span style="font-size: 10pt">,
+but many programs assume they are defined there.
+If
+</span><span style="font-size: 10pt"><tt>_LIMITS_EXTENSION</tt></span><span style="font-size: 10pt">
+is defined, those names will all be defined when
+</span><span style="font-size: 10pt"><tt>&lt;limits.h&gt;</tt></span><span style="font-size: 10pt">
+is included.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_BSD_EXTENSION</tt></span><span style="font-size: 10pt">.
+This extension includes not only Berkeley Unix routines,
+but also a grab bag of other miscellaneous routines often
+found in Unix implementations.
+The extension allows the inclusion of any of:
+</span><span style="font-size: 10pt"><tt>&lt;bsd.h&gt;</tt></span><span style="font-size: 10pt">
+for
+</span><span style="font-size: 10pt"><tt>bcopy()</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>bcmp()</tt></span><span style="font-size: 10pt">,
+and similar Berkeley functions;
+</span><span style="font-size: 10pt"><tt>&lt;netdb.h&gt;</tt></span><span style="font-size: 10pt">
+for
+</span><span style="font-size: 10pt"><tt>gethostbyname()</tt></span><span style="font-size: 10pt">,
+etc.,
+and associated structures;
+</span><span style="font-size: 10pt"><tt>&lt;select.h&gt;</tt></span><span style="font-size: 10pt">
+for the Berkeley
+</span><span style="font-size: 10pt"><tt>select</tt></span><span style="font-size: 10pt">
+function and associated types and macros
+for dealing with multiple input sources;
+</span><span style="font-size: 10pt"><tt>&lt;sys/ioctl.h&gt;</tt></span><span style="font-size: 10pt">
+for the
+</span><span style="font-size: 10pt"><tt>ioctl</tt></span><span style="font-size: 10pt">
+function (minimally implemented);
+</span><span style="font-size: 10pt"><tt>&lt;sys/param.h&gt;</tt></span><span style="font-size: 10pt">
+for
+</span><span style="font-size: 10pt"><tt>NOFILES_MAX</tt></span><span style="font-size: 10pt">;
+</span><span style="font-size: 10pt"><tt>&lt;sys/pty.h&gt;</tt></span><span style="font-size: 10pt">
+for pseudo-tty support via the
+</span><span style="font-size: 10pt"><tt>ptsname(int)</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>ptmname(int)</tt></span><span style="font-size: 10pt">
+functions;
+</span><span style="font-size: 10pt"><tt>&lt;sys/resource.h&gt;</tt></span><span style="font-size: 10pt">;
+</span><span style="font-size: 10pt"><tt>&lt;sys/socket.h&gt;</tt></span><span style="font-size: 10pt">
+for socket structures, constants, and functions;
+</span><span style="font-size: 10pt"><tt>&lt;sys/time.h&gt;</tt></span><span style="font-size: 10pt">
+for definitions of the
+</span><span style="font-size: 10pt"><tt>timeval</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>timezone</tt></span><span style="font-size: 10pt">
+structures;
+and
+</span><span style="font-size: 10pt"><tt>&lt;sys/uio.h&gt;</tt></span><span style="font-size: 10pt">
+for the
+</span><span style="font-size: 10pt"><tt>iovec</tt></span><span style="font-size: 10pt">
+structure and the
+</span><span style="font-size: 10pt"><tt>writev</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>readv</tt></span><span style="font-size: 10pt">
+functions used for scatter/gather I/O.
+Defining
+</span><span style="font-size: 10pt"><tt>_BSD_EXTENSION</tt></span><span style="font-size: 10pt">
+also enables various extra definitions in
+</span><span style="font-size: 10pt"><tt>&lt;ctype.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;signal.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;stdio.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;unistd.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;sys/stat.h&gt;</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>&lt;sys/times.h&gt;</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_NET_EXTENSION</tt></span><span style="font-size: 10pt">.
+This extension allows inclusion of
+</span><span style="font-size: 10pt"><tt>&lt;libnet.h&gt;</tt></span><span style="font-size: 10pt">,
+which defines the networking functions described in the Plan 9 manual page
+</span><span style="font-size: 10pt"><i>dial</i></span><span style="font-size: 10pt">(2).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_PLAN9_EXTENSION</tt></span><span style="font-size: 10pt">.
+This extension allows inclusion of
+</span><span style="font-size: 10pt"><tt>&lt;u.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;lock.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;qlock.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;utf.h&gt;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>&lt;fmt.h&gt;</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>&lt;draw.h&gt;</tt></span><span style="font-size: 10pt">.
+These are pieces of Plan 9 source code ported into APE,
+mostly from 
+</span><span style="font-size: 10pt"><tt>&lt;libc.h&gt;</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_REGEXP_EXTENSION</tt></span><span style="font-size: 10pt">.
+This extension allows inclusion of
+</span><span style="font-size: 10pt"><tt>&lt;regexp.h&gt;</tt></span><span style="font-size: 10pt">,
+which defines the regular expression matching functions described
+in the Plan 9 manual page
+</span><span style="font-size: 10pt"><i>regexp</i></span><span style="font-size: 10pt">(2).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_RESEARCH_SOURCE</tt></span><span style="font-size: 10pt">.
+This extension enables a small library of functions from the Tenth Edition Unix
+Research System (V10).
+These functions and the types needed to use them are all defined in the
+</span><span style="font-size: 10pt"><tt>&lt;libv.h&gt;</tt></span><span style="font-size: 10pt">
+header.
+The provided functions are:
+</span><span style="font-size: 10pt"><tt>srand</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>rand</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>nrand</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>lrand</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>frand</tt></span><span style="font-size: 10pt">
+(better random number generators);
+</span><span style="font-size: 10pt"><tt>getpass</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>tty_echoon</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>tty_echooff</tt></span><span style="font-size: 10pt">
+(for dealing with the common needs for mucking with terminal
+characteristics);
+</span><span style="font-size: 10pt"><tt>min</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>max</tt></span><span style="font-size: 10pt">;
+</span><span style="font-size: 10pt"><tt>nap</tt></span><span style="font-size: 10pt">;
+and
+</span><span style="font-size: 10pt"><tt>setfields</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>getfields</tt></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><tt>getmfields</tt></span><span style="font-size: 10pt">
+(for parsing a line into fields).
+See the Research Unix System Programmer&rsquo;s Manual, Tenth Edition, for a description
+of these functions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>_C99_SNPRINTF_EXTENSION</tt></span><span style="font-size: 10pt">.
+This extension permits the use of the return values of
+</span><span style="font-size: 10pt"><i>snprintf</i></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><i>vsnprintf</i></span><span style="font-size: 10pt">.
+Before C99, the 1999 C standard,
+these functions usually returned the number of bytes,
+excluding terminating NUL,
+actually stored in the target string.
+(GNU, as usual, had to be different and returned -1 if the target
+string was too small.)
+C99 requires them to instead return the number of bytes,
+excluding terminating NUL,
+that would have been written into the target string if it were infinitely large
+or a negative value if an &lsquo;encoding error&rsquo; occurs,
+so old programs compiled under C99 rules will be prone to overrunning
+their buffers.
+This extension is a way for the programmer to declare that he or she understands
+the situation and has adjusted the code being compiled to compensate.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Common Problems
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Some large systems, including X11, have been ported successfully
+to Plan 9 using APE
+(the X11 port is not included in the distribution, however,
+because supporting it properly is too big a job).
+The problems encountered fall into three categories:
+(1) non-ANSI C/POSIX features used; (2) inadequate simulation of POSIX functions;
+and (3) compiler/loader bugs.
+By far the majority of problems are in the first category.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">POSIX is just starting to be a target for programmers.
+Most existing code is written to work with one or both of a BSD or a System V Unix.
+System V is fairly close to POSIX, but there are some differences.
+Also, many System V systems have imported some BSD features that are
+not part of POSIX.
+A good strategy for porting external programs is to first try using
+</span><span style="font-size: 10pt"><tt>CFLAGS=-D_POSIX_SOURCE</tt></span><span style="font-size: 10pt">;
+if that doesn&rsquo;t work, try adding
+</span><span style="font-size: 10pt"><tt>_D_BSD_EXTENSION</tt></span><span style="font-size: 10pt">
+and perhaps include
+</span><span style="font-size: 10pt"><tt>&lt;bsd.h&gt;</tt></span><span style="font-size: 10pt">
+in source files.
+Here are some solutions to problems that might remain:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   Third (environment) argument to
+</span><span style="font-size: 10pt"><tt>main</tt></span><span style="font-size: 10pt">.
+Use the
+</span><span style="font-size: 10pt"><tt>environ</tt></span><span style="font-size: 10pt">
+global instead.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>OPEN_MAX</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>PATH_MAX</tt></span><span style="font-size: 10pt">,
+etc., assumed in
+</span><span style="font-size: 10pt"><tt>&lt;limits.h&gt;</tt></span><span style="font-size: 10pt">.
+Rewrite to call
+</span><span style="font-size: 10pt"><tt>sysconf</tt></span><span style="font-size: 10pt">
+or define
+</span><span style="font-size: 10pt"><tt>_LIMITS_EXTENSION</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>&lt;varargs.h&gt;</tt></span><span style="font-size: 10pt">.
+Rewrite to use
+</span><span style="font-size: 10pt"><tt>&lt;stdarg.h&gt;</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The second class of problems has to do with inadequacies in the Plan 9
+simulation of POSIX functions.
+These shortcomings have rarely gotten in the way
+(except, perhaps, for the
+</span><span style="font-size: 10pt"><tt>link</tt></span><span style="font-size: 10pt">
+problem).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   Functions for setting the userid, groupid, effective userid and effective groupid
+do not do anything useful.  The concept is impossible to simulate in Plan 9.
+</span><span style="font-size: 10pt"><tt>Chown</tt></span><span style="font-size: 10pt">
+also does nothing.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>execlp</tt></span><span style="font-size: 10pt">
+and the related functions do not look at the
+</span><span style="font-size: 10pt"><tt>PATH</tt></span><span style="font-size: 10pt">
+environment variable.  They just try the current directory and
+</span><span style="font-size: 10pt"><tt>/bin</tt></span><span style="font-size: 10pt">
+if the pathname is not absolute.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   Advisory locking via
+</span><span style="font-size: 10pt"><tt>fcntl</tt></span><span style="font-size: 10pt">
+is not implemented.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>isatty</tt></span><span style="font-size: 10pt">
+is hard to do correctly.
+The approximation used is only sometimes correct.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>link</tt></span><span style="font-size: 10pt">
+always fails.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   With
+</span><span style="font-size: 10pt"><tt>open</tt></span><span style="font-size: 10pt">,
+the
+</span><span style="font-size: 10pt"><tt>O_NOCTTY</tt></span><span style="font-size: 10pt">
+option has no effect.
+The concept of a controlling tty is foreign to Plan 9.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>setsid</tt></span><span style="font-size: 10pt">
+forks the name space and note group,
+which is only approximately the right behavior.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   The functions dealing with stacking signals,
+</span><span style="font-size: 10pt"><tt>sigpending</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>sigprocmask</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>sigsuspend</tt></span><span style="font-size: 10pt">,
+do not work.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   </span><span style="font-size: 10pt"><tt>umask</tt></span><span style="font-size: 10pt">
+has no effect, as there is no such concept in Plan 9.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">   code that does
+</span><span style="font-size: 10pt"><tt>getenv("HOME")</tt></span><span style="font-size: 10pt">
+should be changed to
+</span><span style="font-size: 10pt"><tt>getenv("home")</tt></span><span style="font-size: 10pt">
+on Plan 9.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

@@ -1,0 +1,1725 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Plumbing and Other Utilities</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Plumbing and Other Utilities</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Rob Pike</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt">Bell Laboratories</span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt">Murray Hill, New Jersey 07974</span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.50in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plumbing is a new mechanism for inter-process communication in Plan 9,
+specifically the passing of messages between interactive programs as part of
+the user interface.
+Although plumbing shares some properties with familiar notions
+such as cut and paste,
+it offers a more general data exchange mechanism without imposing
+a particular user interface.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.50in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The core of the plumbing system is a program called the
+</span><span style="font-size: 10pt"><i>plumber</i></span><span style="font-size: 10pt">,
+which handles all messages and dispatches and reformats them
+according to configuration rules written in a special-purpose language.
+This approach allows the contents and context of a piece of data to define how
+it is handled.
+Unlike with drag and drop or cut and paste,
+the user doesn&rsquo;t need to deliver the data;
+the contents of a plumbing message, as interpreted by the plumbing rules,
+determine its destination.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.50in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The plumber has an unusual architecture: it is a language-driven file server.
+This design has distinct advantages.
+It makes plumbing easy to add to an existing, Unix-like command environment;
+it guarantees uniform handling of inter-application messages;
+it off-loads from those applications most of the work of extracting and dispatching messages;
+and it works transparently across a network.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Data moves from program to program in myriad ways.
+Command-line arguments,
+shell pipe lines,
+cut and paste,
+drag and drop, and other user interface techniques all provide some form
+of interprocess communication.
+Then there are tricks associated with special domains,
+such as HTML hyperlinks or the heuristics mail readers
+use to highlight URLs embedded in mail messages.
+Some systems provide implicit ways to automate the attachment of program to data&mdash;the
+best known examples are probably the resource forks in MacOS and the
+file name extension &lsquo;associations&rsquo; in Microsoft Windows&mdash;but in practice
+humans must too often carry their data from program to program.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Why should a human do the work?
+Usually there is one obvious thing to do with a piece of data,
+and the data itself suggests what this is.
+Resource forks and associations speak to this issue directly, but statically and narrowly and with
+little opportunity to control the behavior.
+Mechanisms with more generality,
+such as cut and paste or drag and drop, demand too much manipulation by
+the user and are (therefore) too error-prone.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">We want a system that, given a piece of data,
+hands it to the appropriate application by default with little or no human intervention,
+while still permitting the user to override the defaults if desired.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The plumbing system is an attempt to address some of these issues in a single,
+coherent, central way.
+It provides a mechanism for
+formatting and sending arbitrary messages between applications,
+typically interactive programs such as text editors, web browsers, and the window system,
+under the control of a central message-handling server called the
+</span><span style="font-size: 10pt"><i>plumber</i></span><span style="font-size: 10pt">.
+Interactive programs provide application-specific connections to the plumber,
+triggering with minimal user action the transfer of data or control to other programs.
+The result is similar to a hypertext system in which all the links are implicit,
+extracted automatically by examining the data and the user&rsquo;s actions.
+It obviates
+cut and paste and other such hand-driven interprocess communication mechanisms.
+Plumbing delivers the goods to the right place automatically.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Overview
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The plumber is implemented as a Plan 9 file server [Pike93];
+programs send messages by writing them to the plumber&rsquo;s file
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/send</tt></span><span style="font-size: 10pt">,
+and receive messages by reading them from
+</span><span style="font-size: 10pt"><i>ports</i></span><span style="font-size: 10pt">,
+which are other plumber files in
+</span><span style="font-size: 10pt"><tt>/mnt/plumb</tt></span><span style="font-size: 10pt">.
+For example,
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/edit</tt></span><span style="font-size: 10pt">
+is by convention the file from which a text editor reads messages requesting it to
+open and display a file for editing.
+(See Figure 1.)
+</span></p><center><table width=60% cellspacing=0 cellpadding=0 border=0><tr height=1>	<td width=1 bgcolor=#000000 />	<td width=10 bgcolor=#000000 />	<td bgcolor=#000000 />	<td width=10 bgcolor=#000000 />	<td width=1 bgcolor=#000000 /></tr><tr height=10>	<td width=1 bgcolor=#000000 />	<td width=10 />	<td />	<td width=10 />	<td width=1 bgcolor=#000000 /></tr>
+<tr>
+<td width=1 bgcolor=#000000 /><td width=10 /><td>
+<center><img src="plumb0.png"></center>
+</center>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; text-indent: 0.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt">Figure 1. The plumber controls the flow of messages between applications.
+Programs write to the file
+</span><span style="font-size: 9pt"><tt>send</tt></span><span style="font-size: 9pt">
+and receive on &lsquo;ports&rsquo; of various names representing services such as
+</span><span style="font-size: 9pt"><tt>edit</tt></span><span style="font-size: 9pt">
+or
+</span><span style="font-size: 9pt"><tt>web</tt></span><span style="font-size: 9pt">.
+Although the figure doesn&rsquo;t illustrate it, some programs may both send and receive messages,
+and some ports are read by multiple applications.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.02in"></p>
+
+</td>
+<td width=10 /><td width=1 bgcolor=#000000 />
+</tr>
+<tr height=10><td width=1 bgcolor=#000000 />	<td width=10 /><td /><td width=10 />	<td width=1 bgcolor=#000000 /></tr><tr height=1>	<td width=1 bgcolor=#000000 />	<td width=10 bgcolor=#000000 />	<td bgcolor=#000000 />	<td width=10 bgcolor=#000000 />	<td width=1 bgcolor=#000000 /></tr>
+</table></center>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The plumber takes messages from the
+</span><span style="font-size: 10pt"><tt>send</tt></span><span style="font-size: 10pt">
+file and interprets their contents using rules defined by
+a special-purpose pattern-action language.
+The language specifies any rewriting of the message that is to be done by the plumber
+and defines how to dispose of a message, such as by sending it to a port or
+starting a new process to handle it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The behavior is best described by example.
+Imagine that the user has, in a terminal emulator window,
+just run a compilation that has failed:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% make</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cc -c rmstar.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>rmstar.c:32: syntax error</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The user points the typing cursor somewhere in the string
+</span><span style="font-size: 10pt"><tt>rmstar.c:32:</tt></span><span style="font-size: 10pt">
+and executes the
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+menu entry.
+This causes the terminal emulator to format a plumbing message
+containing the entire string surrounding the cursor,
+</span><span style="font-size: 10pt"><tt>rmstar:32:</tt></span><span style="font-size: 10pt">,
+and to write it to
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/send</tt></span><span style="font-size: 10pt">.
+The plumber receives this message and compares it sequentially to the various
+patterns in its configuration.
+Eventually, it will find one that breaks the string into pieces,
+</span><span style="font-size: 10pt"><tt>rmstar.c</tt></span><span style="font-size: 10pt">,
+a colon,
+</span><span style="font-size: 10pt"><tt>32</tt></span><span style="font-size: 10pt">,
+and the final colon.
+Other associated patterns verify that
+</span><span style="font-size: 10pt"><tt>rmstar.c</tt></span><span style="font-size: 10pt">
+is a file in the current directory of the program generating
+the message, and that
+</span><span style="font-size: 10pt"><tt>32</tt></span><span style="font-size: 10pt">
+looks like a line number within it.
+The plumber rewrites the message,
+setting the data to the string
+</span><span style="font-size: 10pt"><tt>rmstar.c</tt></span><span style="font-size: 10pt">
+and attaching an indication that
+</span><span style="font-size: 10pt"><tt>32</tt></span><span style="font-size: 10pt">
+is a line number to display.
+Finally, it sends the resulting message to the
+</span><span style="font-size: 10pt"><tt>edit</tt></span><span style="font-size: 10pt">
+port.
+The text editor picks up the message, opens
+</span><span style="font-size: 10pt"><tt>rmstar.c</tt></span><span style="font-size: 10pt">
+(if it&rsquo;s not already open) and highlights line 32, the location of the syntax error.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">From the user&rsquo;s point of view, this process is simple: the error message appears,
+it is &lsquo;plumbed&rsquo;, and the editor jumps to the problem.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Of course, there are many different ways to cause compiler messages to
+pop up the source of an error,
+but the design of the plumber addresses more general issues than the specific
+goal of shortening the compile/debug/edit cycle.
+It facilitates the general exchange of data among programs, interactive or otherwise,
+throughout the environment, and its
+architecture&mdash;a central, language-driven file server&mdash;although
+unusual, has distinct advantages.
+It makes plumbing easy to add to an existing, Unix-like command environment;
+it guarantees uniform handling of inter-application messages;
+it off-loads from those applications most of the work of extracting and dispatching messages;
+and it works transparently and effortlessly across a network.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This paper is organized bottom-up, beginning with the format of the messages
+and proceeding through the plumbing language, the handling of messages,
+and the interactive user interface.
+The last sections discuss the implications of the design
+and compare the plumbing system to other environments that
+provide similar services.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Format of messages
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Since the language that controls the plumber is defined in terms of the
+contents of plumbing messages, we begin by describing their layout.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plumbing messages have a fixed-format textual
+header followed by a free-format data section.
+The header consists of six lines of text, in set order,
+each specifying a property of the message.
+Any line may be blank except the last, which is the length of the data portion of the
+message, as a decimal string.
+The lines are, in order:
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The source application, the name of the program generating the message.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The destination port, the name of the port to which the messages should be sent.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The working directory in which the message was generated.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The type of the data, analogous to a MIME type, such as
+</span><span style="font-size: 10pt"><tt>text</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>image/gif</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Attributes of the message, given as blank-separated
+</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>name</i></span><span style="font-size: 10pt"><tt>=</tt></span><span style="font-size: 10pt"><i>value</i></span><span style="font-size: 10pt">
+pairs.
+The values may be quoted to protect
+blanks or quotes; values may not contain newlines.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.35in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The length of the data section, in bytes.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here is a sample message, one that (conventionally) tells the editor to open the file
+</span><span style="font-size: 10pt"><tt>/usr/rob/src/mem.c</tt></span><span style="font-size: 10pt">
+and display line
+27 within it:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumbtest</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>edit</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/usr/rob/src</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>addr=27</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>5</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>mem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Because in general it need not be text, the data section of the message has no terminating newline.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A library interface simplifies the processing of messages by translating them
+to and from a data structure,
+</span><span style="font-size: 10pt"><tt>Plumbmsg</tt></span><span style="font-size: 10pt">,
+defined like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef struct Plumbattr Plumbattr;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>typedef struct Plumbmsg  Plumbmsg;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct Plumbmsg</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char            *src;       /* source application */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char            *dst;       /* destination port */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char            *wdir;  /* working directory */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char            *type;  /* type of data */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Plumbattr   *attr;  /* attribute list */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    int         ndata;  /* #bytes of data */</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char            *data;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct Plumbattr</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char            *name;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    char            *value;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Plumbattr   *next;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The library also includes routines to send a message, receive a message,
+manipulate the attribute list, and so on.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Language
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An instance of the plumber runs for each user on each terminal or workstation.
+It
+begins by reading its rules from the file
+</span><span style="font-size: 10pt"><tt>lib/plumbing</tt></span><span style="font-size: 10pt">
+in the user&rsquo;s home directory,
+which in turn may use
+</span><span style="font-size: 10pt"><tt>include</tt></span><span style="font-size: 10pt">
+statements to interpolate macro definitions and
+rules from standard plumbing rule libraries stored in
+</span><span style="font-size: 10pt"><tt>/sys/lib/plumb</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The rules control the processing of messages.
+They are written in
+a pattern-action language comprising a sequence of blank-line-separated
+</span><span style="font-size: 10pt"><i>rule</i></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>sets</i></span><span style="font-size: 10pt">,
+each of which contains one or more
+</span><span style="font-size: 10pt"><i>patterns</i></span><span style="font-size: 10pt">
+followed by one or more
+</span><span style="font-size: 10pt"><i>actions</i></span><span style="font-size: 10pt">.
+Each incoming message is compared against the rule sets in order.
+If all the patterns within a rule set succeed,
+one of the associated actions is taken and processing completes.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The syntax of the language is straightforward.
+Each rule (pattern or action) has three components, separated by white space:
+an
+</span><span style="font-size: 10pt"><i>object</i></span><span style="font-size: 10pt">,
+a
+</span><span style="font-size: 10pt"><i>verb</i></span><span style="font-size: 10pt">,
+and optional
+</span><span style="font-size: 10pt"><i>arguments</i></span><span style="font-size: 10pt">.
+The object
+identifies a part of the message, such as
+the source application
+(</span><span style="font-size: 10pt"><tt>src</tt></span><span style="font-size: 10pt">),
+or the data
+portion of the message
+(</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">),
+or the rule&rsquo;s own arguments
+(</span><span style="font-size: 10pt"><tt>arg</tt></span><span style="font-size: 10pt">);
+or it is the keyword
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">,
+which introduces an action.
+The verb specifies an operation to perform on the object, such as the word
+&lsquo;</span><span style="font-size: 10pt"><tt>is</tt></span><span style="font-size: 10pt">&rsquo;
+to require precise equality between the object and the argument, or
+&lsquo;</span><span style="font-size: 10pt"><tt>isdir</tt></span><span style="font-size: 10pt">&rsquo;
+to require that the object be the name of a directory.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For instance, this rule set sends messages containing the names of files
+ending in
+</span><span style="font-size: 10pt"><tt>.gif</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>.jpg</tt></span><span style="font-size: 10pt">,
+etc. to a program,
+</span><span style="font-size: 10pt"><tt>page</tt></span><span style="font-size: 10pt">,
+to display them; it is analogous to a Windows association rule:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># image files go to page</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;[a-zA-Z0-9_\-./]+&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;([a-zA-Z0-9_\-./]+)\.(jpe?g|gif|bit|tiff|ppm)&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>arg isfile $0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb to image</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb client page -wi</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(Lines beginning with
+</span><span style="font-size: 10pt"><tt>#</tt></span><span style="font-size: 10pt">
+are commentary.)
+Consider how this rule handles the following message, annotated down the left column for clarity:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>src</i></span><span style="font-size: 9pt"><tt> plumbtest</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>dst</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>wdir</i></span><span style="font-size: 9pt"><tt>    /usr/rob/pics</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>type</i></span><span style="font-size: 9pt"><tt>    text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>attr</i></span><span style="font-size: 9pt"><tt></tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>ndata</i></span><span style="font-size: 9pt"><tt>   9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><i>data</i></span><span style="font-size: 9pt"><tt>    horse.gif</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>is</tt></span><span style="font-size: 10pt">
+verb specifies a precise match, and the
+</span><span style="font-size: 10pt"><tt>type</tt></span><span style="font-size: 10pt">
+field of the message is the string
+</span><span style="font-size: 10pt"><tt>text</tt></span><span style="font-size: 10pt">,
+so the first pattern succeeds.
+The
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+verb invokes a regular expression pattern match of the object (here
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">)
+against the argument pattern.
+Both
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+patterns in this rule set will succeed, and in the process set the variables
+</span><span style="font-size: 10pt"><tt>$0</tt></span><span style="font-size: 10pt">
+to the matched string,
+</span><span style="font-size: 10pt"><tt>$1</tt></span><span style="font-size: 10pt">
+to the first parenthesized submatch, and so on (analogous to
+</span><span style="font-size: 10pt"><tt>&amp;</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>\1</tt></span><span style="font-size: 10pt">,
+etc. in
+</span><span style="font-size: 10pt"><tt>ed</tt></span><span style="font-size: 10pt">&rsquo;s
+regular expressions).
+The pattern
+</span><span style="font-size: 10pt"><tt>arg</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>isfile</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>$0</tt></span><span style="font-size: 10pt">
+verifies that the named file,
+</span><span style="font-size: 10pt"><tt>horse.gif</tt></span><span style="font-size: 10pt">,
+is an actual file in the directory
+</span><span style="font-size: 10pt"><tt>/usr/rob/pics</tt></span><span style="font-size: 10pt">.
+If all the patterns succeed, one of the actions will be executed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are two actions in this rule set.
+The
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>to</tt></span><span style="font-size: 10pt">
+rule specifies
+</span><span style="font-size: 10pt"><tt>image</tt></span><span style="font-size: 10pt">
+as the destination port of the message.
+By convention, the plumber mounts its services in the directory
+</span><span style="font-size: 10pt"><tt>/mnt/plumb</tt></span><span style="font-size: 10pt">,
+so in this case if the file
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/image</tt></span><span style="font-size: 10pt">
+has been opened, the message will be made available to the program reading from it.
+Note that the message does not name a port, but the rule set that matches
+the message does, and that is sufficient to dispatch the message.
+If on the other hand a message matches no rule but has an explicit port mentioned,
+that too is sufficient.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If no client has opened the
+</span><span style="font-size: 10pt"><tt>image</tt></span><span style="font-size: 10pt">
+port,
+that is, if the program
+</span><span style="font-size: 10pt"><tt>page</tt></span><span style="font-size: 10pt">
+is not already running, the
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>client</tt></span><span style="font-size: 10pt">
+action gives the execution script to start the application
+and send the message on its way; the
+</span><span style="font-size: 10pt"><tt>-wi</tt></span><span style="font-size: 10pt">
+arguments tell
+</span><span style="font-size: 10pt"><tt>page</tt></span><span style="font-size: 10pt">
+to create a window and to receive its initial arguments from the plumbing port.
+The process by which the plumber starts a program is described in more detail in the next section.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">It may seem odd that there are two
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+rules in this example.
+The reason is related to the way the plumber can use the rules themselves
+to refine the
+</span><span style="font-size: 10pt"><i>data</i></span><span style="font-size: 10pt">
+in the message, somewhat in the manner of Structural Regular Expressions [Pike87a].
+For example, consider what happens if the cursor is at the last character of
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% make nightmare&gt;horse.gif</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">and the user asks to plumb what the cursor is pointing at.
+The program creating the plumbing
+message&mdash;in this case the terminal emulator running the window&mdash;can send the
+entire white-space-delimited string
+</span><span style="font-size: 10pt"><tt>nightmare&gt;horse.gif</tt></span><span style="font-size: 10pt">
+or even the entire line, and the combination of
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+rules can determine that the user was referring to the string
+</span><span style="font-size: 10pt"><tt>horse.gif</tt></span><span style="font-size: 10pt">.
+The user could of course select the entire string
+</span><span style="font-size: 10pt"><tt>horse.gif</tt></span><span style="font-size: 10pt">,
+but it&rsquo;s more convenient just to point in the general location and let the machine
+figure out what should be done.
+The process is as follows.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The application generating the message adds a special attribute to the message, named
+</span><span style="font-size: 10pt"><tt>click</tt></span><span style="font-size: 10pt">,
+whose numerical value is the offset of the cursor&mdash;the selection point&mdash;within the data string.
+This attribute tells the plumber two things:
+first, that the regular expressions in
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+rules should be used to identify the relevant data;
+and second, approximately where the relevant data lies.
+The plumber 
+will then use the first
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+pattern to identify the longest leftmost match that touches the cursor, which will extract the string
+</span><span style="font-size: 10pt"><tt>horse.gif</tt></span><span style="font-size: 10pt">,
+and the second pattern will then verify that that names a picture file.
+The rule set succeeds and the data is winnowed to the matching substring
+before being sent to its destination.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Each
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+pattern within a given rule set must match the same portion of the string, which
+guarantees that the rule set fails to match a string for which the
+second pattern matches only a portion.
+For instance, our example rule set should not execute if the data is the string
+</span><span style="font-size: 10pt"><tt>horse.gift</tt></span><span style="font-size: 10pt">,
+and although the first pattern will match
+</span><span style="font-size: 10pt"><tt>horse.gift</tt></span><span style="font-size: 10pt">,
+the second will match only
+</span><span style="font-size: 10pt"><tt>horse.gif</tt></span><span style="font-size: 10pt">
+and the rule set will fail.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The same approach of multiple
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+rules can be used to exclude, for instance, a terminal period from
+a file name or URL, so a file name or URL at the end of a sentence is recognized properly.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If a
+</span><span style="font-size: 10pt"><tt>click</tt></span><span style="font-size: 10pt">
+attribute is not specified, all patterns must match the entire string,
+so the user has an option:
+he or she may select exactly what data to send,
+or may instead indicate where the data is by clicking the selection button on the mouse
+and letting the machine locate the URL or image file name within the text.
+In other words,
+the user can control the contents of the message precisely when required,
+but the default, simplest action in the user interface does the right thing most of the time.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>How Messages are Handled in the Plumber
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">An application creates a message header, fills in whatever fields it wishes to define,
+attaches the data, and writes the result to the file
+</span><span style="font-size: 10pt"><tt>send</tt></span><span style="font-size: 10pt">
+in the plumber&rsquo;s service directory,
+</span><span style="font-size: 10pt"><tt>/mnt/plumb</tt></span><span style="font-size: 10pt">.
+The plumber receives the message and applies the plumbing rules successively to it.
+When a rule set matches, the message is dispatched as indicated by that rule set
+and processing continues with the next message.
+If no rule set matches the message, the plumber indicates this by returning a write
+error to the application, that is, the write to
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/send</tt></span><span style="font-size: 10pt">
+fails, with the resulting error string
+describing the failure.
+(Plan 9 uses strings rather than pre-defined numbers to describe error conditions.)
+Thus a program can discover whether a plumbing message has been sent successfully.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">After a matching rule set has been identified, the plumber applies a series of rewriting
+steps to the message.  Some rewritings are defined by the rule set; others are implicit.
+For example, if the message does not specify a destination port, the outgoing message
+will be rewritten to identify it.
+If the message does specify the port, the rule set will only match if any
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>to</tt></span><span style="font-size: 10pt">
+action in the rule set names the same port.
+(If it matches no rule sets, but mentions a port, it will be sent there unmodified.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The rule set may contain actions that explicitly rewrite components of the message.
+These may modify the attribute list or replace the data section of the message.
+Here is a sample rule set that does both.
+It matches strings of the form
+</span><span style="font-size: 10pt"><tt>plumb.h</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>plumb.h:27</tt></span><span style="font-size: 10pt">.
+If that string identifies a file in the standard C include directory,
+</span><span style="font-size: 10pt"><tt>/sys/include</tt></span><span style="font-size: 10pt">,
+perhaps with an optional line number, the outgoing message
+is rewritten to contain the full path name and an attribute,
+</span><span style="font-size: 10pt"><tt>addr</tt></span><span style="font-size: 10pt">,
+to hold the line number:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># .h files are looked up in /sys/include and passed to edit</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;([a-zA-Z0-9]+\.h)(:([0-9]+))?&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>arg isfile /sys/include/$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data set /sys/include/$1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>attr add addr=$3</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb to edit</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>data</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>set</tt></span><span style="font-size: 10pt">
+rule replaces the contents of the data, and the
+</span><span style="font-size: 10pt"><tt>attr</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>add</tt></span><span style="font-size: 10pt">
+rule adds a new attribute to the message.
+The intent of this rule is to permit one to plumb an include file name in a C program
+to trigger the opening of that file, perhaps at a specified line, in the text editor.
+A variant of this rule, discussed below,
+tells the editor how to interpret syntax errors from the compiler,
+or the output of
+</span><span style="font-size: 10pt"><tt>grep</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>-n</tt></span><span style="font-size: 10pt">,
+both of which use a fixed syntax
+</span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><tt></tt></span><span style="font-size: 10pt"></span><span style="font-size: 10pt"><i>file</i></span><span style="font-size: 10pt"><tt>:</tt></span><span style="font-size: 10pt"><i>line</i></span><span style="font-size: 10pt">
+to identify a line of source.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Plan 9 text editors interpret the
+</span><span style="font-size: 10pt"><tt>addr</tt></span><span style="font-size: 10pt">
+attribute as the definition of which portion of the file to display.
+In fact, the real rule includes a richer definition of the address syntax,
+so one may plumb strings such as
+</span><span style="font-size: 10pt"><tt>plumb.h:/plumbsend</tt></span><span style="font-size: 10pt">
+(using a regular expression after the
+</span><span style="font-size: 10pt"><tt>/</tt></span><span style="font-size: 10pt">)
+to pop up the declaration of a function in a C header file.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another form of rewriting is that the plumber may modify the attribute list of
+the message to clarify how to handle the message.
+The primary example of this involves the treatment of the
+</span><span style="font-size: 10pt"><tt>click</tt></span><span style="font-size: 10pt">
+attribute, described in the previous section.
+If the message contains a
+</span><span style="font-size: 10pt"><tt>click</tt></span><span style="font-size: 10pt">
+attribute and the matching rule set uses it to extract the matching substring from the data,
+the plumber
+deletes the
+</span><span style="font-size: 10pt"><tt>click</tt></span><span style="font-size: 10pt">
+attribute and replaces the data with the matching substring.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Once the message is rewritten, the actions of the matching rule set are examined.
+If the rule set contains a
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>to</tt></span><span style="font-size: 10pt">
+action and the corresponding port is open&mdash;that is, if a program is already reading
+from that port&mdash;the message is delivered to the port.
+The application will receive the message and handle it as it sees fit.
+If the port is not open, a
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>start</tt></span><span style="font-size: 10pt">
+or
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>client</tt></span><span style="font-size: 10pt">
+action will start a new program to handle the message.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>start</tt></span><span style="font-size: 10pt">
+action is the simpler: its argument specifies a command to run
+instead of passing on the message; the message is discarded.
+Here for instance is a rule that, given the process id (pid) of an existing process,
+starts the
+</span><span style="font-size: 10pt"><tt>acid</tt></span><span style="font-size: 10pt">
+debugger [Wint94] in a new window to examine that process:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># processes go to acid (assuming strlen(pid) &gt;= 2)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;[a-zA-Z0-9.:_\-/]+&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;[0-9][0-9]+&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>arg isdir /proc/$0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb start window acid $0</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">(Note the use of multiple
+</span><span style="font-size: 10pt"><tt>matches</tt></span><span style="font-size: 10pt">
+rules to avoid misfires from strings like
+</span><span style="font-size: 10pt"><tt>party.1999</tt></span><span style="font-size: 10pt">.)
+The
+</span><span style="font-size: 10pt"><tt>arg</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>isdir</tt></span><span style="font-size: 10pt">
+rule checks that the pid represents a running process (or broken one; Plan 9 does not create
+</span><span style="font-size: 10pt"><tt>core</tt></span><span style="font-size: 10pt">
+files but leaves broken processes around for debugging) by checking that the process file
+system has a directory for that pid [Kill84].
+Using this rule, one may plumb the pid string printed by the
+</span><span style="font-size: 10pt"><tt>ps</tt></span><span style="font-size: 10pt">
+command or by the operating system when the program breaks;
+the debugger will then start automatically.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The other startup action,
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>client</tt></span><span style="font-size: 10pt">,
+is used when a program will read messages from the plumbing port.
+For example,
+text editors can read files specified as command arguments, so one could use a
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>start</tt></span><span style="font-size: 10pt">
+rule to begin editing a file.
+If, however, the editor will read messages from the
+</span><span style="font-size: 10pt"><tt>edit</tt></span><span style="font-size: 10pt">
+plumbing port, letting it read the message
+from the port insures that it uses other information in the message,
+such as the line number to display.
+The
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>client</tt></span><span style="font-size: 10pt">
+action is therefore like
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>start</tt></span><span style="font-size: 10pt">,
+but keeps the message around for delivery when the application opens the port.
+Here is the full rule set to pass a regular file to the text editor:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># existing files, possibly tagged by address, go to editor</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;([.a-zA-Z0-9_/\-]*[a-zA-Z0-9_/\-])(&rsquo;$addr&rsquo;)?&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>arg isfile $1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data set $1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>attr add addr=$3</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb to edit</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb client window $editor</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If the editor is already running, the
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>to</tt></span><span style="font-size: 10pt">
+rule causes it to receive the message on the port.
+If not,
+the command
+&lsquo;</span><span style="font-size: 10pt"><tt>window</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>$editor</tt></span><span style="font-size: 10pt">&rsquo;
+will create a new window (using the Plan 9 program
+</span><span style="font-size: 10pt"><tt>window</tt></span><span style="font-size: 10pt">)
+to run the editor, and once that starts it will open the
+</span><span style="font-size: 10pt"><tt>edit</tt></span><span style="font-size: 10pt">
+plumbing port as usual and discover this first message already waiting.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The variables
+</span><span style="font-size: 10pt"><tt>$editor</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>$addr</tt></span><span style="font-size: 10pt">
+in this rule set
+are macros defined in the plumbing rules file; they specify the name of the user&rsquo;s favorite text editor
+and a regular expression
+that matches that editor&rsquo;s address syntax, such as line numbers and patterns.
+This rule set lives in a library of shared plumbing rules that
+users&rsquo; private rules can build on,
+so the rule set needs to be adaptable to different editors and their address syntax.
+The macro definitions for Acme and Sam [Pike94,Pike87b] look like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>editor=acme</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># or editor=sam</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>addrelem=&rsquo;((#?[0-9]+)|(/[A-Za-z0-9_\^]+/?)|[.$])&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>addr=:($addrelem([,;+\-]$addrelem)*)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Finally, the application reads the message from the appropriate port, such as
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/edit</tt></span><span style="font-size: 10pt">,
+unpacks it, and goes to work.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Message Delivery
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In summary, a message is delivered by writing it to the
+</span><span style="font-size: 10pt"><tt>send</tt></span><span style="font-size: 10pt">
+file and having the plumber, perhaps after some rewriting, send it to the destination
+port or start a new application to handle it.
+If no destination can be found by the plumber, the original write to the
+</span><span style="font-size: 10pt"><tt>send</tt></span><span style="font-size: 10pt">
+file will fail, and the application will know the message could not be delivered.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If multiple applications are reading from the destination port, each will receive
+an identical copy of the message; that is, the plumber implements fan-out.
+The number of messages delivered is equal to the number of clients that have
+opened the destination port.
+The plumber queues the messages and makes sure that each application that opened
+the port before the message was written gets exactly one copy.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This design minimizes blocking in the sending applications, since the write to the
+</span><span style="font-size: 10pt"><tt>send</tt></span><span style="font-size: 10pt">
+file can complete as soon as the message has been queued for the appropriate port.
+If the plumber waited for the message to be read by the recipient, the sender could
+block unnecessarily.
+Unfortunately, this design also means that there is no way for a sender to know when
+the message has been handled; in fact, there are cases when
+the message will not be delivered at all, such as if the recipient exits while there are
+still messages in the queue.
+Since the plumber is part of a user interface, and not
+an autonomous message delivery system,
+the decision was made to give the
+non-blocking property priority over reliability of message delivery.
+In practice, this tradeoff has worked out well:
+applications almost always know when a message has failed to be delivered (the
+</span><span style="font-size: 10pt"><tt>write</tt></span><span style="font-size: 10pt">
+fails because no destination could be found),
+and those occasions when the sender believes incorrectly that the message has been delivered
+are both extremely rare and easily recognized by the user&mdash;usually because the recipient
+application has exited.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The Rules File
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The plumber begins execution by reading the user&rsquo;s startup plumbing rules file,
+</span><span style="font-size: 10pt"><tt>lib/plumbing</tt></span><span style="font-size: 10pt">.
+Since the plumber is implemented as a file server, it can also present its current rules
+as a dynamic file, a design that provides an easily understood way to maintain the rules.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The file
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/rules</tt></span><span style="font-size: 10pt">
+is the text of the rule set the plumber is currently using,
+and it may be edited like a regular file to update those rules.
+To clear the rules, truncate that file;
+to add a new rule set, append to it:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% echo &rsquo;type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data is self-destruct</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb start rm -rf $HOME&rsquo; &gt;&gt; /mnt/plumb/rules</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This rule set will take effect immediately.
+If it has a syntax error, the write will fail with an error message from the plumber,
+such as &lsquo;malformed rule&rsquo; or &rsquo;undefined verb&rsquo;.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">To restore the plumber to its startup configuration,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% cp /usr/$user/lib/plumbing /mnt/plumb/rules</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For more sophisticated changes,
+one can of course use a regular text editor to modify
+</span><span style="font-size: 10pt"><tt>/mnt/plumb/rules</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This simple way of maintaining an active service could profitably be adopted by other systems.
+It avoids the need to reboot, to update registries with special tools, or to send asynchronous signals
+to critical programs.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>The User Interface
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">One unusual property of the plumbing system is that
+the user interface that programs provide to access it can vary considerably, yet
+the result is nonetheless a unifying force in the environment.
+Shells talk to editors, image viewers, and web browsers; debuggers talk to editors;
+editors talk to themselves; and the window system talks to everybody.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The plumber grew out of some of the ideas of the Acme editor/window-system/user interface [Pike94],
+in particular its &lsquo;acquisition&rsquo; feature.
+With a three-button mouse, clicking the right button in Acme on a piece of text tells Acme to
+get the thing being pointed to.
+If it is a file name, open the file;
+if it is a directory, open a viewer for its contents;
+if a line number, go to that line;
+if a regular expression, search for it.
+This one-click access to anything describable textually was very powerful but had several
+limitations, of which the most important were that Acme&rsquo;s rules for interpreting the
+text (that is, the implicit hyperlinks) were hard-wired and inflexible, and
+that they only applied to and within Acme itself.
+One could not, for example, use Acme&rsquo;s power to open an image file, since Acme is
+a text-only system.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The plumber addresses these limitations, even with Acme itself:
+Acme now uses the plumber to interpret the right button clicks for it.
+When the right button is clicked on some text,
+Acme constructs a plumbing message much as described above,
+using the
+</span><span style="font-size: 10pt"><tt>click</tt></span><span style="font-size: 10pt">
+attribute and the white-space-delimited text surrounding the click.
+It then writes the message to the plumber; if the write succeeds, all is well.
+If not, it falls back to its original, internal rules, which will result in a context search
+for the word within the current document.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If the message is sent successfully, the recipient is likely to be Acme itself, of course:
+the request may be to open a file, for example.
+Thus Acme has turned the plumber into an external component of its own operation,
+while expanding the possibilities; the operation might be to start an image viewer to
+open a picture file, something Acme cannot do itself.
+The plumber expands the power of Acme&rsquo;s original user interface.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Traditional menu-driven programs such as the text editor Sam [Pike87b] and the default
+shell window of the window
+system
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+[Pike91] cannot dedicate a mouse button solely to plumbing, but they can certainly
+dedicate a menu entry.
+The editing menu for such programs now contains an entry,
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">,
+that creates a plumbing message using the current selection.
+(Acme manages to send a message by clicking on the text with one button;
+other programs require a click with the select button and then a menu operation.)
+For example, after this happens in a shell window:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% make</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>cc -c shaney.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>shaney.c:232: i undefined</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">one can click anywhere on the string
+</span><span style="font-size: 10pt"><tt>shaney.c:232</tt></span><span style="font-size: 10pt">,
+execute the
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+menu entry, and have line 232 appear in the text editor, be it Sam or Acme&mdash;whichever has the
+</span><span style="font-size: 10pt"><tt>edit</tt></span><span style="font-size: 10pt">
+port open.
+(If this were an Acme shell window, it would be sufficient to right-click on the string.)
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[An interesting side line is how the window system knows what directory the
+shell is running in; in other words, what value to place in the
+</span><span style="font-size: 10pt"><tt>wdir</tt></span><span style="font-size: 10pt">
+field of the plumb message.
+Recall that
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+is, like many Plan 9 programs, a file server.
+It now serves a new file,
+</span><span style="font-size: 10pt"><tt>/dev/wdir</tt></span><span style="font-size: 10pt">,
+that is private to each window.
+Programs, in particular the
+Plan 9 shell,
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">,
+can write that file to inform the window system of its current directory.
+When a
+</span><span style="font-size: 10pt"><tt>cd</tt></span><span style="font-size: 10pt">
+command is executed in an interactive shell,
+</span><span style="font-size: 10pt"><tt>rc</tt></span><span style="font-size: 10pt">
+updates the contents of
+</span><span style="font-size: 10pt"><tt>/dev/wdir</tt></span><span style="font-size: 10pt">
+and plumbing can proceed with local file names.]
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Of course, users can plumb image file names, process ids, URLs, and other items&mdash;any string
+whose syntax and disposition are defined in the plumbing rules file.
+An example of how the pieces fit together is the way Plan 9 now handles mail, particularly
+MIME-encoded messages.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When a new mail message arrives, the mail receiver process sends a plumbing message to the
+</span><span style="font-size: 10pt"><tt>newmail</tt></span><span style="font-size: 10pt">
+port, which notifies any interested process that new mail is here.
+The plumbing message contains information about the mail, including
+its sender, date, and current location in the file system.
+The interested processes include a program,
+</span><span style="font-size: 10pt"><tt>faces</tt></span><span style="font-size: 10pt">,
+that gives a graphical display of the mail box using
+faces to represent the senders of messages [PiPr85],
+as well as interactive mail programs such as the Acme mail viewer [Pike94].
+The user can then click on the face that appears, and the
+</span><span style="font-size: 10pt"><tt>faces</tt></span><span style="font-size: 10pt">
+program will send another plumbing message, this time to the
+</span><span style="font-size: 10pt"><tt>showmail</tt></span><span style="font-size: 10pt">
+port.
+Here is the rule for that port:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># faces -&gt; new mail window for message</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;[a-zA-Z0-9_\-./]+&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;/mail/fs/[a-zA-Z0-9/]+/[0-9]+&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb to showmail</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb start window edmail -s $0</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">If a program, such as the Acme mail reader, is reading that port, it will open a new window
+in which to display the message.
+If not, the
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>start</tt></span><span style="font-size: 10pt">
+rule will create a new window and run
+</span><span style="font-size: 10pt"><tt>edmail</tt></span><span style="font-size: 10pt">,
+a conventional mail reading process, to examine it.
+Notice how the plumbing connects the components of the interface together the same way
+regardless of which components are actually being used to view mail.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There is more to the mail story.
+Naturally, mail boxes in Plan 9 are treated as little file systems, which are synthesized
+on demand by a special-purpose file server that takes a flat mail box file and converts
+it into a set of directories, one per message, with component files containing the header,
+body, MIME information, and so on.
+Multi-part MIME messages are unpacked into multi-level directories, like this:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% ls -l /mail/fs/mbox/25</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>d-r-xr-xr-x M 20 rob rob     0 Nov 21 13:06 /mail/fs/mbox/25/1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>d-r-xr-xr-x M 20 rob rob     0 Nov 21 13:06 /mail/fs/mbox/25/2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--r--r--r-- M 20 rob rob 28678 Nov 21 13:06 /mail/fs/mbox/25/body</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>--r--r--r-- M 20 rob rob     0 Nov 21 13:06 /mail/fs/mbox/25/cc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>...</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% mail</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>25 messages</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>: 25</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>From: presotto</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Date: Sun Nov 21 13:05:51 EST 1999</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>To: rob</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Check this out.</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>===&gt; 2/ (image/jpeg) [inline]</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    /mail/fs/mbox/25/2/fabio.jpg</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>:</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Since the components are all (synthetic) files, the user can plumb the pieces
+to view embedded pictures, URLs, and so on.
+Note that the mail program can plumb the contents of
+</span><span style="font-size: 10pt"><tt>inline</tt></span><span style="font-size: 10pt">
+attachments automatically, without user interaction;
+in other words, plumbing lets the mailer handle multimedia data
+without itself interpreting it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">At a more mundane level, a shell command,
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">,
+can be used to send messages:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% cd /usr/rob/src</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% plumb mem.c</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">will send the appropriate message to the
+</span><span style="font-size: 10pt"><tt>edit</tt></span><span style="font-size: 10pt">
+port.
+A surprising use of the
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+command is in actions within the plumbing rules file.
+In our lab, we commonly receive Microsoft Word documents by mail,
+but we do not run Microsoft operating systems on our machines so we cannot
+view them without at least rebooting.
+Therefore, when a Word document arrives in mail, we could plumb the
+</span><span style="font-size: 10pt"><tt>.doc</tt></span><span style="font-size: 10pt">
+file but the text editor could not decode it.
+However, we have a program,
+</span><span style="font-size: 10pt"><tt>doc2txt</tt></span><span style="font-size: 10pt">,
+that decodes the Word file format to extract and format the embedded text.
+The solution is to use
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+in a
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>start</tt></span><span style="font-size: 10pt">
+action to invoke
+</span><span style="font-size: 10pt"><tt>doc2txt</tt></span><span style="font-size: 10pt">
+on
+</span><span style="font-size: 10pt"><tt>.doc</tt></span><span style="font-size: 10pt">
+files and synthesize a plain text file:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># rule set for microsoft word documents</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;[a-zA-Z0-9_\-./]+&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;([a-zA-Z0-9_\-./]+)\.doc&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>arg isfile $0</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb start doc2txt $data | \</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    plumb -i -d edit -a action=showdata -a filename=$0</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The arguments to
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+tell it to take standard input as its data rather than the text of the arguments
+(</span><span style="font-size: 10pt"><tt>-i</tt></span><span style="font-size: 10pt">),
+define the destination port
+(</span><span style="font-size: 10pt"><tt>-d</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>edit</tt></span><span style="font-size: 10pt">),
+and set a conventional attribute so the editor knows to show the message data
+itself rather than interpret it as a file name
+(</span><span style="font-size: 10pt"><tt>-a</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>action=showdata</tt></span><span style="font-size: 10pt">)
+and provide the original file name
+(</span><span style="font-size: 10pt"><tt>-a</tt></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><tt>filename=$0</tt></span><span style="font-size: 10pt">).
+Now when a user plumbs a
+</span><span style="font-size: 10pt"><tt>.doc</tt></span><span style="font-size: 10pt">
+file the plumbing rules run a process to extract the text and send it as a
+temporary file to the editor for viewing.
+It&rsquo;s imperfect, but it&rsquo;s easy and it beats rebooting.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another simple example is a rule that turns man pages into hypertext.
+Manual page entries of the form
+</span><span style="font-size: 10pt"><tt>plumber(1)</tt></span><span style="font-size: 10pt">
+can be clicked on to pop up a window containing the formatted &lsquo;man page&rsquo;.
+That man page will in turn contain more such citations, which will also be clickable.
+The rule is a little like that for Word documents:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt># man index entries are synthesized</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>type is text</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data matches &rsquo;([a-zA-Z0-9_\-./]+)\(([0-9])\)&rsquo;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>plumb start man $2 $1 | \</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    plumb -i -d edit -a action=showdata -a filename=/man/$1($2)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There are many other inventive uses of plumbing.
+One more should give some of the flavor.
+We have a shell script,
+</span><span style="font-size: 10pt"><tt>src</tt></span><span style="font-size: 10pt">,
+that takes as argument the name of an executable binary file.
+It examines the symbol table of the binary to find the source file
+from which it was compiled.
+Since the Plan 9 compilers place full source path names in the symbol table,
+</span><span style="font-size: 10pt"><tt>src</tt></span><span style="font-size: 10pt">
+can discover the complete file name.
+That is then passed to
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">,
+complete with the line number to find the
+symbol
+</span><span style="font-size: 10pt"><tt>main</tt></span><span style="font-size: 10pt">.
+For example,
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>% src plumb</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">is all it takes to pop up an editor window on the
+</span><span style="font-size: 10pt"><tt>main</tt></span><span style="font-size: 10pt">
+routine of the
+</span><span style="font-size: 10pt"><tt>plumb</tt></span><span style="font-size: 10pt">
+command, beginning at line 39 of
+</span><span style="font-size: 10pt"><tt>/sys/src/cmd/plumb/plumb.c</tt></span><span style="font-size: 10pt">.
+Like most uses of plumbing,
+this is not a breakthrough in functionality, but it is a great convenience.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Why This Architecture?
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The design of the plumbing system is peculiar:
+a centralized language-based file server does most of the work,
+while compared to other systems the applications themselves
+contribute relatively little.
+This architecture is deliberate, of course.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">That the plumber&rsquo;s behavior is derived from a linguistic description
+gives the system great flexibility and dynamism&mdash;rules can be added
+and changed at will, without rebooting&mdash;but the existence of a central library of rules
+ensures that, for most users, the environment behaves in well-established ways.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">That the plumber is a file server is perhaps the most unusual aspect of its design,
+but is also one of the most important.
+Messages are passed by regular I/O operations on files, so no extra technology
+such as remote procedure call or request brokers needs to be provided;
+messages are transmitted by familiar means.
+Almost every service in Plan 9 is a file server, so services can be exported
+trivially using the system&rsquo;s remote file system operations [Pike93].
+The plumber is no exception;
+plumbing messages pass routinely across the network to remote applications without
+any special provision,
+in contrast to some commercial IPC mechanisms that become
+significantly more complex when they involve multiple machines.
+As I write this, my window system is talking to applications running on three
+different machines, but they all share a single instance of the plumber and so
+can interoperate to integrate my environment.
+Plan 9 uses a shared file name space
+to combine multiple networked machines&mdash;compute servers,
+file servers, and interactive workstations&mdash;into a single
+computing environment; plumbing&rsquo;s design as a file server
+is a natural by-product of, and contributor to, the overall system architecture
+[Pike92].
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The centrality of the plumber is also unusual.
+Other systems tend to let the applications determine where messages will go;
+consider mail readers that recognize and highlight URLs in the messages.
+Why should just the mail readers do this, and why should they just do it for URLs?
+(Acme was guilty of similar crimes.)
+The plumber, by removing such decisions to a central authority,
+guarantees that all applications behave the same and simultaneously
+frees them all from figuring out what&rsquo;s important.
+The ability for the plumber to excerpt useful data from within a message
+is critical to the success of this model.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The entire system is remarkably small.
+The plumber itself is only about two thousand lines of C code.
+Most applications work fine in a plumbing environment without knowing about it at all;
+some need trivial changes such as to standardize their error output;
+a few need to generate and receive plumbing messages.
+But even to add the ability to send and receive messages in a program such as text editor is short work,
+involving typically a few dozen lines of code.
+Plumbing fits well into the existing environment.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">But plumbing is new and it hasn&rsquo;t been pushed far enough yet.
+Most of the work so far has been with textual messages, although
+the underlying system is capable of handling general data.
+We plan to reimplement some of the existing data movement operations,
+such as cut and paste or drag and drop, to use plumbing as their exchange mechanism.
+Since the plumber is a central message handler, it is an obvious place to store the &lsquo;clipboard&rsquo;.
+The clipboard could be built as a special port that holds onto messages rather than
+deleting them after delivery.
+Since the clipboard would then be holding a plumbing
+message rather than plain text, as in the current Plan 9 environment,
+it would become possible to cut and paste arbitrary data without
+providing new mechanism.
+In effect, we would be providing a new user interface to the existing plumbing facilities.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another possible extension is the ability to override plumbing operations interactively.
+Originally, the plan was to provide a mechanism, perhaps a pop-up menu, that one could
+use to direct messages, for example to send a PostScript file to the editor rather than the
+PostScript viewer by naming an explicit destination in the message.
+Although this deficiency should one day be addressed, it should be done without
+complicating the interface for invoking the default behavior.
+Meanwhile, in practice the default behavior seems to work very well in practice&mdash;as it
+must if plumbing is to be successful&mdash;so the lack of
+overrides is not keenly felt.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Comparison with Other Systems
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The ideas of the plumbing system grew from an
+attempt to generalize the way Acme acquires files and data.
+Systems further from that lineage also share some properties with plumbing.
+Most, however, require explicit linking or message passing rather than
+plumbing&rsquo;s implicit, context-based pattern matching, and none
+has the plumber&rsquo;s design of a language-based file server.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Reiss&rsquo;s FIELD system [Reis95] probably comes the closest to providing the facilities of the plumber.
+It has a central message-passing mechanism that connects applications together through
+a combination of a library and a pattern-matching central message dispatcher that handles
+message send and reply.
+The main differences between FIELD&rsquo;s message dispatcher and the plumber are first
+that the plumber is based on a special-purpose language while the FIELD
+system uses an object-oriented library, second that the plumber has no concept
+of a reply to a message, and finally that the FIELD system
+has no concept of port.
+But the key distinction is probably in the level of use.
+In FIELD, the message dispatcher is a critical integrating force of the underlying
+programming environment, handling everything from debugging events to
+changing the working directory of a program.
+Plumbing, by contrast, is intended primarily for integrating the user interface
+of existing tools; it is more modest and very much simpler.
+The central advantage of the plumber is its convenience and dynamism;
+the FIELD system does not share the ease with which
+message dispatch rules can be added or modified.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The inspiration for Acme was
+the user interface to the object-oriented Oberon system [WiGu92].
+Oberon&rsquo;s user interface interprets mouse clicks on strings such as
+</span><span style="font-size: 10pt"><tt>Obj.meth</tt></span><span style="font-size: 10pt">
+to invoke calls to the method
+</span><span style="font-size: 10pt"><tt>meth</tt></span><span style="font-size: 10pt">
+of the object
+</span><span style="font-size: 10pt"><tt>Obj</tt></span><span style="font-size: 10pt">.
+This was the starting point for Acme&rsquo;s middle-button execution [Pike94],
+but nothing in Oberon is much like Acme&rsquo;s right-button &lsquo;acquisition&rsquo;,
+which was the starting point for the plumber.
+Oberon&rsquo;s implicit method-based linking is not nearly as general as the pattern-matched
+linking of the plumber, nor does its style of user-triggered method call
+correspond well to the more general idea of inter-application communication
+of plumbing messages.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Microsoft&rsquo;s OLE interface is another relative.
+It allows one application to
+</span><span style="font-size: 10pt"><i>embed</i></span><span style="font-size: 10pt">
+its own data within another&rsquo;s,
+for example to place an Excel spreadsheet within a Frame document;
+when Frame needs to format the page, it will start Excel itself, or at least some of its
+DLLs, to format the spreadsheet.
+OLE data can only be understood by the application that created it;
+plumbing messages, by contrast, contain arbitrary data with a rigidly formatted header
+that will be interpreted by the pattern matcher and the destination application.
+The plumber&rsquo;s simplified message format may limit its
+flexibility but makes messages easy and efficient to dispatch and to interpret.
+At least for the cut-and-paste style of exchange OLE encourages,
+plumbing gives up some power in return for simplicity, while avoiding
+the need to invoke a vestigial program (if Excel can be called a vestige) every time
+the pasted data is examined.
+Plumbing is also better suited to
+other styles of data exchange, such as connecting compiler errors to the
+text editor.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Hyperbole [Wein] package for Emacs adds hypertext facilities to existing documents.
+It includes explicit links and, like plumbing, a rule-driven way to form implicit links.
+Since Emacs is purely textual, like Acme, Hyperbole does not easily extend to driving
+graphical applications, nor does it provide a general interprocess communication method.
+For instance, although Hyperbole provides some integration for mail applications,
+it cannot provide the glue that allows a click on a face icon in an external program to open a
+mail message within the viewer.
+Moreover, since it is not implemented as a file server,
+Hyperbole does not share the advantages of that architecture.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Henry&rsquo;s
+</span><span style="font-size: 10pt"><tt>error</tt></span><span style="font-size: 10pt">
+program in 4BSD echoes a small but common use of plumbing.
+It takes the error messages produced by a compiler and drives a text editor
+through the steps of looking at each one in turn; the notion is to quicken the
+compile/edit/debug cycle.
+Similar results are achieved in EMACS by writing special M-LISP
+macros to parse the error messages from various compilers.
+Although for this particular purpose they may be more convenient than plumbing,
+these are specific solutions to a specific problem and lack plumbing&rsquo;s generality.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Of course, the resource forks in MacOS and the association rules for
+file name extensions in Windows also provide some of the functionality of
+the plumber, although again without the generality or dynamic nature.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Closer to home, Ousterhout&rsquo;s Tcl (Tool Command Language) [Oust90]
+was originally designed to embed a little command interpreter
+in each application to control interprocess communication and
+provide a level of integration.
+Plumbing, on the other hand, provides minimal support within
+the application, offloading most of the message handling and all the
+command execution to the central plumber.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The most obvious relative to plumbing is perhaps the hypertext links of a web browser.
+Plumbing differs by synthesizing
+the links on demand.
+Rather than constructing links within a document as in HTML,
+plumbing uses the context of a button click to derive what it should link to.
+That the rules for this decision can be modified dynamically gives it a more
+fluid feel than a standard web browsing world.
+One possibility for future work is to adapt a web browser to use
+plumbing as its link-following engine, much as Acme used plumbing to offload
+its acquisition rules.
+This would connect the web browser to the existing tools, rather than the
+current trend in most systems of replacing the tools by a browser.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Each of these prior systems&mdash;and there are others, e.g. [Pasa93, Free93]&mdash;addresses
+a particular need or subset of the
+issues of system integration.
+Plumbing differs because its particular choices were different.
+It focuses on two key issues:
+centralizing and automating the handling of interprocess communication
+among interactive programs,
+and maximizing the convenience (or minimizing the trouble) for the human user
+of its services.
+Moreover, the plumber&rsquo;s implementation as a file server, with messages
+passed over files it controls,
+permits the architecture to work transparently across a network.
+None of the other systems discussed here integrates distributed systems
+as smoothly as local ones without the addition of significant extra technology.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Discussion
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">There were a few surprises during the development of plumbing.
+The first version of plumbing was done for the Inferno system [Dorw97a,Dorw97b],
+using its file-to-channel mechanism to mediate the IPC.
+Although it was very simple to build, it encountered difficulties because
+the plumber was too disconnected from its clients; in particular, there was
+no way to discover whether a port was in use.
+When plumbing was implemented afresh for Plan 9, it was provided through a true file server.
+Although this was much more work, it paid off handsomely.
+The plumber now knows whether a port is open, which makes it easy to decide whether
+a new program must be started to handle a message,
+and the ability to edit the rules file dynamically is a major advantage.
+Other advantages arise from the file-server design,
+such as
+the ease of exporting plumbing ports across the network to remote machines
+and the implicit security model a file-based interface provides: no one has
+permission to open my private plumbing files.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">On the other hand, Inferno was an all-new environment and the user interface for plumbing was
+able to be made uniform for all applications.
+This was impractical for Plan 9, so more
+</span><span style="font-size: 10pt"><i>ad hoc</i></span><span style="font-size: 10pt">
+interfaces had to be provided for that environment.
+Yet even in Plan 9 the advantages of efficient,
+convenient, dynamic interprocess communication outweigh the variability of
+the user interface.
+In fact, it is perhaps a telling point that the system works well for a variety of interfaces;
+the provision of a central, convenient message-passing
+service is a good idea regardless of how the programs use it.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Plumbing&rsquo;s rule language uses only regular expressions and a few special
+rules such as
+</span><span style="font-size: 10pt"><tt>isfile</tt></span><span style="font-size: 10pt">
+for matching text.
+There is much more that could be done.  For example, in the current system a JPEG
+file can be recognized by a
+</span><span style="font-size: 10pt"><tt>.jpg</tt></span><span style="font-size: 10pt">
+suffix but not by its contents, since the plumbing language has no facility
+for examining the
+</span><span style="font-size: 10pt"><i>contents</i></span><span style="font-size: 10pt">
+of files named in its messages.
+To address this issue without adding more special rules requires rethinking
+the language itself.
+Although the current system seems a good balance of complexity
+and functionality,
+perhaps a richer, more general-purpose language would
+permit more exotic applications of the plumbing model.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In conclusion, plumbing adds an effective, easy-to-use inter-application
+communication mechanism to the Plan 9
+user interface.
+Its unusual design as a language-driven file server makes it easy to add
+context-dependent, dynamically interpreted, general-purpose hyperlinks
+to the desktop, for both existing tools and new ones.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>Acknowledgements
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Dave Presotto wrote the mail file system and
+</span><span style="font-size: 10pt"><tt>edmail</tt></span><span style="font-size: 10pt">.
+He, Russ Cox, Sape Mullender, and Cliff Young influenced the design, offered useful suggestions,
+and suffered early versions of the software.
+They also made helpful comments on this paper, as did Dennis Ritchie and Brian Kernighan.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>References
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Dorw97a]
+Sean Dorward, Rob Pike, David Leo Presotto, Dennis M. Ritchie,
+Howard W. Trickey, and Philip Winterbottom,
+&lsquo;&lsquo;Inferno&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the IEEE Compcon 97 Conference</i></span><span style="font-size: 10pt">,
+San Jose, 1997, pp. 241-244.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Dorw97b]
+Sean Dorward, Rob Pike, David Leo Presotto, Dennis M. Ritchie,
+Howard W. Trickey, and Philip Winterbottom,
+&lsquo;&lsquo;The Inferno Operating System&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Bell Labs Technical Journal</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><b>2</b></span><span style="font-size: 10pt">,
+1, Winter, 1997.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Free93]
+FreeBSD,
+Syslog configuration file manual
+</span><span style="font-size: 10pt"><i>syslog.conf</i></span><span style="font-size: 10pt">(0).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Kill84]
+T. J. Killian,
+&lsquo;&lsquo;Processes as Files&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the Summer 1984 USENIX Conference</i></span><span style="font-size: 10pt">,
+Salt Lake City, 1984, pp. 203-207.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Oust90]
+John K. Ousterhout,
+&lsquo;&lsquo;Tcl: An Embeddable Command Languages&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the Winter 1990 USENIX Conference</i></span><span style="font-size: 10pt">,
+Washington, 1990, pp. 133-146.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pasa93]
+Vern Paxson and Chris Saltmarsh,
+"Glish: A User-Level Software Bus for Loosely-Coupled Distributed Systems" ,
+</span><span style="font-size: 10pt"><i>Proceedings of the Winter 1993 USENIX Conference</i></span><span style="font-size: 10pt">,
+San Diego, 1993, pp. 141-155.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike87a]
+Rob Pike,
+&lsquo;&lsquo;Structural Regular Expressions&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>EUUG Spring 1987 Conference Proceedings</i></span><span style="font-size: 10pt">,
+Helsinki, May 1987, pp. 21-28.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike87b]
+Rob Pike,
+&lsquo;&lsquo;The Text Editor sam&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Software - Practice and Experience</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><b>17</b></span><span style="font-size: 10pt">,
+5, Nov. 1987, pp. 813-845.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike91]
+Rob Pike,
+&lsquo;&lsquo;8&frac12;, the Plan 9 Window System&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the Summer 1991 USENIX Conference</i></span><span style="font-size: 10pt">,
+Nashville, 1991, pp. 257-265.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike93]
+Rob Pike, Dave Presotto, Ken Thompson, Howard Trickey, and Phil Winterbottom,
+&lsquo;&lsquo;The Use of Name Spaces in Plan 9&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Operating Systems Review</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><b>27</b></span><span style="font-size: 10pt">,
+2, April 1993, pp. 72-76.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike94]
+Rob Pike,
+&lsquo;&lsquo;Acme: A User Interface for Programmers&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the Winter 1994 USENIX Conference</i></span><span style="font-size: 10pt">,
+San Francisco, 1994, pp. 223-234.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[PiPr85]
+Rob Pike and Dave Presotto,
+&lsquo;&lsquo;Face the Nation&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the USENIX Summer 1985 Conference</i></span><span style="font-size: 10pt">,
+Portland, 1985, pg. 81.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Reis95]
+Steven P. Reiss,
+</span><span style="font-size: 10pt"><i>The FIELD Programming Environment: A Friendly Integrated Environment for Learning and Development</i></span><span style="font-size: 10pt">,
+Kluwer, Boston, 1995.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Wein]
+Bob Weiner,
+</span><span style="font-size: 10pt"><i>Hyperbole User Manual</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>http://www.cs.indiana.edu/elisp/hyperbole/hyperbole_1.html</tt></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Wint94]
+Philip Winterbottom,
+&lsquo;&lsquo;ACID: A Debugger based on a Language&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the USENIX Winter Conference</i></span><span style="font-size: 10pt">,
+San Francisco, CA, 1994.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[WiGu92]
+Niklaus Wirth and Jurg Gutknecht,
+</span><span style="font-size: 10pt"><i>Project Oberon: The Design of an Operating System and Compilers</i></span><span style="font-size: 10pt">,
+Addison-Wesley, Reading, 1992.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+</body>
+</html>
+

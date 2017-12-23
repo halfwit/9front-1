@@ -1,0 +1,1672 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf8">
+<title>Acid: A Debugger Built From A Language</title>
+</meta>
+</head>
+<body>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 12pt"><b>Acid: A Debugger Built From A Language</b></span></p>
+<p style="margin-top: 0; margin-bottom: 0.21in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>Phil Winterbottom</i></span></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>philw@plan9.bell-labs.com</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.33in"></p>
+<p style="line-height: 1.4em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: center;">
+<span style="font-size: 10pt"><i>ABSTRACT</i></span></p>
+<p style="margin-top: 0; margin-bottom: 0.19in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid is an unusual source-level symbolic debugger for Plan 9. It is implemented
+as a language interpreter with specialized primitives that provide
+debugger support.  Programs written in the language manipulate
+one or more target processes; variables in the language represent the
+symbols, state, and resources of those processes. 
+This structure allows complex
+interaction between the debugger and the target program and
+provides a convenient method of parameterizing differences between
+machine architectures.
+Although some effort is required to learn
+the debugging language, the richness and flexibility of the
+debugging environment encourages new ways of reasoning about the way
+programs run and the conditions under which they fail.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>1.
+Introduction
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The size and complexity
+of programs have increased in proportion to processor speed and memory but
+the interface between debugger and programmer has changed little.
+Graphical user interfaces have eased some of the tedious
+aspects of the interaction. A graphical interface is a convenient
+means for navigating through source and data structures but provides
+little benefit for process control.
+The introduction of a new concurrent language, Alef [Win93], emphasized the
+inadequacies of the existing Plan 9 [Pike90] debugger
+</span><span style="font-size: 10pt"><i>db</i></span><span style="font-size: 10pt">,
+a distant relative of
+</span><span style="font-size: 10pt"><i>adb</i></span><span style="font-size: 10pt">,
+and made it clear that a new debugger was required.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Current debuggers like
+</span><span style="font-size: 10pt"><i>dbx</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><i>sdb</i></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><i>gdb</i></span><span style="font-size: 10pt">
+are limited to answering only the questions their authors
+envisage.  As a result, they supply a plethora
+of specialized commands, each attempting to anticipate
+a specific question a user may ask.
+When a debugging situation arises that is beyond the scope
+of the command set, the tool is useless.
+Further,
+it is often tedious or impossible to reproduce an anomalous state
+of the program, especially when
+the state is embedded in the program&rsquo;s data structures.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid applies some ideas found in CAD software used for
+hardware test and simulation.
+It is based on the notion that the state and resources of a program
+are best represented and manipulated by a language. The state and resources,
+such as memory, registers, variables, type information and source code
+are represented by variables in the language.
+Expressions provide a computation mechanism and control
+statements allow repetitive or selective interpretation based
+on the result of expression evaluation.
+The heart of the Acid debugger is an interpreter for a small typeless
+language whose operators mirror the operations
+of C and Alef, which in turn correspond well to the basic operations of
+the machine. The interpreter itself knows nothing of the underlying
+hardware; it deals with the program state and resources
+in the abstract.
+Fundamental routines to control
+processes, read files, and interface to the system are implemented
+as builtin functions available to the interpreter.
+The actual debugger functionality is coded
+in Acid; commands are implemented as Acid functions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">This language-based approach has several advantages.
+Most importantly, programs written in Acid, including most of the
+debugger itself, are inherently portable.
+Furthermore, Acid avoids the limitations other debuggers impose when
+debugging parallel programs.  Instead of embedding a fixed
+process model in the debugger, Acid allows the
+programmer to adapt the debugger to handle an
+arbitrary process partitioning or program structure. 
+The ability to
+interact dynamically with an executing process provides clear advantages
+over debuggers constrained to probe a static image.
+Finally, the Acid language is a powerful vehicle for expressing
+assertions about logic, process state, and the contents of data structures.
+When combined with dynamic interaction it allows a
+limited form of automated program verification without requiring
+modification or recompilation of the source code.
+The language is also an
+excellent vehicle for preserving a test suite for later regression testing.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The debugger may be customized by its users; standard
+functions may be modified or extended to suit a particular application
+or preference.
+For example, the kernel developers in our group require a
+command set supporting assembler-level debugging while the application
+programmers prefer source-level functionality.
+Although the default library is biased toward assembler-level debugging,
+it is easily modified to provide a convenient source-level interface.
+The debugger itself does not change; the user combines primitives
+and existing Acid functions in different ways to
+implement the desired interface.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>2.
+Related Work
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">DUEL [Gol93], an extension to
+</span><span style="font-size: 10pt"><i>gdb</i></span><span style="font-size: 10pt">
+[Stal91], proposes using a high level expression evaluator to solve
+some of these problems. The evaluator provides iterators to loop over data
+structures and conditionals to control evaluation of expressions.
+The author shows that complex state queries can be formulated
+by combining concise expressions but this only addresses part of the problem.
+A program is a dynamic entity; questions asked when the program is in
+a static state are meaningful only after the program has been &lsquo;caught&rsquo; in
+that state. The framework for manipulating the program is still as
+primitive as the underlying debugger. While DUEL provides a means to
+probe data structures it entirely neglects the most beneficial aspect
+of debugging languages: the ability to control processes. Acid is structured
+around a thread of control that passes between the interpreter and the
+target program.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The NeD debugger [May92] is a set of extensions to TCL [Ous90] that provide
+debugging primitives. The resulting language, NeDtcl, is used to implement
+a portable interface between a conventional debugger, pdb [May90], and
+a server that executes NeDtcl programs operating on the target program.
+Execution of the NeDtcl programs implements the debugging primitives
+that pdb expects.
+NeD is targeted at multi-process debugging across a network,
+and proves the flexibility of a language as a means of
+communication between debugging tools. Whereas NeD provides an interface
+between a conventional debugger and the process it debugs, Acid is the
+debugger itself. While NeD has some of the ideas
+found in Acid it is targeted toward a different purpose. Acid seeks to
+integrate the manipulation of a program&rsquo;s resources into the debugger
+while NeD provides a flexible interconnect between components of
+the debugging environment. The choice of TCL is appropriate for its use
+in NeD but is not suitable for Acid. Acid relies on the coupling of the type
+system with expression evaluation, which are the root of its design,
+to provide the debugging primitives.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Dalek [Ols90] is an event based language extension to gdb. State transitions
+in the target program cause events to be queued for processing by the
+debugging language.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid has many of the advantages of same process or
+</span><span style="font-size: 10pt"><i>local</i></span><span style="font-size: 10pt">
+</span><span style="font-size: 10pt"><i>agent</i></span><span style="font-size: 10pt">
+debuggers, like Parasight [Aral], without the need for dynamic linking or
+shared memory.
+Acid improves on the ideas of these other systems by completely integrating
+all aspects of the debugging process into the language environment. Of
+particular importance is the relationship between Acid variables,
+program symbols, source code, registers and type information. This
+integration is made possible by the design of the Acid language.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Interpreted languages such as Lisp and Smalltalk are able to provide
+richer debugging environments through more complete information than
+their compiled counterparts. Acid is a means to gather and represent
+similar information about compiled programs through cooperation
+with the compilation tools and library implementers.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>3.
+Acid the Language
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid is a small interpreted language targeted to its debugging task.
+It focuses on representing program state and addressing data rather than
+expressing complex computations. Program state is
+</span><span style="font-size: 10pt"><i>addressable</i></span><span style="font-size: 10pt">
+from an Acid program.
+In addition to parsing and executing expressions and providing
+an architecture-independent interface to the target process,
+the interpreter supplies a mark-and-scan garbage collector
+to manage storage.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Every Acid session begins with the loading of the Acid libraries.
+These libraries contain functions, written in Acid, that provide
+a standard debugging environment including breakpoint management,
+stepping by instruction or statement, stack tracing, and
+access to variables, memory, and registers.
+The library contains 600 lines of Acid code and provides
+functionality similar to
+</span><span style="font-size: 10pt"><i>dbx</i></span><span style="font-size: 10pt">.
+Following the loading of the system library, Acid loads
+user-specified libraries; this load sequence allows the
+user to augment or override the standard commands
+to customize the debugging environment.  When all libraries
+are loaded, Acid issues an interactive prompt and begins
+evaluating expressions entered by the user.  The Acid &lsquo;commands&rsquo;
+are actually invocations of builtin primitives or previously defined
+Acid functions. Acid evaluates each expression as it is entered and
+prints the result.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>4.
+Types and Variables
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid variables are of four basic types:
+</span><span style="font-size: 10pt"><i>integer</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><i>string</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><i>float</i></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><i>list</i></span><span style="font-size: 10pt">.
+The type of a variable is inferred by the type of the right-hand side of
+an assignment expression.
+Many of the operators can be applied to more than
+one type; for these operators the action of the operator is determined
+by the type of its operands.
+For example,
+the
+</span><span style="font-size: 10pt"><tt>+</tt></span><span style="font-size: 10pt">
+operator adds
+</span><span style="font-size: 10pt"><i>integer</i></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><i>float</i></span><span style="font-size: 10pt">
+operands, and concatenates
+</span><span style="font-size: 10pt"><i>string</i></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><i>list</i></span><span style="font-size: 10pt">
+operands.
+Lists are the only complex type in Acid; there are no arrays, structures
+or pointers. Operators provide
+</span><span style="font-size: 10pt"><tt>head</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>tail</tt></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><tt>append</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>delete</tt></span><span style="font-size: 10pt">
+operations.
+Lists can also be indexed like arrays.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid has two levels of scope: global and local.
+Function parameters and variables declared in a function body
+using the
+</span><span style="font-size: 10pt"><tt>local</tt></span><span style="font-size: 10pt">
+keyword are created at entry to the function and
+exist for the lifetime of a function.
+Global variables are created by assignment and need not be declared.
+All variables and functions in the program
+being debugged are entered in the Acid symbol table as global
+variables during Acid initialization.
+Conflicting variable names are resolved by prefixing enough &lsquo;$&rsquo; characters
+to make them unique.
+Syntactically, Acid variables and target program
+symbols are referenced identically.
+However, the variables are managed differently in the Acid
+symbol table and the user must be aware of this distinction.
+The value of an Acid variable is stored in the symbol
+table; a reference returns the value.
+The symbol table entry for a variable or function in the target
+program contains the address of that symbol in the image
+of the program.  Thus, the value of a program variable is
+accessed by indirect reference through the Acid
+variable that has the same name; the value of an Acid variable is the
+address of the corresponding program variable.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>5.
+Control Flow
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>while</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>loop</tt></span><span style="font-size: 10pt">
+statements implement looping.
+The former
+is similar to the same statement in C.
+The latter evaluates starting and ending expressions yielding
+integers and iterates while an incrementing loop index
+is within the bounds of those expressions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: i = 0; loop 1,5 do print(i=i+1)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x00000001</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x00000002</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x00000003</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x00000004</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x00000005</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid:</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The traditional
+</span><span style="font-size: 10pt"><tt>if-then-else</tt></span><span style="font-size: 10pt">
+statement implements conditional execution.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>6.
+Addressing
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Two indirection operators allow Acid to access values in
+the program being debugged.
+The
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+operator fetches a value from the memory image of an
+executing process;
+the
+</span><span style="font-size: 10pt"><tt>@</tt></span><span style="font-size: 10pt">
+operator fetches a value from the text file of the process.
+When either operator appears on the left side of an assignment, the value
+is written rather than read.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The indirection operator must know the size of the object
+referenced by a variable.
+The Plan 9 compilers neglect to include this
+information in the program symbol table, so Acid cannot
+derive this information implicitly.
+Instead Acid variables have formats.
+The format is a code
+letter specifying the printing style and the effect of some of the
+operators on that variable.
+The indirection operators look at the format code to determine the
+number of bytes to read or write.
+The format codes are derived from the format letters used by
+</span><span style="font-size: 10pt"><i>db</i></span><span style="font-size: 10pt">.
+By default, symbol table variables and numeric constants
+are assigned the format code
+</span><span style="font-size: 10pt"><tt>&rsquo;X&rsquo;</tt></span><span style="font-size: 10pt">
+which specifies 32-bit hexadecimal.
+Printing such a variable yields output of the form
+</span><span style="font-size: 10pt"><tt>0x00123456</tt></span><span style="font-size: 10pt">.
+An indirect reference through the variable fetches 32 bits
+of data at the address indicated by the variable.
+Other formats specify various data types, for example
+</span><span style="font-size: 10pt"><tt>i</tt></span><span style="font-size: 10pt">
+an instruction,
+</span><span style="font-size: 10pt"><tt>D</tt></span><span style="font-size: 10pt">
+a signed 32 bit decimal,
+</span><span style="font-size: 10pt"><tt>s</tt></span><span style="font-size: 10pt">
+a null-terminated string.
+The
+</span><span style="font-size: 10pt"><tt>fmt</tt></span><span style="font-size: 10pt">
+function
+allows the user to change the format code of a variable
+to control the printing format and
+operator side effects.
+This function evaluates the expression supplied as the first
+argument, attaches the format code supplied as the second
+argument to the result and returns that value.
+If the result is assigned to a variable,
+the new format code applies to
+that variable.  For convenience, Acid provides the
+</span><span style="font-size: 10pt"><tt>\</tt></span><span style="font-size: 10pt">
+operator as a shorthand infix form of
+</span><span style="font-size: 10pt"><tt>fmt</tt></span><span style="font-size: 10pt">.
+For example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: x=10</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: x              // print x in hex</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0000000a </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: x = fmt(x, &rsquo;D&rsquo;)        // make x type decimal</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: print(x, fmt(x, &rsquo;X&rsquo;), x\X) // print x in decimal &amp; hex</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>10 0x0000000a 0x0000000a</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: x              // print x in decimal</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>10</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: x\o            // print x in octal</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>000000000012</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The 
+</span><span style="font-size: 10pt"><tt>++</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>--</tt></span><span style="font-size: 10pt">
+operators increment or decrement a variable by an amount
+determined by its format code.  Some formats imply a non-fixed size.
+For example, the
+</span><span style="font-size: 10pt"><tt>i</tt></span><span style="font-size: 10pt">
+format code disassembles an instruction into a string.
+On a 68020, which has variable length instructions:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: p=main\i                     // p=addr(main), type INST</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: loop 1,5 do print(p\X, @p++) // disassemble 5 instr&rsquo;s</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0000222e LEA  0xffffe948(A7),A7</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x00002232 MOVL s+0x4(A7),A2</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x00002236 PEA  0x2f($0)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0000223a MOVL A2,-(A7)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0000223c BSR  utfrrune</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid:</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here,
+</span><span style="font-size: 10pt"><tt>main</tt></span><span style="font-size: 10pt">
+is the address of the function of the same name in the program under test.
+The loop retrieves the five instructions beginning at that address and
+then prints the address and the assembly language representation of each.
+Notice that the stride of the increment operator varies with the size of
+the instruction: the
+</span><span style="font-size: 10pt"><tt>MOVL</tt></span><span style="font-size: 10pt">
+at 
+</span><span style="font-size: 10pt"><tt>0x0000223a</tt></span><span style="font-size: 10pt">
+is a two byte instruction while all others are four bytes long.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Registers are treated as normal program variables referenced
+by their symbolic assembler language names.
+When a
+process stops, the register set is saved by the kernel
+at a known virtual address in the process memory map.
+The Acid variables associated with the registers point
+to the saved values and the
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+indirection operator can then be used to read and write the register set.
+Since the registers are accessed via Acid variables they may
+be used in arbitrary expressions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: PC                            // addr of saved PC</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0xc0000f60 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: *PC</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>0x0000623c                          // contents of PC</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: *PC\a</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: *R1=10                        // modify R1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: asm(*PC+4)                    // disassemble @ PC+4</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main+0x4 0x00006240     MOVW    R31,0x0(R29)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main+0x8 0x00006244     MOVW    $setR30(SB),R30</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main+0x10 0x0000624c    MOVW    R1,_clock(SB)</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Here, the saved
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+is stored at address
+</span><span style="font-size: 10pt"><tt>0xc0000f60</tt></span><span style="font-size: 10pt">;
+its current content is
+</span><span style="font-size: 10pt"><tt>0x0000623c</tt></span><span style="font-size: 10pt">.
+The
+&lsquo;</span><span style="font-size: 10pt"><tt>a</tt></span><span style="font-size: 10pt">&rsquo;
+format code converts this value to a string specifying
+the address as an offset beyond the nearest symbol.
+After setting the value of register
+</span><span style="font-size: 10pt"><tt>1</tt></span><span style="font-size: 10pt">,
+the example uses the
+</span><span style="font-size: 10pt"><tt>asm</tt></span><span style="font-size: 10pt">
+command to disassemble a short section of code beginning
+at four bytes beyond the current value of the
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>7.
+Process Interface
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A program executing under Acid is monitored through the
+</span><span style="font-size: 10pt"><i>proc</i></span><span style="font-size: 10pt">
+file system interface provided by Plan 9.
+Textual messages written to the
+</span><span style="font-size: 10pt"><tt>ctl</tt></span><span style="font-size: 10pt">
+file control the execution of the process.
+For example writing
+</span><span style="font-size: 10pt"><tt>waitstop</tt></span><span style="font-size: 10pt">
+to the control file causes the write to block until the target
+process enters the kernel and is stopped. When the process is stopped
+the write completes. The
+</span><span style="font-size: 10pt"><tt>startstop</tt></span><span style="font-size: 10pt">
+message starts the target process and then does a
+</span><span style="font-size: 10pt"><tt>waitstop</tt></span><span style="font-size: 10pt">
+action.
+Synchronization between the debugger and the target process is determined
+by the actions of the various messages. Some operate asynchronously to the
+target process and always complete immediately, others block until the
+action completes. The asynchronous messages allow Acid to control
+several processes simultaneously.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The interpreter has builtin functions named after each of the control
+messages. The functions take a process id as argument.
+Any time a control message causes the program to execute instructions 
+the interpreter performs two actions when the control operation has completed.
+The Acid variables pointing at the register set are fixed up to point
+at the saved registers, and then
+the user defined function
+</span><span style="font-size: 10pt"><tt>stopped</tt></span><span style="font-size: 10pt">
+is executed.
+The 
+</span><span style="font-size: 10pt"><tt>stopped</tt></span><span style="font-size: 10pt">
+function may print the current address,
+line of source or instruction and return to interactive mode. Alternatively
+it may traverse a complex data structure, gather statistics and then set
+the program running again.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Several Acid variables are maintained by the debugger rather than the
+programmer.
+These variables allow generic Acid code to deal with the current process,
+architecture specifics or the symbol table.
+The variable
+</span><span style="font-size: 10pt"><tt>pid</tt></span><span style="font-size: 10pt">
+is the process id of the current process Acid is debugging.
+The variable
+</span><span style="font-size: 10pt"><tt>symbols</tt></span><span style="font-size: 10pt">
+contains a list of lists where each sublist contains the symbol
+name, its type and the value of the symbol.
+The variable
+</span><span style="font-size: 10pt"><tt>registers</tt></span><span style="font-size: 10pt">
+contains a list of the machine-specific register names. Global symbols in the target program
+can be referenced directly by name from Acid. Local variables
+are referenced using the colon operator as </span><span style="font-size: 10pt"><tt>function:variable</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>8.
+Source Level Debugging
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid provides several builtin functions to manipulate source code.
+The
+</span><span style="font-size: 10pt"><tt>file</tt></span><span style="font-size: 10pt">
+function reads a text file, inserting each line into a list.
+The
+</span><span style="font-size: 10pt"><tt>pcfile</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>pcline</tt></span><span style="font-size: 10pt">
+functions each take an address as an argument.
+The first
+returns a string containing the name of the source file
+and the second returns an integer containing the line number
+of the source line containing the instruction at the address.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: pcfile(main)      // file containing main</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main.c</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: pcline(main)      // line # of main in source</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>11</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: file(pcfile(main))[pcline(main)]  // print that line</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>main(int argc, char *argv[])</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: src(*PC)          // print statements nearby</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt> 9</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt> 10 void</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&gt;11 main(int argc, char *argv[])</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt> 12 {</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt> 13 int a;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">In this example, the three primitives are combined in an expression to print
+a line of source code associated with an address.
+The
+</span><span style="font-size: 10pt"><tt>src</tt></span><span style="font-size: 10pt">
+function prints a few lines of source
+around the address supplied as its argument. A companion routine,
+</span><span style="font-size: 10pt"><tt>Bsrc</tt></span><span style="font-size: 10pt">,
+communicates with the external editor
+</span><span style="font-size: 10pt"><tt>sam</tt></span><span style="font-size: 10pt">.
+Given an address, it loads the corresponding source file into the editor
+and highlights the line containing the address.  This simple interface
+is easily extended to more complex functions.
+For example, the
+</span><span style="font-size: 10pt"><tt>step</tt></span><span style="font-size: 10pt">
+function can select the current file and line in the editor
+each time the target program stops, giving the user a visual
+trace of the execution path of the program. A more complete interface
+allowing two way communication between Acid and the
+</span><span style="font-size: 10pt"><tt>acme</tt></span><span style="font-size: 10pt">
+user interface [Pike93] is under construction. A filter between the debugger
+and the user interface provides interpretation of results from both
+sides of the interface. This allows the programming environment to
+interact with the debugger and vice-versa, a capability missing from the
+</span><span style="font-size: 10pt"><tt>sam</tt></span><span style="font-size: 10pt">
+interface.
+The
+</span><span style="font-size: 10pt"><tt>src</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>Bsrc</tt></span><span style="font-size: 10pt">
+functions are both written in Acid code using the file and line primitives.
+Acid provides library functions to step through source level
+statements and functions. Furthermore, addresses in Acid expressions can be
+specified by source file and line.
+Source code is manipulated in the Acid
+</span><span style="font-size: 10pt"><i>list</i></span><span style="font-size: 10pt">
+data type.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>9.
+The Acid Library
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The following examples define some useful commands and
+illustrate the interaction of the debugger and the interpreter.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>defn bpset(addr)                          // set breakpoint</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if match(addr, bplist) &gt;= 0 then</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        print("bkpoint already set:", addr\a, "\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    else {</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        *fmt(addr, bpfmt) = bpinst;   // plant it</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        bplist = append bplist, addr; // add to list</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>bpset</tt></span><span style="font-size: 10pt">
+function plants a break point in memory. The function starts by
+using the
+</span><span style="font-size: 10pt"><tt>match</tt></span><span style="font-size: 10pt">
+builtin to
+search the breakpoint list to determine if a breakpoint is already
+set at the address.
+The indirection operator, controlled by the format code returned
+by the
+</span><span style="font-size: 10pt"><tt>fmt</tt></span><span style="font-size: 10pt">
+primitive, is used to plant the breakpoint in memory.
+The variables
+</span><span style="font-size: 10pt"><tt>bpfmt</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>bpinst</tt></span><span style="font-size: 10pt">
+are Acid global variables containing the format code specifying
+the size of the breakpoint instruction and the breakpoint instruction
+itself.
+These
+variables are set by architecture-dependent library code
+when the debugger first attaches to the executing image.
+Finally the address of the breakpoint is
+appended to the breakpoint list,
+</span><span style="font-size: 10pt"><tt>bplist</tt></span><span style="font-size: 10pt">.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>defn step()             // single step</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    local lst, lpl, addr, bput;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    bput = 0;           // sitting on bkpoint</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if match(*PC, bplist) &gt;= 0 then {   </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        bput = fmt(*PC, bpfmt); // save current addr</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        *bput = @bput;      // replace it</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    lst = follow(*PC);      // get follow set</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    lpl = lst;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    while lpl do {          // place breakpoints</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        *(head lpl) = bpinst;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        lpl = tail lpl;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    startstop(pid);         // do the step</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    while lst do {          // remove breakpoints</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        addr = fmt(head lst, bpfmt);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        *addr = @addr;      // replace instr.</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        lst = tail lst;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if bput != 0 then</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        *bput = bpinst;     // restore breakpoint</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>step</tt></span><span style="font-size: 10pt">
+function executes a single assembler instruction.
+If the
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+is sitting
+on a breakpoint, the address and size of
+the breakpoint are saved.
+The breakpoint instruction
+is then removed using the
+</span><span style="font-size: 10pt"><tt>@</tt></span><span style="font-size: 10pt">
+operator to fetch
+</span><span style="font-size: 10pt"><tt>bpfmt</tt></span><span style="font-size: 10pt">
+bytes from the text file and to place it into the memory
+of the executing process using the
+</span><span style="font-size: 10pt"><tt>*</tt></span><span style="font-size: 10pt">
+operator.
+The
+</span><span style="font-size: 10pt"><tt>follow</tt></span><span style="font-size: 10pt">
+function is an Acid
+builtin which returns a follow-set: a list of instruction addresses which
+could be executed next.
+If the instruction stored at the
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+is a branch instruction, the
+list contains the addresses of the next instruction and
+the branch destination; otherwise, it contains only the
+address of the next instruction.
+The follow-set is then used to replace each possible following
+instruction with a breakpoint instruction.  The original
+instructions need not be saved; they remain
+in their unaltered state in the text file.
+The
+</span><span style="font-size: 10pt"><tt>startstop</tt></span><span style="font-size: 10pt">
+builtin writes the &lsquo;startstop&rsquo; message to the
+</span><span style="font-size: 10pt"><i>proc</i></span><span style="font-size: 10pt">
+control file for the process named
+</span><span style="font-size: 10pt"><tt>pid</tt></span><span style="font-size: 10pt">.
+The target process executes until some condition causes it to
+enter the kernel, in this case, the execution of a breakpoint.
+When the process blocks, the debugger regains control and invokes the
+Acid library function
+</span><span style="font-size: 10pt"><tt>stopped</tt></span><span style="font-size: 10pt">
+which reports the address and cause of the blockage.
+The
+</span><span style="font-size: 10pt"><tt>startstop</tt></span><span style="font-size: 10pt">
+function completes and returns to the
+</span><span style="font-size: 10pt"><tt>step</tt></span><span style="font-size: 10pt">
+function where
+the follow-set is used to replace the breakpoints placed earlier.
+Finally, if the address of the original
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+contained a breakpoint, it is replaced.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Notice that this approach to process control is inherently portable;
+the Acid code is shared by the debuggers for all architectures.
+Acid variables and builtin functions provide a transparent interface
+to architecture-dependent values and functions.  Here the breakpoint
+value and format are referenced through Acid variables and the
+</span><span style="font-size: 10pt"><tt>follow</tt></span><span style="font-size: 10pt">
+primitive masks the differences in the underlying instruction set.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>next</tt></span><span style="font-size: 10pt">
+function, similar to the
+</span><span style="font-size: 10pt"><i>dbx</i></span><span style="font-size: 10pt">
+command of the same name,
+is a simpler example.
+This function steps through
+a single source statement but steps over function calls.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>defn next()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>{</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    local sp, bound;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    sp = *SP;           // save starting SP</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    bound = fnbound(*PC);       // begin &amp; end of fn.</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    stmnt();            // step 1 statement</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    pc = *PC;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    if pc &gt;= bound[0] &amp;&amp; pc &lt; bound[1] then</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        return {};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    while (pc&lt;bound[0] || pc&gt;bound[1]) &amp;&amp; sp&gt;=*SP do {</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        step();</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>        pc = *PC;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    }</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    src(*PC);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>}</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>next</tt></span><span style="font-size: 10pt">
+function
+starts by saving the current stack pointer in a local variable.
+It then uses the Acid library function
+</span><span style="font-size: 10pt"><tt>fnbound</tt></span><span style="font-size: 10pt">
+to return the addresses of the first and last instructions in
+the current function in a list.
+The
+</span><span style="font-size: 10pt"><tt>stmnt</tt></span><span style="font-size: 10pt">
+function executes a single source statement and then uses
+</span><span style="font-size: 10pt"><tt>src</tt></span><span style="font-size: 10pt">
+to print a few lines of source around the new
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">.
+If the new value of the
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+remains in the current function,
+</span><span style="font-size: 10pt"><tt>next</tt></span><span style="font-size: 10pt">
+returns.
+When the executed statement is a function call or a return
+from a function, the new value of the
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+is outside the bounds calculated by
+</span><span style="font-size: 10pt"><tt>fnbound</tt></span><span style="font-size: 10pt">
+and the test of the
+</span><span style="font-size: 10pt"><tt>while</tt></span><span style="font-size: 10pt">
+loop is evaluated.
+If the statement was a return, the new value of the stack pointer
+is greater than the original value and the loop completes without
+execution.
+Otherwise, the loop is entered and instructions are continually
+executed until the value of the
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+is between the bounds calculated earlier.  At that point, execution
+ceases and a few lines of source in the vicinity of the
+</span><span style="font-size: 10pt"><tt>PC</tt></span><span style="font-size: 10pt">
+are printed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid provides concise and elegant expression for control and
+manipulation of target programs. These examples demonstrate how a
+few well-chosen primitives can be combined to create a rich debugging environment.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>10.
+Dealing With Multiple Architectures
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">A single binary of Acid may be used to debug a program running on any
+of the five processor architectures supported by Plan 9.  For example,
+Plan 9 allows a user on a MIPS to import the
+</span><span style="font-size: 10pt"><i>proc</i></span><span style="font-size: 10pt">
+file system from an i486-based PC and remotely debug a program executing
+on that processor.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Two levels of abstraction provide this architecture independence.
+On the lowest level, a Plan 9 library supplies functions to
+decode the file header of the program being debugged and
+select a table of system parameters
+and a jump vector of architecture-dependent
+functions based on the magic number.
+Among these functions are byte-order-independent
+access to memory and text files, stack manipulation, disassembly,
+and floating point number interpretation.
+The second level of abstraction is supplied by Acid.
+It consists of primitives and approximately 200 lines
+of architecture-dependent Acid library code that interface the
+interpreter to the architecture-dependent library.
+This layer performs functions such as mapping register names to
+memory locations, supplying breakpoint values and sizes,
+and converting processor specific data to Acid data types.
+An example of the latter is the stack trace function
+</span><span style="font-size: 10pt"><tt>strace</tt></span><span style="font-size: 10pt">,
+which uses the stack traversal functions in the
+architecture-dependent library to construct a list of lists describing
+the context of a process.  The first level of list selects
+each function in the trace; subordinate lists contain the
+names and values of parameters and local variables of
+the functions.  Acid commands and library functions that
+manipulate and display process state information operate
+on the list representation and are independent of the
+underlying architecture.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>11.
+Alef Runtime
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Alef is a concurrent programming language,
+designed specifically for systems programming, which supports both
+shared variable and message passing paradigms.
+Alef borrows the C expression syntax but implements
+a substantially different type system.
+The language provides a rich set of 
+exception handling, process management, and synchronization
+primitives, which rely on a runtime system.
+Alef program bugs are often deadlocks, synchronization failures,
+or non-termination caused by locks being held incorrectly.
+In such cases, a process stalls deep
+in the runtime code and it is clearly
+unreasonable to expect a programmer using the language
+to understand the detailed
+internal semantics of the runtime support functions.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Instead, there is an Alef support library, coded in Acid, that
+allows the programmer to interpret the program state in terms of
+Alef operations.  Consider the example of a multi-process program
+stalling because of improper synchronization.  A stack trace of
+the program indicates that it is waiting for an event in some
+obscure Alef runtime
+synchronization function.
+The function itself is irrelevant to the
+programmer; of greater importance is the identity of the
+unfulfilled event.
+Commands in the Alef support library decode
+the runtime data structures and program state to report the cause
+of the blockage in terms of the high-level operations available to
+the Alef programmer.  
+Here, the Acid language acts
+as a communications medium between Alef implementer and Alef user.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>12.
+Parallel Debugging
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The central issue in parallel debugging is how the debugger is
+multiplexed between the processes comprising
+the program.
+Acid has no intrinsic model of process partitioning; it
+only assumes that parallel programs share a symbol table,
+though they need not share memory.
+The
+</span><span style="font-size: 10pt"><tt>setproc</tt></span><span style="font-size: 10pt">
+primitive attaches the debugger to a running process
+associated with the process ID supplied as its argument
+and assigns that value to the global variable
+</span><span style="font-size: 10pt"><tt>pid</tt></span><span style="font-size: 10pt">,
+thereby allowing simple rotation among a group of processes.
+Further, the stack trace primitive is driven by parameters
+specifying a unique process context, so it is possible to
+examine the state of cooperating processes without switching
+the debugger focus from the process of interest.
+Since Acid is inherently extensible and capable of
+dynamic interaction with subordinate processes, the
+programmer can define Acid commands to detect and control
+complex interactions between processes.
+In short, the programmer is free to specify how the debugger reacts
+to events generated in specific threads of the program.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The support for parallel debugging in Acid depends on a crucial kernel
+modification: when the text segment of a program is written (usually to
+place a breakpoint), the segment is cloned to prevent other threads
+from encountering the breakpoint.  Although this incurs a slight performance
+penalty, it is of little importance while debugging.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>13.
+Communication Between Tools
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The Plan 9 Alef and C compilers do not
+embed detailed type information in the symbol table of an
+executable file.
+However, they do accept a command line option causing them to
+emit descriptions of complex data types
+(e.g., aggregates and abstract data types)
+to an auxiliary file.
+The vehicle for expressing this information is Acid source code.
+When an Acid debugging session is 
+subsequently started, that file is loaded with the other Acid libraries.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">For each complex object in the program the compiler generates
+three pieces of Acid code.
+The first is a table describing the size and offset of each
+member of the complex data type.  Following is an Acid function,
+named the same as the object, that formats and prints each member.
+Finally, Acid declarations associate the
+Alef or C program variables of a type with the functions
+to print them.
+The three forms of declaration are shown in the following example:
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>struct Bitmap {</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Rectangle    0 r;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Rectangle   16 clipr;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    &rsquo;D&rsquo;   32 ldepth;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    &rsquo;D&rsquo;   36 id;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    &rsquo;X&rsquo;   40 cache;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>defn</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Bitmap(addr) {</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    complex Bitmap addr;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print("Rectangle r {\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Rectangle(addr.r);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print("}\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print("Rectangle clipr {\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    Rectangle(addr.clipr);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print("}\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print(" ldepth  ", addr.ldepth, "\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print(" id  ", addr.id, "\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    print(" cache   ", addr.cache, "\n");</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>};</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.15in"></p>
+
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>complex Bitmap darkgrey;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>complex Bitmap Window_settag:b;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>struct</tt></span><span style="font-size: 10pt">
+declaration specifies decoding instructions for the complex type named
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">.
+Although the syntax is superficially similar to a C structure declaration,
+the semantics differ markedly: the C declaration specifies a layout, while
+the Acid declaration tells how to decode it.
+The declaration specifies a type, an offset, and name for each
+member of the complex object. The type is either the name of another
+complex declaration, for example,
+</span><span style="font-size: 10pt"><tt>Rectangle</tt></span><span style="font-size: 10pt">,
+or a format code.
+The offset is the number of bytes from the start
+of the object to the member
+and the name is the member&rsquo;s name in the Alef or C declaration.
+This type description is a close match for C and Alef, but is simple enough
+to be language independent.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">
+function expects the address of a
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">
+as its only argument.
+It uses the decoding information contained in the
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">
+structure declaration to extract, format, and print the
+value of each member of the complex object pointed to by
+the argument.
+The Alef compiler emits code to call other Acid functions
+where a member is another complex type; here,
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">
+calls
+</span><span style="font-size: 10pt"><tt>Rectangle</tt></span><span style="font-size: 10pt">
+to print its contents.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>complex</tt></span><span style="font-size: 10pt">
+declarations associate Alef variables with complex types.
+In the example,
+</span><span style="font-size: 10pt"><tt>darkgrey</tt></span><span style="font-size: 10pt">
+is the name of a global variable of type
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">
+in the program being debugged.
+Whenever the name
+</span><span style="font-size: 10pt"><tt>darkgrey</tt></span><span style="font-size: 10pt">
+is evaluated by Acid, it automatically calls the
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">
+function with the address of
+</span><span style="font-size: 10pt"><tt>darkgrey</tt></span><span style="font-size: 10pt">
+as the argument.
+The second
+</span><span style="font-size: 10pt"><tt>complex</tt></span><span style="font-size: 10pt">
+declaration associates a local variable or parameter named
+</span><span style="font-size: 10pt"><tt>b</tt></span><span style="font-size: 10pt">
+in function
+</span><span style="font-size: 10pt"><tt>Window_settag</tt></span><span style="font-size: 10pt">
+with the
+</span><span style="font-size: 10pt"><tt>Bitmap</tt></span><span style="font-size: 10pt">
+complex data type.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid borrows the C operators
+</span><span style="font-size: 10pt"><tt>.</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>-&gt;</tt></span><span style="font-size: 10pt">
+to access the decoding parameters of a member of a complex type.
+Although this representation is sufficiently general for describing
+the decoding of both C and Alef complex data types, it may
+prove too restrictive for target languages with more complicated
+type systems.
+Further, the assumption that the compiler can select the proper
+Acid format code for each basic type in the language is somewhat
+naive.  For example, when a member of a complex type is a pointer,
+it is assigned a hexadecimal type code; integer members are always 
+assigned a decimal type code.
+This heuristic proves inaccurate when an integer field is a
+bit mask or set of bit flags which are more appropriately displayed
+in hexadecimal or octal.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>14.
+Code Verification
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid&rsquo;s ability to interact dynamically with
+an executing program allows passive test and
+verification of the target program.  For example,
+a common concern is leak detection in programs using
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">.
+Of interest are two items: finding memory that was allocated
+but never freed and detecting bad pointers passed to
+</span><span style="font-size: 10pt"><tt>free</tt></span><span style="font-size: 10pt">.
+An auxiliary Acid library contains Acid functions to
+monitor the execution of a program and detect these
+faults, either as they happen or in the automated
+post-mortem analysis of the memory arena.
+In the following example, the
+</span><span style="font-size: 10pt"><tt>sort</tt></span><span style="font-size: 10pt">
+command is run under the control of the
+Acid memory leak library.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>helix% acid -l malloc /bin/sort</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/bin/sort: mips plan 9 executable</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/lib/acid/port</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/lib/acid/mips</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/lib/acid/malloc</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: go()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>now</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>is</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>the</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>time</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>&lt;ctrl-d&gt;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>is</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>now</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>the</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>time</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>27680 : breakpoint  _exits+0x4  MOVW    $0x8,R1</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: </tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>go</tt></span><span style="font-size: 10pt">
+command creates a process and plants
+breakpoints at the entry to
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>free</tt></span><span style="font-size: 10pt">.
+The program is then started and continues until it
+exits or stops.  If the reason for stopping is anything
+other than the breakpoints in
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">
+and
+</span><span style="font-size: 10pt"><tt>free</tt></span><span style="font-size: 10pt">,
+Acid prints the usual status information and returns to the
+interactive prompt.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When the process stops on entering
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">,
+the debugger must capture and save the address that
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">
+will return.
+After saving a stack
+trace so the calling routine can be identified, it places
+a breakpoint at the return address and restarts the program.
+When
+</span><span style="font-size: 10pt"><tt>malloc</tt></span><span style="font-size: 10pt">
+returns, the breakpoint stops the program,
+allowing the debugger
+to grab the address of the new memory block from the return register.
+The address and stack trace are added to the list of outstanding
+memory blocks, the breakpoint is removed from the return point, and
+the process is restarted.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When the process stops at the beginning of
+</span><span style="font-size: 10pt"><tt>free</tt></span><span style="font-size: 10pt">,
+the memory address supplied as the argument is compared to the list
+of outstanding memory blocks.  If it is not found an error message
+and a stack trace of the call is reported; otherwise, the
+address is deleted from the list.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">When the program exits, the list of outstanding memory blocks contains
+the addresses of all blocks that were allocated but never freed.
+The
+</span><span style="font-size: 10pt"><tt>leak</tt></span><span style="font-size: 10pt">
+library function traverses the list producing a report describing
+the allocated blocks.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: leak()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Lost a total of 524288 bytes from:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    malloc() malloc.c:32 called from dofile+0xe8 sort.c:217 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    dofile() sort.c:190 called from main+0xac sort.c:161 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    main() sort.c:128 called from _main+0x20 main9.s:10 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Lost a total of 64 bytes from:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    malloc() malloc.c:32 called from newline+0xfc sort.c:280 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    newline() sort.c:248 called from dofile+0x110 sort.c:222 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    dofile() sort.c:190 called from main+0xac sort.c:161 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    main() sort.c:128 called from _main+0x20 main9.s:10 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>Lost a total of 64 bytes from:</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    malloc() malloc.c:32 called from realloc+0x14 malloc.c:129 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    realloc() malloc.c:123 called from bldkey+0x358 sort.c:1388 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    buildkey() sort.c:1345 called from newline+0x150 sort.c:285 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    newline() sort.c:248 called from dofile+0x110 sort.c:222 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    dofile() sort.c:190 called from main+0xac sort.c:161 </tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    main() sort.c:128 called from _main+0x20 main9.s:10</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: refs()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>data...bss...stack...</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: leak()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.14in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: </tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The presence of a block in the allocation list does not imply
+it is there because of a leak; for instance, it may have been
+in use when the program terminated.
+The
+</span><span style="font-size: 10pt"><tt>refs()</tt></span><span style="font-size: 10pt">
+library function scans the
+</span><span style="font-size: 10pt"><i>data</i></span><span style="font-size: 10pt">,
+</span><span style="font-size: 10pt"><i>bss</i></span><span style="font-size: 10pt">,
+and
+</span><span style="font-size: 10pt"><i>stack</i></span><span style="font-size: 10pt">
+segments of the process looking for pointers
+into the allocated blocks.  When one is found, the block is deleted from
+the outstanding block list.
+The
+</span><span style="font-size: 10pt"><tt>leak</tt></span><span style="font-size: 10pt">
+function is used again to report the
+blocks remaining allocated and unreferenced.
+This strategy proves effective in detecting
+disconnected (but non-circular) data structures.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The leak detection process is entirely passive.
+The program is not
+specially compiled and the source code is not required.
+As with the Acid support functions for the Alef runtime environment,
+the author of the library routines has encapsulated the
+functionality of the library interface
+in Acid code.
+Any programmer may then check a program&rsquo;s use of the
+library routines without knowledge of either implementation.
+The performance impact of running leak detection is great
+(about 10 times slower),
+but it has not prevented interactive programs like
+</span><span style="font-size: 10pt"><tt>sam</tt></span><span style="font-size: 10pt">
+and the
+</span><span style="font-size: 10pt"><tt>8&frac12;</tt></span><span style="font-size: 10pt">
+window system from being tested.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>15.
+Code Coverage
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Another common component of software test uses 
+</span><span style="font-size: 10pt"><i>coverage</i></span><span style="font-size: 10pt">
+analysis.
+The purpose of the test is to determine which paths through the code have
+not been executed while running the test suite.
+This is usually
+performed by a combination of compiler support and a reporting tool run
+on the output generated by statements compiled into the program.
+The compiler emits code that
+logs the progress of the program as it executes basic blocks and writes the
+results to a file. The file is then processed by the reporting tool 
+to determine which basic blocks have not been executed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid can perform the same function in a language independent manner without
+modifying the source, object or binary of the program. The following example
+shows
+</span><span style="font-size: 10pt"><tt>ls</tt></span><span style="font-size: 10pt">
+being run under the control of the Acid coverage library.
+</span></p><p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>philw-helix% acid -l coverage /bin/ls</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/bin/ls: mips plan 9 executable</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/lib/acid/port</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/lib/acid/mips</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>/lib/acid/coverage</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: coverage()</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>newstime</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>profile</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>tel</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>wintool</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>2: (error) msg: pid=11419 startstop: process exited</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>acid: analyse(ls)</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ls.c:102,105</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    102:     return 1;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    103: }</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    104: if(db[0].qid.path&amp;CHDIR &amp;&amp; dflag==0){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    105:     output();</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>ls.c:122,126</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    122:     memmove(dirbuf+ndir, db, sizeof(Dir));</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    123:     dirbuf[ndir].prefix = 0;</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    124:     p = utfrrune(s, &rsquo;/&rsquo;);</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    125:     if(p){</tt></span></p>
+<p style="line-height: 1.1em; margin-left: 1.28in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 9pt"><tt>    126:         dirbuf[ndir].prefix = s;</tt></span></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="margin-top: 0; margin-bottom: 0.08in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The
+</span><span style="font-size: 10pt"><tt>coverage</tt></span><span style="font-size: 10pt">
+function begins by looping through the text segment placing
+breakpoints at the entry to each basic block. The start of each basic
+block is found using the Acid builtin function
+</span><span style="font-size: 10pt"><tt>follow</tt></span><span style="font-size: 10pt">.
+If the list generated by
+</span><span style="font-size: 10pt"><tt>follow</tt></span><span style="font-size: 10pt">
+contains more than one
+element, then the addresses mark the start of basic blocks. A breakpoint
+is placed at each address to detect entry into the block. If the result
+of
+</span><span style="font-size: 10pt"><tt>follow</tt></span><span style="font-size: 10pt">
+is a single address then no action is taken, and the next address is
+considered. Acid maintains a list of
+breakpoints already in place and avoids placing duplicates (an address may be
+the destination of several branches).
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">After placing the breakpoints the program is set running.
+Each time a breakpoint is encountered
+Acid deletes the address from the breakpoint list, removes the breakpoint
+from memory and then restarts the program.
+At any instant the breakpoint list contains the addresses of basic blocks
+which have not been executed. 
+The
+</span><span style="font-size: 10pt"><tt>analyse</tt></span><span style="font-size: 10pt">
+function reports the lines of source code bounded by basic blocks
+whose addresses are have not been deleted from the breakpoint list.
+These are the basic blocks which have not been executed.
+Program performance is almost unaffected since each breakpoint is executed
+only once and then removed.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The library contains a total of 128 lines of Acid code.
+An obvious extension of this algorithm could be used to provide basic block
+profiling.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>16.
+Conclusion
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid has two areas of weakness. As with
+other language-based tools like
+</span><span style="font-size: 10pt"><i>awk</i></span><span style="font-size: 10pt">,
+a programmer must learn yet another language to step beyond the normal
+debugging functions and use the full power of the debugger.
+Second, the command line interface supplied by the
+</span><span style="font-size: 10pt"><i>yacc</i></span><span style="font-size: 10pt">
+parser is inordinately clumsy.
+Part of the problem relates directly to the use of
+</span><span style="font-size: 10pt"><i>yacc</i></span><span style="font-size: 10pt">
+and could be circumvented with a custom parser.
+However, structural problems would remain: Acid often requires
+too much typing to execute a simple
+command.
+A debugger should prostitute itself to its users, doing whatever
+is wanted with a minimum of encouragement; commands should be
+concise and obvious. The language interface is more consistent than
+an ad hoc command interface but is clumsy to use.
+Most of these problems are addressed by an Acme interface
+which is under construction. This should provide the best of
+both worlds: graphical debugging and access to the underlying acid
+language when required.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">The name space clash between Acid variables, keywords, program variables,
+and functions is unavoidable.
+Although it rarely affects a debugging session, it is annoying
+when it happens and is sometimes difficult to circumvent.
+The current renaming scheme
+is too crude; the new names are too hard to remember.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Acid has proved to be a powerful tool whose applications
+have exceeded expectations.
+Of its strengths, portability, extensibility and parallel debugging support
+were by design and provide the expected utility.
+In retrospect,
+its use as a tool for code test and verification and as
+a medium for communicating type information and encapsulating
+interfaces has provided unanticipated benefits and altered our
+view of the debugging process.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>17.
+Acknowledgments
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.35in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Bob Flandrena was the first user and helped prepare the paper.
+Rob Pike endured three buggy Alef compilers and a new debugger
+in a single sitting.
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"><b>18.
+References
+</b></span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike90] R. Pike, D. Presotto, K. Thompson, H. Trickey,
+&lsquo;&lsquo;Plan 9 from Bell Labs&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>UKUUG Proc. of the Summer 1990 Conf.,
+</i></span><span style="font-size: 10pt">London, England,
+1990,
+reprinted, in a different form, in this volume.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Gol93] M. Golan, D. Hanson,
+&lsquo;&lsquo;DUEL -- A Very High-Level Debugging Language&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>USENIX Proc. of the Winter 1993 Conf.,
+</i></span><span style="font-size: 10pt">San Diego, CA,
+1993.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Lin90] M. A. Linton,
+&lsquo;&lsquo;The Evolution of DBX&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>USENIX Proc. of the Summer 1990 Conf.,
+</i></span><span style="font-size: 10pt">Anaheim, CA,
+1990.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Stal91] R. M. Stallman, R. H. Pesch,
+&lsquo;&lsquo;Using GDB: A guide to the GNU source level debugger&rsquo;&rsquo;,
+Technical Report, Free Software Foundation,
+Cambridge, MA,
+1991.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Win93] P. Winterbottom,
+&lsquo;&lsquo;Alef reference Manual&rsquo;&rsquo;,
+this volume.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Pike93] Rob Pike,
+&lsquo;&lsquo;Acme: A User Interface for Programmers&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>USENIX Proc. of the Winter 1994 Conf.,
+</i></span><span style="font-size: 10pt">San Francisco, CA,
+reprinted in this volume.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Ols90] Ronald A. Olsson, Richard H. Crawford, and W. Wilson Ho,
+&lsquo;&lsquo;Dalek: A GNU, improved programmable debugger&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>USENIX Proc. of the Summer 1990 Conf.,
+</i></span><span style="font-size: 10pt">Anaheim, CA.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[May92] Paul Maybee,
+&lsquo;&lsquo;NeD: The Network Extensible Debugger&rsquo;&rsquo;
+</span><span style="font-size: 10pt"><i>USENIX Proc. of the Summer 1992 Conf.,
+</i></span><span style="font-size: 10pt">San Antonio, TX.
+</span></p><p style="margin-top: 0; margin-bottom: 0.05in"></p>
+<p style="line-height: 1.2em; margin-left: 1.00in; text-indent: 0.00in; margin-right: 1.00in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">[Aral] Ziya Aral, Ilya Gertner, and Greg Schaffer,
+&lsquo;&lsquo;Efficient debugging primitives for multiprocessors&rsquo;&rsquo;,
+</span><span style="font-size: 10pt"><i>Proceedings of the Third International Conference on Architectural
+Support for Programming Languages and Operating Systems,
+</i></span><span style="font-size: 10pt">SIGPLAN notices Nr. 22, May 1989.
+</span></p><p style="margin-top: 0; margin-bottom: 0.50in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.35in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt"></span><span style="font-size: 10pt"><b>Notes</b></span><span style="font-size: 10pt">
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+<p style="line-height: 1.2em; margin-left: 1.50in; text-indent: 0.00in; margin-right: 1.50in; margin-top: 0; margin-bottom: 0; text-align: justify;">
+<span style="font-size: 10pt">Originally appeared in
+</span><span style="font-size: 10pt"><i>Proc. of the Winter 1994 USENIX Conf.,
+</i></span><span style="font-size: 10pt">pp. 211-222,
+San Francisco, CA
+</span></p><p style="margin-top: 0; margin-bottom: 0.17in"></p>
+<p style="margin-top: 0; margin-bottom: 0.17in"></p>
+
+</body>
+</html>
+
